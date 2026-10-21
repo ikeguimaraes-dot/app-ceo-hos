@@ -5,11 +5,18 @@ import type {
   Session,
   DataMode,
   NotificationPreferences,
+  DecidePendingInput,
+  PendingDecisionResult,
 } from "../contracts/gateways";
 import { demo } from "./fixtures";
 export function createMockGateways(now = Date.now, delay = 240): Gateways {
   let mode: DataMode = "normal";
   const read = new Set<string>();
+  const decided = new Set<string>();
+  const decisions = new Map<
+    string,
+    { input: DecidePendingInput; result: PendingDecisionResult }
+  >();
   let preferences: NotificationPreferences = {
     categories: ["pending", "operation", "people", "system"],
     quietStart: null,
@@ -108,8 +115,55 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       async list(scope, cursor) {
         await check(scope, "pending.read");
         const items =
-          mode === "empty" || cursor ? [] : demo.pending.map((p) => ({ ...p }));
+          mode === "empty" || cursor
+            ? []
+            : demo.pending
+                .filter((p) => !decided.has(`${scope.unitId}:${p.id}`))
+                .map((p) => ({
+                  ...p,
+                  canDecide:
+                    bootstrap(scope.session)
+                      .units.find((u) => u.id === scope.unitId)
+                      ?.capabilities.includes(
+                        p.kind === "maintenance"
+                          ? "maintenance.decide"
+                          : "punch.decide",
+                      ) ?? false,
+                }));
         return { items, nextCursor: null, updatedAt: "2026-10-20T12:00:00Z" };
+      },
+      async decide(scope, input) {
+        const item = demo.pending.find(
+          (candidate) => candidate.id === input.itemId,
+        );
+        if (!item) throw new Error("Pendência não encontrada.");
+        await check(
+          scope,
+          item.kind === "maintenance" ? "maintenance.decide" : "punch.decide",
+        );
+        const key = `${scope.session.userId}:${input.idempotencyKey}`;
+        const replay = decisions.get(key);
+        if (replay) {
+          if (JSON.stringify(replay.input) !== JSON.stringify(input))
+            throw new Error("Conflito de idempotência.");
+          return { ...replay.result };
+        }
+        if (input.expectedVersion !== item.version)
+          throw new Error("A pendência mudou. Atualize a lista.");
+        const resourceKey = `${scope.unitId}:${input.itemId}`;
+        if (decided.has(resourceKey))
+          throw new Error("A pendência já foi decidida.");
+        if (input.decision === "reject" && !input.reason?.trim())
+          throw new Error("Informe o motivo da rejeição.");
+        const result: PendingDecisionResult = {
+          itemId: input.itemId,
+          state: input.decision === "approve" ? "approved" : "rejected",
+          version: `${item.version}-${input.decision}`,
+          decidedAt: "2026-10-20T12:00:00Z",
+        };
+        decided.add(resourceKey);
+        decisions.set(key, { input: { ...input }, result });
+        return { ...result };
       },
     },
     operation: {

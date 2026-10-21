@@ -8,13 +8,16 @@ async function login(page: Page, scenario?: string) {
 async function unit(page: Page, name = "Jardim") {
   await page.getByRole("button", { name: `Abrir ${name} · Demo` }).click();
 }
-test("login, dashboard, unit isolation, notifications and logout stay local", async ({
+test("login, dashboard, unit isolation, notifications and logout stay inside the app boundary", async ({
   page,
 }) => {
   const external: string[] = [];
+  const appOrigin = new URL(
+    process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173",
+  ).origin;
   page.on("request", (request) => {
     if (
-      !request.url().startsWith("http://127.0.0.1:4173") &&
+      !request.url().startsWith(appOrigin) &&
       !request.url().startsWith("data:")
     )
       external.push(request.url());
@@ -44,6 +47,18 @@ test("login, dashboard, unit isolation, notifications and logout stay local", as
   });
   await page.getByRole("tab", { name: "Pendências" }).click();
   await expect(page.getByText("Revisar fechamento")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Preparar aprovação", exact: true })
+    .first()
+    .click();
+  await expect(page.getByText("Confirmar aprovação").first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "Confirmar aprovação", exact: true })
+    .click();
+  await expect(
+    page.getByText("Pendência aprovada com registro de auditoria."),
+  ).toBeVisible();
+  await expect(page.getByText("Revisar fechamento")).toHaveCount(0);
   await page.screenshot({
     path: "docs/screenshots/pending.png",
     fullPage: true,

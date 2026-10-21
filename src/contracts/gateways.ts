@@ -1,6 +1,8 @@
 export type Capability =
   | "dashboard.read"
   | "pending.read"
+  | "maintenance.decide"
+  | "punch.decide"
   | "operation.read"
   | "people.read"
   | "notifications.read";
@@ -35,9 +37,26 @@ export type Dashboard = {
 };
 export type PendingItem = {
   id: string;
+  kind: "maintenance" | "punch";
   title: string;
   detail: string;
   priority: "attention" | "normal";
+  version: string;
+  canDecide: boolean;
+};
+export type PendingDecision = "approve" | "reject";
+export type DecidePendingInput = {
+  itemId: string;
+  decision: PendingDecision;
+  reason: string | null;
+  expectedVersion: string;
+  idempotencyKey: string;
+};
+export type PendingDecisionResult = {
+  itemId: string;
+  state: "approved" | "rejected";
+  version: string;
+  decidedAt: string;
 };
 export type Page<T> = {
   items: T[];
@@ -94,6 +113,10 @@ export interface DashboardGateway {
 }
 export interface PendingItemsGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<PendingItem>>;
+  decide(
+    scope: Scope,
+    input: DecidePendingInput,
+  ): Promise<PendingDecisionResult>;
 }
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;

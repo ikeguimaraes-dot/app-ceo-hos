@@ -30,6 +30,8 @@ import {
 const capability = z.enum([
   "dashboard.read",
   "pending.read",
+  "maintenance.decide",
+  "punch.decide",
   "operation.read",
   "people.read",
   "notifications.read",
@@ -58,9 +60,18 @@ const dashboardSchema = z.object({
 });
 const pendingItemSchema = z.object({
   id: z.string(),
+  kind: z.enum(["maintenance", "punch"]),
   title: z.string(),
   detail: z.string(),
   priority: z.enum(["attention", "normal"]),
+  version: z.string().min(1),
+  canDecide: z.boolean(),
+});
+const pendingDecisionSchema = z.object({
+  itemId: z.string(),
+  state: z.enum(["approved", "rejected"]),
+  version: z.string().min(1),
+  decidedAt: z.string(),
 });
 const notificationItemSchema = z.object({
   id: z.string().uuid(),
@@ -133,6 +144,15 @@ function friendlyError(error: { message: string; code?: string } | null) {
     return new Error(
       "As preferências mudaram em outro dispositivo. Atualize e tente novamente.",
     );
+  if (
+    error.code === "PT409" ||
+    /pending_.*conflict|pending_already_decided/i.test(error.message)
+  )
+    return new Error(
+      "Esta pendência mudou ou já foi decidida. Atualize a lista antes de continuar.",
+    );
+  if (/decision_reason_required|invalid_decision/i.test(error.message))
+    return new Error("Revise a decisão e informe o motivo da rejeição.");
   return new Error("Não foi possível concluir a operação.");
 }
 
@@ -268,6 +288,22 @@ export function createRemoteGateways(): Gateways {
             scope.signal,
           ),
         ) satisfies Page<PendingItem>;
+      },
+      async decide(scope, input) {
+        return pendingDecisionSchema.parse(
+          await rpc(
+            "ghost_decide_pending_v1",
+            {
+              p_unit_id: scope.unitId,
+              p_item_id: input.itemId,
+              p_decision: input.decision,
+              p_reason: input.reason,
+              p_expected_version: input.expectedVersion,
+              p_idempotency_key: input.idempotencyKey,
+            },
+            scope.signal,
+          ),
+        );
       },
     },
     operation: {

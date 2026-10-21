@@ -11,6 +11,8 @@ export const demo = {
       capabilities: [
         "dashboard.read",
         "pending.read",
+        "maintenance.decide",
+        "punch.decide",
         "operation.read",
         "people.read",
         "notifications.read",
@@ -45,15 +47,21 @@ export const demo = {
   pending: [
     {
       id: "demo-review",
+      kind: "maintenance" as const,
       title: "Revisar fechamento",
       detail: "Conferência simulada • nenhuma ação financeira será executada",
       priority: "attention" as const,
+      version: "demo-review-v1",
+      canDecide: true,
     },
     {
       id: "demo-document",
+      kind: "punch" as const,
       title: "Conferir documento",
       detail: "Documento fictício disponível para revisão",
       priority: "normal" as const,
+      version: "demo-document-v1",
+      canDecide: true,
     },
   ],
   operation: {

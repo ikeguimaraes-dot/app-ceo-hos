@@ -1,17 +1,17 @@
 # Roadmap e critérios de aceite
 
-| Fase                                | Estado              | Entrega / próximo gate                                                                                                                       |
-| ----------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 — descoberta                      | Concluída           | Inventário KPH, auditoria remota, riscos e matriz de segurança                                                                               |
-| 1A — fundação mock                  | Concluída           | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais                                               |
-| 1B — backend dev                    | Concluída           | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
-| 2A — distribuição controlada        | Em andamento        | Projeto EAS e builds internos; iOS físico/APNs aguardam aprovação Apple, FCM e conta KPH de teste ainda faltam                               |
-| 2B — notificações reais             | Implementada em dev | Preferências, fila privada, deduplicação, retentativas, receipts, limpeza e worker Edge Function; entrega física aguarda APNs/FCM            |
-| 2C — piloto operacional             | Implementada em dev | Paginação, resumos mínimos, revogação e controles de coorte; ativação aguarda usuários nomeados                                              |
-| 2D — decisões                       | Pendente            | Contrato transacional de aprovação, idempotência, conflito e auditoria                                                                       |
-| 3 — expansão financeira/operacional | Pendente            | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados                                              |
-| 4 — pessoas                         | Pendente            | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso                                                                  |
-| 5 — lojas                           | Pendente            | Privacidade, acessibilidade física, performance, observabilidade, assinatura, rollout e rollback                                             |
+| Fase                                | Estado                  | Entrega / próximo gate                                                                                                                       |
+| ----------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 — descoberta                      | Concluída               | Inventário KPH, auditoria remota, riscos e matriz de segurança                                                                               |
+| 1A — fundação mock                  | Concluída               | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais                                               |
+| 1B — backend dev                    | Concluída               | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
+| 2A — distribuição controlada        | Em andamento            | Projeto EAS e builds internos; iOS físico/APNs aguardam aprovação Apple, FCM e conta KPH de teste ainda faltam                               |
+| 2B — notificações reais             | Implementada em dev     | Preferências, fila privada, deduplicação, retentativas, receipts, limpeza e worker Edge Function; entrega física aguarda APNs/FCM            |
+| 2C — piloto operacional             | Implementada em dev     | Paginação, resumos mínimos, revogação e controles de coorte; ativação aguarda usuários nomeados                                              |
+| 2D — decisões                       | Implementada localmente | Contrato transacional de aprovação, capabilities por recurso, idempotência, conflito e auditoria; aplicação em dev aguarda revisão final     |
+| 3 — expansão financeira/operacional | Pendente                | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados                                              |
+| 4 — pessoas                         | Pendente                | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso                                                                  |
+| 5 — lojas                           | Pendente                | Privacidade, acessibilidade física, performance, observabilidade, assinatura, rollout e rollback                                             |
 
 ## Definition of Done da Fase 1
 

@@ -186,6 +186,69 @@ describe("session and access boundaries", () => {
     await c.setMode("offline");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow("offline");
   });
+  it("decides a pending item once and replays the same idempotent result", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    const scope = { session: c.state.session!, unitId: "demo-garden" };
+    const input = {
+      itemId: "demo-review",
+      decision: "approve" as const,
+      reason: null,
+      expectedVersion: "demo-review-v1",
+      idempotencyKey: "test-idempotency-0001",
+    };
+    const first = await gateways.pending.decide(scope, input);
+    expect(await gateways.pending.decide(scope, input)).toEqual(first);
+    expect((await gateways.pending.list(scope)).items).not.toContainEqual(
+      expect.objectContaining({ id: "demo-review" }),
+    );
+  });
+  it("rejects stale versions, reused keys and missing decision capability", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    const scope = { session: c.state.session!, unitId: "demo-garden" };
+    await expect(
+      gateways.pending.decide(scope, {
+        itemId: "demo-document",
+        decision: "reject",
+        reason: "Registro divergente",
+        expectedVersion: "stale",
+        idempotencyKey: "test-idempotency-0002",
+      }),
+    ).rejects.toThrow("mudou");
+    const original = {
+      itemId: "demo-document",
+      decision: "reject" as const,
+      reason: "Registro divergente",
+      expectedVersion: "demo-document-v1",
+      idempotencyKey: "test-idempotency-0003",
+    };
+    await gateways.pending.decide(scope, original);
+    await expect(
+      gateways.pending.decide(scope, { ...original, reason: "Outro motivo" }),
+    ).rejects.toThrow("idempotência");
+
+    const restricted = setup();
+    await enter(restricted.controller, "restricted");
+    await restricted.controller.selectUnit("demo-garden");
+    await expect(
+      restricted.gateways.pending.decide(
+        {
+          session: restricted.controller.state.session!,
+          unitId: "demo-garden",
+        },
+        {
+          itemId: "demo-review",
+          decision: "approve",
+          reason: null,
+          expectedVersion: "demo-review-v1",
+          idempotencyKey: "test-idempotency-0004",
+        },
+      ),
+    ).rejects.toThrow("Acesso não permitido");
+  });
   it("revokes removed capabilities and clears cached data on access change", async () => {
     const { controller: c, gateways, queries } = setup();
     await enter(c);

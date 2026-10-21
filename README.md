@@ -56,6 +56,7 @@ O adapter real usa Supabase Auth com sess√£o em SecureStore, PKCE para recupera√
 - `ghost_notification_preferences_v1`
 - `ghost_notification_preferences_update_v1`
 - `ghost_pending_items_v2`
+- `ghost_decide_pending_v1`
 - `ghost_notifications_v2`
 - `ghost_operation_summary_v1`
 - `ghost_people_summary_v1`

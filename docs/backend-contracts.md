@@ -2,11 +2,10 @@
 
 Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gateways.ts` e nas RPCs `ghost_*_v1`. Esta é a lista exata do que ainda falta para operação e distribuição.
 
-| Contrato restante                   | Entrada/saída necessária                                                                         | Regra do servidor                                                                                                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Decidir aprovação                   | ID opaco, unidade, decisão, motivo, versão esperada e idempotency key → estado/version/timestamp | Transação única, item ainda pendente, capability de decisão, escopo do recurso e trilha de auditoria; conflito 409 |
-| Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual                                                 | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho                                                   |
-| Observabilidade                     | request ID, código estável e duração → logs sem PII                                              | Nunca registrar JWT, e-mail, valores, documentos ou payload completo                                               |
+| Contrato restante                   | Entrada/saída necessária                            | Regra do servidor                                                    |
+| ----------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual    | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho     |
+| Observabilidade                     | request ID, código estável e duração → logs sem PII | Nunca registrar JWT, e-mail, valores, documentos ou payload completo |
 
 ## Decisões de produto e infraestrutura
 
@@ -28,3 +27,5 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 Nenhum desses itens exige mudar telas para consultar tabelas. Novas capacidades entram no bootstrap e novas operações entram por RPC/Edge Function versionada.
 
 Os contratos paginados, os agregados mínimos de Operação/Pessoas e a revogação por `accessVersion` foram entregues na [Fase 2C](phase-2c.md). O SLA atual de revogação em primeiro plano é de até 60 segundos, além da revalidação em cada RPC.
+
+O contrato transacional de decisão, com versão esperada, idempotência, conflito 409 e auditoria privada, foi entregue na [Fase 2D](phase-2d.md).
