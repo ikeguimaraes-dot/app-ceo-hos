@@ -30,7 +30,7 @@ Logout tenta revogar primeiro a instalação push com a sessão válida, encerra
 - Todas as sete RPCs: `anon` sem `EXECUTE`, `authenticated` com `EXECUTE`.
 - Registro push: usuário vinculado aceito em rollback; usuário sem vínculo negado.
 - Teste HTTP com publishable key: endpoint público acessível, login inválido rejeitado e bootstrap anônimo negado.
-- Auth URL Configuration: redirects `ghost-local`, `ghost-preview` e `ghost-production` cadastrados; total confirmado de oito URLs permitidas.
+- Auth URL Configuration: redirects `ghost-local`, `ghost-preview`, `ghost-production` e `https://app-ceo-hos.vercel.app/auth/reset-password` cadastrados; total confirmado de nove URLs permitidas.
 - iOS: Xcode build concluído, app instalado e aberto; SecureStore real validado após corrigir separador incompatível.
 - Android: build/instalação local registrados em [validação](validation.md).
 - Lint, TypeScript, testes, boundary check, exportações e E2E registrados em [validação](validation.md).
