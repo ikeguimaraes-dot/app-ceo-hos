@@ -10,6 +10,7 @@ Iniciada em 2026-10-21. Esta fase transforma a fundação validada em artefatos 
 - EAS CLI fixado no projeto e versões nativas controladas remotamente.
 - Ambiente EAS `preview` contém somente Project URL e publishable key do Supabase de desenvolvimento.
 - Perfis `preview` para APK/ iOS ad hoc e `preview-simulator` para validação iOS sem assinatura.
+- Ícone próprio quadrado aplicado a iOS, Android adaptativo e web; sem texto ou referência a outra marca.
 - OTA permanece desativado.
 
 ## Builds

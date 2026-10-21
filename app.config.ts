@@ -14,13 +14,20 @@ const config: ExpoConfig = {
   scheme: `ghost-${environment}`,
   orientation: "portrait",
   userInterfaceStyle: "automatic",
+  icon: "./assets/icon.png",
   ios: {
     supportsTablet: true,
     bundleIdentifier: `com.grupomeeteat.ghost${suffix}`,
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
-  android: { package: `com.grupomeeteat.ghost${suffix}` },
-  web: { bundler: "metro", output: "single" },
+  android: {
+    package: `com.grupomeeteat.ghost${suffix}`,
+    adaptiveIcon: {
+      foregroundImage: "./assets/adaptive-icon.png",
+      backgroundColor: "#064A36",
+    },
+  },
+  web: { bundler: "metro", output: "single", favicon: "./assets/icon.png" },
   plugins: [
     "expo-router",
     "expo-secure-store",
