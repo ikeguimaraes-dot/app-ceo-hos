@@ -40,7 +40,7 @@ O advisor pós-migration não encontrou alerta de performance nos objetos Ghost.
 - Android: AVD `Ghost_API_36`, compile SDK 37/target 36. Gradle concluiu 326 tarefas, instalou o APK e abriu o scheme `ghost-local`. Evidência: [android-phase1b-login.png](screenshots/android-phase1b-login.png).
 - Web: Metro responde em `127.0.0.1:8081`; Chrome exibiu o login remoto. O único warning observado é a limitação esperada do listener de token do Expo Notifications no web.
 
-Simuladores comprovam build, instalação, abertura e SecureStore nativo. Recuperação por e-mail, push APNs/FCM e jornada positiva de um usuário KPH não foram executados porque dependem dos redirects ainda não salvos, projeto EAS e uma conta de desenvolvimento já vinculada.
+Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os três redirects de recovery foram salvos no Auth e a lista passou de cinco para oito URLs. Recuperação por e-mail, push APNs/FCM e jornada positiva de um usuário KPH ainda não foram executados porque dependem de um e-mail/conta de desenvolvimento vinculada e, para push, de projeto EAS.
 
 ## Auditoria de dependências
 

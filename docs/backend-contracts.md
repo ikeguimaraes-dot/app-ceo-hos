@@ -19,7 +19,7 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 
 - Vincular um projeto EAS e fornecer `EXPO_PUBLIC_EAS_PROJECT_ID`; configurar APNs/FCM fora do cliente.
 - Definir IDs definitivos de App Store/Play Store antes do primeiro build distribuído.
-- Salvar os três redirects de recuperação no Auth e testar e-mail real: `ghost-local://auth/reset-password`, `ghost-preview://auth/reset-password` e `ghost-production://auth/reset-password`.
+- Testar e-mail real nos três redirects já cadastrados no Auth: `ghost-local://auth/reset-password`, `ghost-preview://auth/reset-password` e `ghost-production://auth/reset-password`.
 - Disponibilizar uma conta KPH de desenvolvimento já vinculada para jornada positiva completa no app, sem criar papel por credencial administrativa.
 - Implantar as migrations Ghost em staging/produção somente após regressão dos consumidores web e aprovação da matriz de capabilities.
 

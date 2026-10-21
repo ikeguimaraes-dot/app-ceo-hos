@@ -5,7 +5,7 @@
 | 0 — descoberta | Concluída | Inventário KPH, auditoria remota, riscos e matriz de segurança |
 | 1A — fundação mock | Concluída | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais |
 | 1B — backend dev | Concluída | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
-| 1C — staging/distribuição interna | Pendente | Rotação de segredo exposto, saneamento legado, redirects Auth, conta de teste, projeto EAS/APNs/FCM e matriz real multiusuário |
+| 1C — staging/distribuição interna | Pendente | Rotação de segredo exposto, saneamento legado, teste de recovery, conta de teste, projeto EAS/APNs/FCM e matriz real multiusuário |
 | 2 — decisões | Pendente | Contrato transacional de aprovação, paginação, worker push e auditoria |
 | 3 — expansão financeira/operacional | Pendente | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados |
 | 4 — pessoas | Pendente | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso |
