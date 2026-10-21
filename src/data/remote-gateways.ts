@@ -256,9 +256,7 @@ export function createRemoteGateways(): Gateways {
             : await Notifications.requestPermissionsAsync();
         if (permission.status !== "granted")
           throw new Error("Permissão de notificações não concedida.");
-        const projectId =
-          Constants.easConfig?.projectId ??
-          (Constants.expoConfig?.extra?.easProjectId as string | undefined);
+        const projectId = Constants.easConfig?.projectId;
         if (!projectId)
           throw new Error("Projeto EAS ainda não configurado para push.");
         const token = await Notifications.getExpoPushTokenAsync({ projectId });

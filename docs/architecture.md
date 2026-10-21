@@ -1,12 +1,12 @@
 # Arquitetura
 
-Status: Fase 1A local e Fase 1B no ambiente de desenvolvimento implementadas. Ghost é um cliente do KPH; não copia Server Actions, cookies do shell ou tabelas web para o celular. Veja a [entrega 1B](phase-1b.md).
+Status: Fase 1 concluída e Fase 2A de distribuição controlada em andamento. Ghost é um cliente do KPH; não copia Server Actions, cookies do shell ou tabelas web para o celular. Veja a [entrega 1B](phase-1b.md) e a [distribuição 2A](phase-2a.md).
 
 ## Componentes e dependências
 
 Expo + React Native + TypeScript estrito, Expo Router para rotas e links; TanStack Query para dados remotos; Supabase JS para Auth; SecureStore para sessão; Local Authentication para bloqueio local opcional; Notifications para registro e recepção push; Zod para respostas remotas. Componentes React Native próprios evitam dependência de UI web. Dependências têm versões exatas e lockfile.
 
-EAS Build/Submit ficam preparados, sem publicação. Perfis development/preview/production e schemes distintos estão configurados; projeto EAS, IDs definitivos e credenciais ainda faltam. OTA permanece desativado. Segredos de assinatura e push ficam no serviço de build/backend, nunca em EXPO_PUBLIC.
+O projeto EAS `@grupomeeteat/ghost-mobile` está vinculado. Perfis development/preview/production, um perfil iOS de simulador e schemes distintos estão configurados. Preview usa `com.grupomeeteat.ghost.preview`; produção reserva `com.grupomeeteat.ghost`. OTA permanece desativado. A keystore Android é gerenciada pelo EAS; certificados Apple e credenciais APNs/FCM ainda dependem das contas externas. Segredos de assinatura e push ficam no serviço de build/backend, nunca em EXPO_PUBLIC.
 
 ```text
 app/                         rotas públicas, callback e árvore autenticada

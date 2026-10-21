@@ -5,8 +5,10 @@
 | 0 — descoberta | Concluída | Inventário KPH, auditoria remota, riscos e matriz de segurança |
 | 1A — fundação mock | Concluída | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais |
 | 1B — backend dev | Concluída | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
-| 1C — staging/distribuição interna | Pendente | Rotação de segredo exposto, saneamento legado, teste de recovery, conta de teste, projeto EAS/APNs/FCM e matriz real multiusuário |
-| 2 — decisões | Pendente | Contrato transacional de aprovação, paginação, worker push e auditoria |
+| 2A — distribuição controlada | Em andamento | Projeto EAS e builds internos; iOS físico/APNs aguardam aprovação Apple, FCM e conta KPH de teste ainda faltam |
+| 2B — notificações reais | Pendente | Worker, preferências, deduplicação, tentativas, receipts e limpeza de tokens |
+| 2C — piloto operacional | Pendente | Paginação, Operação/Pessoas mínimos, revogação e grupo pequeno de usuários |
+| 2D — decisões | Pendente | Contrato transacional de aprovação, idempotência, conflito e auditoria |
 | 3 — expansão financeira/operacional | Pendente | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados |
 | 4 — pessoas | Pendente | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso |
 | 5 — lojas | Pendente | Privacidade, acessibilidade física, performance, observabilidade, assinatura, rollout e rollback |
@@ -22,4 +24,4 @@
 - API móvel testada com allow/deny no desenvolvimento.
 - Documentação lista com precisão o que falta para staging/produção.
 
-A Fase 1 não inclui aprovação financeira, envio efetivo de push, EAS Build/Submit ou implantação em produção.
+A Fase 1 não inclui aprovação financeira, envio efetivo de push, EAS Build/Submit ou implantação em produção. A [Fase 2A](phase-2a.md) registra a distribuição controlada posterior.

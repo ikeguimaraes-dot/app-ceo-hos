@@ -8,6 +8,8 @@ A versão web de preview está disponível em **https://app-ceo-hos.vercel.app**
 
 O deploy é uma exportação estática do Expo Router com fallback de SPA para que links como `/pending`, `/notifications` e `/auth/reset-password` abram diretamente. A publicação móvel nas lojas continua separada e depende de EAS, APNs/FCM e dos identificadores definitivos.
 
+A distribuição móvel controlada da [Fase 2A](docs/phase-2a.md) usa o projeto EAS `@grupomeeteat/ghost-mobile`, APK interno e build iOS de simulador. O iOS físico/TestFlight aguarda a aprovação da inscrição Apple Developer; APNs e FCM permanecem sem credenciais no cliente.
+
 ## Executar
 
 Requer Node 22.23+ e npm 10+.
@@ -90,4 +92,4 @@ python3 scripts/check_docs.py
 - `src/ui/`: tokens, tema claro/escuro e componentes; catálogo interno em `/catalog`.
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

@@ -9,7 +9,7 @@ required = [
     'docs/design-system.md', 'docs/backend-readiness.md',
     'docs/source-inventory.md', 'docs/validation.md', 'docs/phase-1a.md',
     'docs/backend-contracts.md', 'docs/device-checklist.md',
-    'docs/phase-1b.md',
+    'docs/phase-1b.md', 'docs/phase-2a.md',
 ]
 errors = []
 for name in required:

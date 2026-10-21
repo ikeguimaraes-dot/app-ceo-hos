@@ -1,19 +1,27 @@
 {
-  "cli": { "version": ">= 16.0.0" },
+  "cli": { "version": "25.3.0", "appVersionSource": "remote" },
   "build": {
     "development": {
       "developmentClient": false,
       "distribution": "internal",
+      "environment": "development",
       "env": { "EXPO_PUBLIC_APP_ENV": "local", "EXPO_PUBLIC_DATA_MODE": "mock" }
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
+      "android": { "buildType": "apk" },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "preview",
         "EXPO_PUBLIC_DATA_MODE": "remote"
       }
     },
+    "preview-simulator": {
+      "extends": "preview",
+      "ios": { "simulator": true }
+    },
     "production": {
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_DATA_MODE": "remote"

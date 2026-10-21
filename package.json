@@ -16,6 +16,10 @@
     "export:mock": "EXPO_PUBLIC_DATA_MODE=mock EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY= expo export --platform web",
     "export:remote": "expo export --platform all",
     "vercel-build": "expo export --platform web",
+    "eas:config:preview": "eas config --platform android --profile preview --non-interactive",
+    "build:preview:android": "eas build --platform android --profile preview",
+    "build:preview:ios": "eas build --platform ios --profile preview",
+    "build:preview:ios-simulator": "eas build --platform ios --profile preview-simulator",
     "test:e2e": "npm run export:mock && playwright test",
     "check:boundaries": "node scripts/check-boundaries.mjs"
   },
@@ -44,6 +48,7 @@
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/react": "19.3.0",
+    "eas-cli": "25.3.0",
     "eslint": "9.39.5",
     "eslint-config-expo": "58.0.4",
     "prettier": "3.9.10",

@@ -25,7 +25,9 @@
 - [ ] Offline/reconexão/retry sem escrita financeira enfileirada.
 - [ ] Tema, fonte ampliada, teclado, VoiceOver/TalkBack e touch targets.
 - [ ] Android e iPhone físicos; simulador não valida APNs/FCM nem biometria real.
-- [ ] Preview assinado com projeto EAS e credenciais isoladas.
+- [x] Projeto EAS vinculado, ambiente preview isolado e keystore Android gerada.
+- [ ] Preview Android instalado a partir do APK EAS.
+- [ ] Preview iOS assinado; aguarda aprovação da inscrição Apple Developer.
 - [ ] Inspeção do bundle final por JWT, secret key, `service_role` e endpoint indevido.
 
 ## Comandos
@@ -38,3 +40,5 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npx expo run:ios --no-b
 ```
 
 Em modo remoto, configure apenas Project URL e publishable key em `.env.local`. Nunca copie credencial administrativa. O Metro deve estar ativo na porta exibida pelo Expo. Para builds preview/production, configure variáveis no EAS e mantenha OTA desativado até existir política de rollout.
+
+Builds controlados usam `npm run build:preview:android`, `npm run build:preview:ios-simulator` e, após a aprovação da Apple Developer, `npm run build:preview:ios`. O APK e o build de simulador não dependem de Metro nem de servidor localhost.

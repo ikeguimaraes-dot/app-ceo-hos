@@ -3,14 +3,9 @@ const environment = process.env.EXPO_PUBLIC_APP_ENV ?? "local";
 if (!["local", "preview", "production"].includes(environment))
   throw new Error("Ambiente inválido");
 const dataMode = process.env.EXPO_PUBLIC_DATA_MODE ?? "mock";
+const easProjectId = "55db4818-fda5-4b05-ae7b-4114bb1c7e70";
 if (!["mock", "remote"].includes(dataMode))
   throw new Error("EXPO_PUBLIC_DATA_MODE inválido.");
-if (
-  dataMode === "remote" &&
-  (!process.env.EXPO_PUBLIC_SUPABASE_URL ||
-    !process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
-)
-  throw new Error("Backend remoto selecionado sem configuração pública.");
 const suffix = environment === "production" ? "" : `.${environment}`;
 const config: ExpoConfig = {
   name: `Ghost${environment === "production" ? "" : ` ${environment}`}`,
@@ -19,8 +14,12 @@ const config: ExpoConfig = {
   scheme: `ghost-${environment}`,
   orientation: "portrait",
   userInterfaceStyle: "automatic",
-  ios: { supportsTablet: true, bundleIdentifier: `app.ghost.demo${suffix}` },
-  android: { package: `app.ghost.demo${suffix}` },
+  ios: {
+    supportsTablet: true,
+    bundleIdentifier: `com.grupomeeteat.ghost${suffix}`,
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
+  },
+  android: { package: `com.grupomeeteat.ghost${suffix}` },
   web: { bundler: "metro", output: "single" },
   plugins: [
     "expo-router",
@@ -38,7 +37,7 @@ const config: ExpoConfig = {
   extra: {
     environment,
     dataMode,
-    easProjectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+    eas: { projectId: easProjectId },
   },
   updates: { enabled: false },
 };

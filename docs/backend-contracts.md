@@ -17,8 +17,8 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 
 ## Decisões de produto e infraestrutura
 
-- Vincular um projeto EAS e fornecer `EXPO_PUBLIC_EAS_PROJECT_ID`; configurar APNs/FCM fora do cliente.
-- Definir IDs definitivos de App Store/Play Store antes do primeiro build distribuído.
+- Configurar APNs/FCM fora do cliente depois da aprovação Apple Developer e da criação do projeto Firebase; o projeto EAS já está vinculado.
+- Confirmar `com.grupomeeteat.ghost` como ID de loja antes da primeira submissão; o preview isolado usa `com.grupomeeteat.ghost.preview`.
 - Testar e-mail real nos redirects nativos já cadastrados no Auth: `ghost-local://auth/reset-password`, `ghost-preview://auth/reset-password` e `ghost-production://auth/reset-password`, além do redirect web `https://app-ceo-hos.vercel.app/auth/reset-password`.
 - Disponibilizar uma conta KPH de desenvolvimento já vinculada para jornada positiva completa no app, sem criar papel por credencial administrativa.
 - Implantar as migrations Ghost em staging/produção somente após regressão dos consumidores web e aprovação da matriz de capabilities.
