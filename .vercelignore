@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+coverage/
+android/
+ios/
+test-results/
+playwright-report/
+supabase/.temp/
+*.apk
+*.xip
