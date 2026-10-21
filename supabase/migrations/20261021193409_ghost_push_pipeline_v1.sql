@@ -287,12 +287,12 @@ begin
 
   with results as (
     select
-      (x->>'deliveryId')::uuid delivery_id,
-      x->>'status' result_status,
-      nullif(x->>'ticketId','') ticket_id,
-      left(nullif(x->>'errorCode',''), 100) error_code
-    from jsonb_array_elements(p_results) x
-    where x->>'status' in ('sent','retry','failed')
+      (x.value->>'deliveryId')::uuid as delivery_id,
+      x.value->>'status' as result_status,
+      nullif(x.value->>'ticketId','') as ticket_id,
+      left(nullif(x.value->>'errorCode',''), 100) as error_code
+    from jsonb_array_elements(p_results) as x(value)
+    where x.value->>'status' in ('sent','retry','failed')
   )
   update ghost_private.push_deliveries d set
     status = r.result_status,
@@ -360,11 +360,11 @@ begin
   end if;
   with results as (
     select
-      (x->>'deliveryId')::uuid delivery_id,
-      x->>'status' result_status,
-      left(nullif(x->>'errorCode',''), 100) error_code
-    from jsonb_array_elements(p_results) x
-    where x->>'status' in ('accepted','retry','failed')
+      (x.value->>'deliveryId')::uuid as delivery_id,
+      x.value->>'status' as result_status,
+      left(nullif(x.value->>'errorCode',''), 100) as error_code
+    from jsonb_array_elements(p_results) as x(value)
+    where x.value->>'status' in ('accepted','retry','failed')
   )
   update ghost_private.push_deliveries d set
     status = case when r.result_status = 'retry' then 'sent' else r.result_status end,
