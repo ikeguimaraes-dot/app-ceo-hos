@@ -94,5 +94,6 @@ python3 scripts/check_docs.py
 - `src/notifications/`: validação de payload e destino local de notificações.
 - `src/ui/`: tokens, tema claro/escuro e componentes; catálogo interno em `/catalog`.
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
+- `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
 Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

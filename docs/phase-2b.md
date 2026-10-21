@@ -2,6 +2,8 @@
 
 Implementada em 2026-10-21 no projeto Supabase de desenvolvimento. Esta fase cria o pipeline de entrega; nenhuma configuração foi aplicada ao backend de produção.
 
+A Edge Function `ghost-push-worker` está implantada no projeto dev com verificação JWT legada desativada e autenticação própria por segredo constante. O segredo existe somente em Edge Function Secrets e no Vault. O job `ghost-push-worker-every-minute` está ativo no `pg_cron`; sua primeira execução automática retornou HTTP 200 com fila vazia.
+
 ## Fluxo
 
 1. Uma inserção no histórico `public.notifications` gera um evento opaco em `ghost_private.push_events`.
@@ -28,9 +30,10 @@ O payload contém apenas versão, IDs opacos, categoria e destino permitido. Tí
 - O worker não registra token ou payload e retorna somente contagens/códigos estáveis.
 - Um lease expirado recoloca uma entrega abandonada na fila; um receipt temporariamente indisponível é consultado novamente sem duplicar o push.
 - A migration auditável é `supabase/migrations/20261021193409_ghost_push_pipeline_v1.sql`.
+- O agendamento reproduzível, sem o valor do segredo, está em `supabase/schedules/ghost-push-worker.sql`.
 
 ## Validação disponível e dependências externas
 
-Os testes unitários cobrem lotes, payload genérico, tickets, receipts, comparação do segredo e deep link permitido. Lint, TypeScript e a barreira de acesso direto passam.
+Os testes unitários cobrem lotes, payload genérico, tickets, receipts, comparação do segredo e deep link permitido. Lint, TypeScript e a barreira de acesso direto passam. Em dev, três RPCs recusaram acesso anônimo; o endpoint do worker retornou 401 sem segredo e 200 com o segredo armazenado.
 
 A entrega física permanece dependente de credenciais FCM v1 para Android e de APNs após a aprovação da organização Apple. Uma conta KPH de desenvolvimento vinculada ainda é necessária para o teste ponta a ponta positivo. Até essas dependências existirem, a fila e o worker podem ser validados sem enviar dados reais a aparelhos.

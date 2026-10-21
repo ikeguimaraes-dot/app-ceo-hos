@@ -18,10 +18,10 @@ Iniciada em 2026-10-21. Esta fase transforma a fundação validada em artefatos 
 | Plataforma | Build EAS | Resultado |
 |---|---|---|
 | Android interno (APK) | EAS local `/tmp/ghost-preview-final.apk` | Concluído, assinado com a keystore gerenciada, instalado e aberto no `Ghost_API_36` |
-| Android cloud (APK) | `b0c4f0b0-be63-4e71-8ba7-60867a03790c` | Aguardando worker EAS; job preservado para gerar o link compartilhável |
+| Android cloud (APK) | `b0c4f0b0-be63-4e71-8ba7-60867a03790c` | Concluído; APK interno compartilhável disponível na página do build |
 | iOS Simulator | `3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f` | Concluído, instalado e aberto no iPhone 17 Pro Simulator |
 
-Os dois aplicativos usam `com.grupomeeteat.ghost.preview` e executam sem Metro ou servidor local. O artefato iOS está disponível na [página do build EAS](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/builds/3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f). Evidências: [iOS](screenshots/ios-eas-preview-login.png) e [Android](screenshots/android-eas-preview-login.png).
+Os dois aplicativos usam `com.grupomeeteat.ghost.preview` e executam sem Metro ou servidor local. Artefatos: [Android](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/builds/b0c4f0b0-be63-4e71-8ba7-60867a03790c) e [iOS Simulator](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/builds/3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f). Evidências: [iOS](screenshots/ios-eas-preview-login.png) e [Android](screenshots/android-eas-preview-login.png).
 
 ## Dependências externas abertas
 

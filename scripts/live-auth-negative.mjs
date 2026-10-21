@@ -16,8 +16,15 @@ const client = createClient(
   env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
-const anonymousRpc = await client.rpc("ghost_bootstrap_v1");
-if (!anonymousRpc.error) throw new Error("Bootstrap anônimo deveria ser negado.");
+for (const rpc of [
+  "ghost_bootstrap_v1",
+  "ghost_notification_preferences_v1",
+  "ghost_internal_push_claim_v1",
+]) {
+  const anonymousRpc = await client.rpc(rpc);
+  if (!anonymousRpc.error)
+    throw new Error(`${rpc} anônima deveria ser negada.`);
+}
 const invalidLogin = await client.auth.signInWithPassword({
   email: "ghost.invalid-login@example.invalid",
   password: "invalid-password-never-use",
@@ -27,7 +34,7 @@ if (!invalidLogin.error || invalidLogin.data.session)
 process.stdout.write(
   JSON.stringify({
     publicEndpoint: true,
-    anonymousRpcDenied: true,
+    anonymousRpcsDenied: 3,
     invalidCredentialsDenied: true,
   }),
 );
