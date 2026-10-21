@@ -26,4 +26,6 @@ A lista mostra ações somente quando `canDecide` vem verdadeiro do servidor. O 
 
 ## Validação
 
-Os mocks exercitam sucesso, remoção da lista, repetição idempotente, chave reutilizada, versão desatualizada e capability ausente. A migration deve ser aplicada apenas no projeto `kph-os-dev`; staging e produção continuam bloqueados pelos gates de segurança documentados.
+Os mocks exercitam sucesso, remoção da lista, repetição idempotente, chave reutilizada, versão desatualizada e capability ausente. A migration `20261021220000` foi aplicada apenas no projeto `kph-os-dev`; staging e produção continuam bloqueados pelos gates de segurança documentados.
+
+Após a aplicação, a auditoria confirmou: execução negada para `anon` e permitida para `authenticated`; função `SECURITY DEFINER` com `search_path` vazio; RLS habilitada e zero grants de cliente na tabela de auditoria; oito papéis mapeados para manutenção e dez para ponto. Um teste autenticado provocou `pending_version_conflict` antes de qualquer escrita. A auditoria continuou vazia e as duas manutenções continuaram pendentes. O Performance Advisor permaneceu com zero erros; os 25 erros do Security Advisor pertencem à superfície legada já registrada nos gates de produção e não incluem objetos da Fase 2D.

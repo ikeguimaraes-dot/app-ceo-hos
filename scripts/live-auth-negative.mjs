@@ -20,10 +20,33 @@ const protectedRpcs = [
   ["ghost_bootstrap_v1"],
   ["ghost_notification_preferences_v1"],
   ["ghost_internal_push_claim_v1"],
-  ["ghost_pending_items_v2", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
-  ["ghost_notifications_v2", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
-  ["ghost_operation_summary_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
-  ["ghost_people_summary_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+  [
+    "ghost_pending_items_v2",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
+  [
+    "ghost_notifications_v2",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
+  [
+    "ghost_operation_summary_v1",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
+  [
+    "ghost_people_summary_v1",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
+  [
+    "ghost_decide_pending_v1",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_item_id: "maintenance:00000000-0000-0000-0000-000000000000",
+      p_decision: "approve",
+      p_reason: null,
+      p_expected_version: "00000000000000000000000000000000",
+      p_idempotency_key: "ghost-negative-anonymous",
+    },
+  ],
 ];
 for (const [rpc, args] of protectedRpcs) {
   const anonymousRpc = await client.rpc(rpc, args);
