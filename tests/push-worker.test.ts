@@ -3,7 +3,10 @@ import {
   chunks,
   constantTimeEqual,
   expoMessage,
+  operationLog,
+  requestId,
   receiptResult,
+  stableErrorCode,
   ticketResult,
   type ClaimedDelivery,
 } from "../supabase/functions/_shared/push";
@@ -61,5 +64,24 @@ describe("push worker boundaries", () => {
   it("compares worker secrets without early exit", () => {
     expect(constantTimeEqual("same", "same")).toBe(true);
     expect(constantTimeEqual("same", "different")).toBe(false);
+  });
+
+  it("emits bounded observability fields without payload data", () => {
+    const id = "0199f0c0-6a2d-7a11-8dd0-0123456789ab";
+    expect(requestId(id.toUpperCase(), () => "fallback")).toBe(id);
+    expect(requestId("not-an-id", () => id)).toBe(id);
+    expect(stableErrorCode(new Error("claim_failed:42501"))).toBe(
+      "claim_failed",
+    );
+    expect(stableErrorCode(new Error("unsafe value with spaces"))).toBe(
+      "worker_failed",
+    );
+    expect(operationLog(id, "error", "claim_failed", 12.6)).toEqual({
+      requestId: id,
+      operation: "push.worker",
+      outcome: "error",
+      code: "claim_failed",
+      durationMs: 13,
+    });
   });
 });

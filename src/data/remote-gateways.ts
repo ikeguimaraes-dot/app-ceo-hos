@@ -168,6 +168,31 @@ export function createRemoteGateways(): Gateways {
       flowType: "pkce",
     },
   });
+  let lastPushReconciliation: { userId: string; at: number } | null = null;
+
+  async function reconcilePush(force: boolean, session: Session) {
+    if (Platform.OS !== "ios" && Platform.OS !== "android") return false;
+    if (
+      !force &&
+      lastPushReconciliation?.userId === session.userId &&
+      Date.now() - lastPushReconciliation.at < 12 * 60 * 60 * 1000
+    )
+      return true;
+    const permission = await Notifications.getPermissionsAsync();
+    if (permission.status !== "granted") return false;
+    const projectId = Constants.easConfig?.projectId;
+    if (!projectId) return false;
+    const token = await Notifications.getExpoPushTokenAsync({ projectId });
+    await rpc("ghost_reconcile_installation_v1", {
+      p_installation_id: await getInstallationId(),
+      p_expo_token: token.data,
+      p_platform: Platform.OS,
+      p_app_environment: environment.appEnvironment,
+      p_app_version: Constants.expoConfig?.version ?? "0.1.0",
+    });
+    lastPushReconciliation = { userId: session.userId, at: Date.now() };
+    return true;
+  }
 
   async function rpc(
     name: string,
@@ -345,7 +370,7 @@ export function createRemoteGateways(): Gateways {
           scope.signal,
         );
       },
-      async register() {
+      async register(session) {
         if (Platform.OS !== "ios" && Platform.OS !== "android")
           throw new Error("Push está disponível apenas em Android e iOS.");
         const current = await Notifications.getPermissionsAsync();
@@ -355,17 +380,11 @@ export function createRemoteGateways(): Gateways {
             : await Notifications.requestPermissionsAsync();
         if (permission.status !== "granted")
           throw new Error("Permissão de notificações não concedida.");
-        const projectId = Constants.easConfig?.projectId;
-        if (!projectId)
+        if (!(await reconcilePush(true, session)))
           throw new Error("Projeto EAS ainda não configurado para push.");
-        const token = await Notifications.getExpoPushTokenAsync({ projectId });
-        await rpc("ghost_register_installation_v1", {
-          p_installation_id: await getInstallationId(),
-          p_expo_token: token.data,
-          p_platform: Platform.OS,
-          p_app_environment: environment.appEnvironment,
-          p_app_version: Constants.expoConfig?.version ?? "0.1.0",
-        });
+      },
+      async reconcile(session) {
+        return reconcilePush(false, session);
       },
       async unregister() {
         const installationId = await readInstallationId();
@@ -373,6 +392,7 @@ export function createRemoteGateways(): Gateways {
           await rpc("ghost_unregister_installation_v1", {
             p_installation_id: installationId,
           });
+        lastPushReconciliation = null;
       },
       async getPreferences() {
         return notificationPreferencesSchema.parse(

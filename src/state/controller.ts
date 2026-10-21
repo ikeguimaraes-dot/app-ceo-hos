@@ -60,6 +60,19 @@ export class Controller {
     this.state = { ...this.state, ...patch };
     this.listeners.forEach((f) => f());
   }
+  private reconcileNotifications(session: Session) {
+    void this.gateways.notifications
+      .reconcile(session)
+      .then((registered) => {
+        if (
+          registered &&
+          this.state.session?.userId === session.userId &&
+          this.state.status === "ready"
+        )
+          this.update({ registered: true });
+      })
+      .catch(() => undefined);
+  }
   async start() {
     try {
       const session = await this.gateways.auth.restore();
@@ -77,6 +90,7 @@ export class Controller {
         status: bootstrap.status === "active" ? "ready" : bootstrap.status,
         unitId: null,
       });
+      if (bootstrap.status === "active") this.reconcileNotifications(session);
     } catch (error) {
       await Promise.allSettled([
         this.gateways.auth.signOut(),
@@ -118,6 +132,7 @@ export class Controller {
         status: bootstrap.status === "active" ? "ready" : bootstrap.status,
         unitId: null,
       });
+      if (bootstrap.status === "active") this.reconcileNotifications(session);
     } catch (e) {
       if (op === this.operation)
         this.update({
@@ -200,6 +215,7 @@ export class Controller {
         generation: this.state.generation + 1,
         locked: false,
       });
+      if (bootstrap.status === "active") this.reconcileNotifications(session);
     } catch {
       return;
     } finally {

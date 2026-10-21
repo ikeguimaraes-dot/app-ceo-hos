@@ -1,11 +1,12 @@
 # Contratos restantes do backend
 
-Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gateways.ts` e nas RPCs `ghost_*_v1`. Esta é a lista exata do que ainda falta para operação e distribuição.
+Os contratos técnicos de leitura, sessão, decisão, reconciliação de instalação e observabilidade já existem em `src/contracts/gateways.ts` e nas RPCs `ghost_*_v1`. Não resta contrato técnico genérico para a fundação móvel. A expansão funcional exige os contratos de produto abaixo, definidos com o KPH antes de qualquer implementação.
 
-| Contrato restante                   | Entrada/saída necessária                            | Regra do servidor                                                    |
-| ----------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
-| Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual    | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho     |
-| Observabilidade                     | request ID, código estável e duração → logs sem PII | Nunca registrar JWT, e-mail, valores, documentos ou payload completo |
+| Contrato de produto ainda necessário | Definição necessária                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Eventos de Operação e Pessoas        | Evento de origem, destinatários, deduplicação, prioridade, validade e destino local permitido |
+| Dashboard financeiro ampliado        | Fonte oficial, competência, unidade monetária, precisão, ausência de dados, atualização e SLA |
+| Novas ações sensíveis                | Recurso, estados, capability, versão esperada, idempotência, auditoria e regras de reversão   |
 
 ## Decisões de produto e infraestrutura
 
@@ -29,3 +30,5 @@ Nenhum desses itens exige mudar telas para consultar tabelas. Novas capacidades 
 Os contratos paginados, os agregados mínimos de Operação/Pessoas e a revogação por `accessVersion` foram entregues na [Fase 2C](phase-2c.md). O SLA atual de revogação em primeiro plano é de até 60 segundos, além da revalidação em cada RPC.
 
 O contrato transacional de decisão, com versão esperada, idempotência, conflito 409 e auditoria privada, foi entregue na [Fase 2D](phase-2d.md).
+
+A reconciliação atômica de instalações, expiração de vínculos sem contato e observabilidade técnica sem PII foram entregues na [Fase 2E](phase-2e.md).

@@ -128,6 +128,7 @@ export interface NotificationGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<Notification>>;
   markRead(scope: Scope, id: string): Promise<void>;
   register(session: Session): Promise<void>;
+  reconcile(session: Session): Promise<boolean>;
   unregister(): Promise<void>;
   getPreferences(session: Session): Promise<NotificationPreferences>;
   updatePreferences(

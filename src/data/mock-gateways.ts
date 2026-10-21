@@ -208,6 +208,10 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       async register() {
         await wait();
       },
+      async reconcile() {
+        await wait();
+        return false;
+      },
       async unregister() {
         read.clear();
       },

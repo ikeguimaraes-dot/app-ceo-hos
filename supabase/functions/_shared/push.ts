@@ -23,6 +23,38 @@ type ExpoResponse = {
 };
 
 const retryable = new Set(["MessageRateExceeded", "ExpoServerError"]);
+const requestIdPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const errorCodePattern = /^[a-z][a-z0-9_]{0,63}$/;
+
+export function requestId(value: string | null, fallback: () => string) {
+  return value && requestIdPattern.test(value)
+    ? value.toLowerCase()
+    : fallback();
+}
+
+export function stableErrorCode(error: unknown) {
+  const candidate =
+    error instanceof Error
+      ? (error.message.split(":", 1)[0] ?? "worker_failed")
+      : "worker_failed";
+  return errorCodePattern.test(candidate) ? candidate : "worker_failed";
+}
+
+export function operationLog(
+  id: string,
+  outcome: "success" | "error",
+  code: string,
+  durationMs: number,
+) {
+  return {
+    requestId: id,
+    operation: "push.worker",
+    outcome,
+    code,
+    durationMs: Math.max(0, Math.round(durationMs)),
+  } as const;
+}
 
 export function chunks<T>(items: T[], size: number): T[][] {
   if (!Number.isInteger(size) || size < 1)

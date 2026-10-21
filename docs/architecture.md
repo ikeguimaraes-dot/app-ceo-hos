@@ -45,7 +45,7 @@ Unidades e capacidades vêm do bootstrap autenticado `ghost_bootstrap_v1`. Sele�
 
 Ao trocar unidade: bloquear ações, incrementar geração do contexto, cancelar consultas, remover cache anterior, validar nova unidade, carregar dados. Chaves incluem usuário, unidade, recurso e parâmetros; respostas atrasadas são descartadas. Não mostrar dados da unidade anterior durante loading. Mudança de permissões repete o mesmo processo.
 
-Logout: desativar vínculo push com autenticação ainda válida quando houver rede; invalidar sessão no servidor quando possível; cancelar requests, limpar cache e SecureStore, limpar contexto/link pendente. Falha de rede não pode impedir limpeza local. Revogação pendente do dispositivo será coberta por expiração de vínculo e revalidação pelo backend; não afirmar desligamento remoto sem confirmação.
+Logout: desativar vínculo push com autenticação ainda válida quando houver rede; invalidar sessão no servidor quando possível; cancelar requests, limpar cache e credenciais do SecureStore, limpar contexto/link pendente. O identificador aleatório da instalação permanece para permitir reconciliação futura em aparelho compartilhado. Falha de rede não impede limpeza local. O backend transfere o vínculo na próxima autenticação e revoga instalações sem contato há 45 dias; não afirmar desligamento remoto sem confirmação.
 
 ## Deep links e recuperação
 
@@ -55,7 +55,7 @@ Schemes por ambiente são `ghost-local`, `ghost-preview` e `ghost-production`. R
 
 Cache de negócio somente em memória nesta fundação; preferência de tema pode persistir. Exibir horário de atualização, estado de cache e falta de conexão. Escritas financeiras e aprovações exigem conexão e confirmação; não enfileirar offline. Retentar leituras transitórias com limite/backoff; 401 tenta renovação uma vez, 403 limpa acesso e não faz retry, 409 pede atualização, 429 respeita Retry-After. Nunca repetir mutações sem chave idempotente e contrato do servidor.
 
-Contratos possuem versão, requestId, escopo, timestamps e estados de ausência de dados. Valores monetários transportados como centavos inteiros dentro de limites seguros ou strings decimais especificadas pelo backend; não parsear moeda com parseFloat. Datas civis ISO separadas de instantes UTC; exibir pt-BR e timezone da unidade quando definido. Telemetria permite nome do evento, duração e código de erro; proíbe JWT, e-mail, salários, payloads e documentos.
+Contratos possuem versão, requestId, escopo, timestamps e estados de ausência de dados. Valores monetários transportados como centavos inteiros dentro de limites seguros ou strings decimais especificadas pelo backend; não parsear moeda com parseFloat. Datas civis ISO separadas de instantes UTC; exibir pt-BR e timezone da unidade quando definido. Telemetria permite request ID, nome allowlisted da operação, resultado, duração, código estável e contadores técnicos; proíbe JWT, e-mail, identificador de usuário, token push, salários, payloads e documentos. Logs operacionais privados expiram em 30 dias.
 
 ## Push
 

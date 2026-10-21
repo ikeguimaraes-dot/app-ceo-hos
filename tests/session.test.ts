@@ -40,6 +40,16 @@ describe("session and access boundaries", () => {
     expect(c.state.unitId).toBeNull();
   });
 
+  it("reconciles an already-authorized push installation without blocking login", async () => {
+    const { controller: c, gateways } = setup();
+    gateways.notifications.reconcile = vi.fn(async () => true);
+    await enter(c);
+    await vi.waitFor(() => expect(c.state.registered).toBe(true));
+    expect(gateways.notifications.reconcile).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "demo-active" }),
+    );
+  });
+
   it("protects deep links before login, including initial startup", async () => {
     const { controller: c } = setup();
     expect(protectedDestination(c.state)).toBe("/login");

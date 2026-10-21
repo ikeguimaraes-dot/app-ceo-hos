@@ -44,7 +44,7 @@ O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [ve
 
 ## Backend da Fase 1B
 
-O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e RPCs autenticadas versionadas. A Fase 2C adiciona paginação e resumos mínimos:
+O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e RPCs autenticadas versionadas. A Fase 2C adiciona paginação e resumos mínimos; a Fase 2E preserva a identidade da instalação entre sessões para reconciliar push com segurança:
 
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v1`
@@ -52,6 +52,7 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_notifications_v1`
 - `ghost_notification_mark_read_v1`
 - `ghost_register_installation_v1`
+- `ghost_reconcile_installation_v1`
 - `ghost_unregister_installation_v1`
 - `ghost_notification_preferences_v1`
 - `ghost_notification_preferences_update_v1`
@@ -101,4 +102,4 @@ python3 scripts/check_docs.py
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 - `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

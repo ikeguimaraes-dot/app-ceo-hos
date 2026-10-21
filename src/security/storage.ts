@@ -59,9 +59,13 @@ export const secureSessionStorage = {
         }),
       ),
     );
-    await SecureStore.setItemAsync(partKey(key, "count"), String(chunks.length), {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-    });
+    await SecureStore.setItemAsync(
+      partKey(key, "count"),
+      String(chunks.length),
+      {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      },
+    );
   },
   removeItem: removeChunks,
 };
@@ -86,12 +90,10 @@ export async function getInstallationId() {
 
 export const secureStorage: LocalStorage = {
   async clear() {
-    await Promise.all([
-      removeChunks(authKey),
-      Platform.OS === "web"
-        ? Promise.resolve(webMemory.delete(installationKey))
-        : SecureStore.deleteItemAsync(installationKey),
-    ]);
+    // The installation identifier belongs to this app installation, not to an
+    // account. Keeping it across logout lets the backend atomically hand a
+    // shared device to the next authenticated user and retire stale bindings.
+    await removeChunks(authKey);
   },
 };
 
