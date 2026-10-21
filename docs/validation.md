@@ -4,43 +4,45 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 
 ## Código e bundles
 
-| Verificação | Resultado |
-|---|---|
-| `npm run lint` | PASS |
-| `npm run typecheck` | PASS |
-| `npm test` | PASS — 17 testes |
-| `npm run check:boundaries` após export remoto | PASS |
-| `npm run test:remote:negative` | PASS — endpoint público, RPC anônima negada e credencial inválida negada |
-| `npm run test:e2e` | PASS — 6 jornadas |
-| `npm run export:mock` | PASS — web |
-| `npm run export:remote` | PASS — Android, iOS e web |
-| `python3 scripts/check_docs.py` | PASS — 16 arquivos, links e ausência de JWT |
-| `npx expo install --check` | Dependências compatíveis pelo mapa local do SDK 58; endpoint online indisponível no sandbox |
-| `npx expo-doctor` | PASS — 20/20 checks |
-| `vercel build --prod` | PASS — exportação web estática em `dist/` |
-| Vercel staged deployment | PASS — `/`, `/pending` e bundle JS responderam 200; fallback SPA e cache imutável confirmados |
-| EAS Android release local | PASS — 566 tarefas, APK assinado instalado e processo ativo sem Metro |
-| EAS Android cloud | PASS — build `b0c4f0b0-be63-4e71-8ba7-60867a03790c` concluído |
-| EAS iOS Simulator final | PASS — build `3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f`, instalado e aberto sem Metro |
+| Verificação                                   | Resultado                                                                                     |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `npm run lint`                                | PASS                                                                                          |
+| `npm run typecheck`                           | PASS                                                                                          |
+| `npm test`                                    | PASS — 23 testes                                                                              |
+| `npm run check:boundaries` após export remoto | PASS                                                                                          |
+| `npm run test:remote:negative`                | PASS — dez RPCs anônimas e credencial inválida negadas                                        |
+| `npm run test:e2e`                            | PASS — 6 jornadas                                                                             |
+| `npm run export:mock`                         | PASS — web                                                                                    |
+| `npm run export:remote`                       | PASS — Android, iOS e web                                                                     |
+| `python3 scripts/check_docs.py`               | PASS — 16 arquivos, links e ausência de JWT                                                   |
+| `npx expo install --check`                    | Dependências compatíveis pelo mapa local do SDK 58; endpoint online indisponível no sandbox   |
+| `npx expo-doctor`                             | PASS — 20/20 checks                                                                           |
+| `vercel build --prod`                         | PASS — exportação web estática em `dist/`                                                     |
+| Vercel staged deployment                      | PASS — `/`, `/pending` e bundle JS responderam 200; fallback SPA e cache imutável confirmados |
+| EAS Android release local                     | PASS — 566 tarefas, APK assinado instalado e processo ativo sem Metro                         |
+| EAS Android cloud                             | PASS — build `b0c4f0b0-be63-4e71-8ba7-60867a03790c` concluído                                 |
+| EAS iOS Simulator final                       | PASS — build `3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f`, instalado e aberto sem Metro             |
 
 Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade, capability ausente, sessão expirada, deep link, recovery simulado e limpeza no logout. As seis jornadas E2E mantêm os dados mock no processo local e validam estados vazio/erro/offline/retry e tema.
 
 ## Backend
 
-| Caso | Resultado |
-|---|---|
-| Migration Ghost API v1 | aplicada em desenvolvimento |
-| Migration de token push revogado | aplicada; índice parcial presente e constraint antiga ausente |
-| Registro push sem vínculo | negado; usuário vinculado aceito em rollback |
-| Bootstrap vinculado | ativo, quatro unidades e capabilities |
-| Unidade fora do vínculo | negada com 42501 |
-| Inativo / sem vínculo | zero unidades |
-| RPC anônima | negada |
-| Grants | 0 grants `anon`; nove RPCs móveis para `authenticated`; cinco RPCs internas somente para `service_role` |
-| Pipeline push v1 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200 |
-| Worker sem/com segredo | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia |
+| Caso                             | Resultado                                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Migration Ghost API v1           | aplicada em desenvolvimento                                                                                      |
+| Migration de token push revogado | aplicada; índice parcial presente e constraint antiga ausente                                                    |
+| Registro push sem vínculo        | negado; usuário vinculado aceito em rollback                                                                     |
+| Bootstrap vinculado              | ativo, quatro unidades e capabilities                                                                            |
+| Unidade fora do vínculo          | negada com 42501                                                                                                 |
+| Inativo / sem vínculo            | zero unidades                                                                                                    |
+| RPC anônima                      | negada                                                                                                           |
+| Grants                           | 0 funções Ghost para `anon`; 15 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role` |
+| Pipeline push v1                 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200   |
+| Worker sem/com segredo           | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia                                                  |
+| Confiabilidade push 2E           | reconciliação autenticada; instalação ativa única; `last_seen_at`; expiração em 45 dias                          |
+| Observabilidade 2E               | tabela privada com RLS e zero grants de cliente; execução agendada `success`/`ok`, request ID e 168 ms           |
 
-O advisor pós-migration não encontrou alerta de performance nos objetos Ghost. Ele sinaliza as sete RPCs `SECURITY DEFINER` porque são executáveis por `authenticated`; isso é intencional para a fachada móvel e cada função valida `auth.uid()`, status, vínculo, unidade e capability com `search_path` vazio. O passivo geral do projeto permanece: 16 views security-definer, 9 tabelas públicas sem RLS, 107 funções definer executáveis por anônimo, 162 por autenticado e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
+O Performance Advisor pós-migration permaneceu sem erros. Os 25 erros do Security Advisor pertencem ao passivo geral já registrado: 16 views security-definer e 9 tabelas expostas sem RLS. A superfície Ghost adicionada na Fase 2E usa `search_path` vazio, RLS, grants explícitos e schema privado. O passivo geral também inclui funções definer legadas executáveis por clientes e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
 
 ## Android e iOS
 

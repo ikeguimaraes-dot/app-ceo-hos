@@ -1,6 +1,6 @@
 # Fase 2E — confiabilidade e observabilidade
 
-Preparada em 2026-10-21 para o projeto Supabase de desenvolvimento. A fase fecha os dois contratos técnicos restantes da fundação móvel sem tocar no backend de produção ou no repositório KPH.
+Implementada em 2026-10-21 no projeto Supabase de desenvolvimento. A fase fecha os dois contratos técnicos restantes da fundação móvel sem tocar no backend de produção ou no repositório KPH.
 
 ## Reconciliação de instalações
 
@@ -21,10 +21,13 @@ Um logout offline ainda não consegue chamar o backend naquele instante. A limpe
 - `ghost_private.operation_logs` tem RLS, nenhum grant para clientes e retenção de 30 dias. Somente `service_role` executa `ghost_internal_operation_log_v1`.
 - Falha na telemetria não altera o resultado do worker; um evento técnico mínimo é escrito no log do runtime.
 
-## Evidência local
+## Evidência
 
 - Auditoria agregada anterior à migration: zero instalações ativas, revogadas, antigas ou duplicadas no ambiente dev; nenhum identificador foi consultado.
 - `npm run lint`, `npm run typecheck`, `npm test` e `npm run check:boundaries` passam.
 - A migration auditável é `supabase/migrations/20261021204715_ghost_reliability_observability_v1.sql`.
-
-Os testes e a aplicação remota são registrados em `docs/validation.md` depois da implantação no projeto dev.
+- A migration foi aplicada e registrada no histórico do `kph-os-dev`; a Edge Function foi reimplantada.
+- RLS está ativo em `operation_logs`; clientes têm zero grants na tabela e não executam a função interna. `authenticated` executa a reconciliação e `anon` não.
+- A primeira execução agendada após o deploy terminou com `success`/`ok`, UUID presente e 168 ms, sem item na fila.
+- O teste remoto negou dez RPCs anônimas, incluindo reconciliação e escrita de telemetria.
+- O Performance Advisor permaneceu sem erros. Os 25 erros do Security Advisor pertencem à superfície legada já registrada e não incluem objetos desta fase.

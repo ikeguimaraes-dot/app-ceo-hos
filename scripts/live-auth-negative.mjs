@@ -21,6 +21,28 @@ const protectedRpcs = [
   ["ghost_notification_preferences_v1"],
   ["ghost_internal_push_claim_v1"],
   [
+    "ghost_reconcile_installation_v1",
+    {
+      p_installation_id: "00000000-0000-0000-0000-000000000000",
+      p_expo_token: "ExponentPushToken[anonymous-negative-test]",
+      p_platform: "ios",
+      p_app_environment: "preview",
+      p_app_version: "0.1.0",
+    },
+  ],
+  [
+    "ghost_internal_operation_log_v1",
+    {
+      p_request_id: "00000000-0000-0000-0000-000000000000",
+      p_operation: "push.worker",
+      p_outcome: "success",
+      p_code: "ok",
+      p_duration_ms: 1,
+      p_claimed_count: 0,
+      p_receipt_count: 0,
+    },
+  ],
+  [
     "ghost_pending_items_v2",
     { p_unit_id: "00000000-0000-0000-0000-000000000000" },
   ],
