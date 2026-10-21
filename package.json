@@ -1,0 +1,52 @@
+{
+  "name": "ghost-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --offline",
+    "android": "expo start --android --offline",
+    "ios": "expo start --ios --offline",
+    "web": "expo start --web --offline",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:remote:negative": "node scripts/live-auth-negative.mjs",
+    "export": "expo export --platform all",
+    "export:mock": "EXPO_PUBLIC_DATA_MODE=mock EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY= expo export --platform web",
+    "export:remote": "expo export --platform all",
+    "test:e2e": "npm run export:mock && playwright test",
+    "check:boundaries": "node scripts/check-boundaries.mjs"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "15.1.1",
+    "@supabase/supabase-js": "2.118.0",
+    "@tanstack/react-query": "5.104.5",
+    "expo": "58.0.16",
+    "expo-constants": "58.0.12",
+    "expo-linking": "58.0.13",
+    "expo-local-authentication": "58.0.2",
+    "expo-notifications": "~58.1.5",
+    "expo-router": "58.0.24",
+    "expo-secure-store": "58.0.2",
+    "expo-splash-screen": "58.0.10",
+    "expo-status-bar": "58.0.3",
+    "expo-system-ui": "58.0.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-safe-area-context": "5.10.1",
+    "react-native-screens": "4.30.0",
+    "react-native-web": "0.21.4",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/react": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-expo": "58.0.4",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

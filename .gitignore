@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+dist/
+coverage/
+.env*
+!.env.example
+*.keystore
+*.p12
+*.mobileprovision
+.DS_Store
+.vscode/
+test-results/
+playwright-report/
+
+# Native projects generated from app.config.ts (Expo CNG)
+/android/
+/ios/
