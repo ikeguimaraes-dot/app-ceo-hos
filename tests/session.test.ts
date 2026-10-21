@@ -6,6 +6,7 @@ import {
   safeDestination,
 } from "../src/state/controller";
 import { createMockGateways } from "../src/data/mock-gateways";
+import { pushDestination } from "../src/notifications/navigation";
 function setup() {
   const storage = {
     clear: vi.fn(async () => {}),
@@ -47,6 +48,15 @@ describe("session and access boundaries", () => {
     expect(safeDestination("/notifications")).toBe("/notifications");
     expect(safeDestination("https://evil.invalid")).toBe("/");
     expect(safeDestination("//evil.invalid")).toBe("/");
+  });
+  it("accepts only versioned push payloads with local destinations", () => {
+    expect(pushDestination({ version: 1, target: "/notifications" })).toBe(
+      "/notifications",
+    );
+    expect(pushDestination({ version: 2, target: "/pending" })).toBe("/");
+    expect(
+      pushDestination({ version: 1, target: "https://evil.invalid" }),
+    ).toBe("/");
   });
   it("requires authorized unit selection after login", async () => {
     const { controller: c } = setup();

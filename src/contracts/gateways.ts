@@ -46,6 +46,14 @@ export type Notification = {
   read: boolean;
   target: "/pending" | "/";
 };
+export type NotificationCategory = "pending" | "operation" | "people" | "system";
+export type NotificationPreferences = {
+  categories: NotificationCategory[];
+  quietStart: string | null;
+  quietEnd: string | null;
+  timezone: string;
+  version: number;
+};
 export interface AuthGateway {
   restore(): Promise<Session | null>;
   signIn(
@@ -74,6 +82,11 @@ export interface NotificationGateway {
   markRead(scope: Scope, id: string): Promise<void>;
   register(session: Session): Promise<void>;
   unregister(): Promise<void>;
+  getPreferences(session: Session): Promise<NotificationPreferences>;
+  updatePreferences(
+    session: Session,
+    preferences: NotificationPreferences,
+  ): Promise<NotificationPreferences>;
 }
 export type DataMode = "normal" | "empty" | "error" | "offline";
 export interface Gateways {

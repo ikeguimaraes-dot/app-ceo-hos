@@ -16,3 +16,4 @@ playwright-report/
 /android/
 /ios/
 /.vercel/
+/supabase/.temp/

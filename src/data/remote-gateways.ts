@@ -12,6 +12,7 @@ import type {
   Dashboard,
   Gateways,
   Notification,
+  NotificationPreferences,
   PendingItem,
   Session,
 } from "../contracts/gateways";
@@ -69,6 +70,14 @@ const notificationSchema = z.array(
     target: z.enum(["/pending", "/"]),
   }),
 );
+const notificationCategory = z.enum(["pending", "operation", "people", "system"]);
+const notificationPreferencesSchema = z.object({
+  categories: z.array(notificationCategory),
+  quietStart: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
+  quietEnd: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
+  timezone: z.string().min(1).max(80),
+  version: z.number().int().nonnegative(),
+});
 
 function mapSession(session: SupabaseSession): Session {
   return {
@@ -92,6 +101,10 @@ function friendlyError(error: { message: string; code?: string } | null) {
     /capability_denied|permission denied/i.test(error.message)
   )
     return new Error("Acesso não permitido para esta unidade.");
+  if (error.code === "40001" || /preferences_conflict/i.test(error.message))
+    return new Error(
+      "As preferências mudaram em outro dispositivo. Atualize e tente novamente.",
+    );
   return new Error("Não foi possível concluir a operação.");
 }
 
@@ -274,6 +287,23 @@ export function createRemoteGateways(): Gateways {
           await rpc("ghost_unregister_installation_v1", {
             p_installation_id: installationId,
           });
+      },
+      async getPreferences() {
+        return notificationPreferencesSchema.parse(
+          await rpc("ghost_notification_preferences_v1"),
+        ) satisfies NotificationPreferences;
+      },
+      async updatePreferences(_session, preferences) {
+        const result = z.object({ version: z.number().int().positive() }).parse(
+          await rpc("ghost_notification_preferences_update_v1", {
+            p_categories: preferences.categories,
+            p_quiet_start: preferences.quietStart,
+            p_quiet_end: preferences.quietEnd,
+            p_timezone: preferences.timezone,
+            p_expected_version: preferences.version,
+          }),
+        );
+        return { ...preferences, version: result.version };
       },
     },
     simulation: {

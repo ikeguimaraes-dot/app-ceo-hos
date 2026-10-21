@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useGhost } from "../state/provider";
 import { safeDestination } from "../state/controller";
@@ -17,7 +17,13 @@ import {
   Loading,
   Screen,
 } from "../ui/components";
-import type { Capability, Scenario, Scope } from "../contracts/gateways";
+import type {
+  Capability,
+  NotificationCategory,
+  NotificationPreferences,
+  Scenario,
+  Scope,
+} from "../contracts/gateways";
 import { environment } from "../config/environment";
 
 const money = new Intl.NumberFormat("pt-BR", {
@@ -620,6 +626,139 @@ export function Profile() {
     </Screen>
   );
 }
+
+const categoryLabels: Record<NotificationCategory, string> = {
+  pending: "Pendências",
+  operation: "Operação",
+  people: "Pessoas",
+  system: "Sistema",
+};
+
+function NotificationPreferencesCard() {
+  const { controller, gateways, state } = useGhost();
+  const session = state.session;
+  const allowed = controller.can("notifications.read");
+  const query = useQuery({
+    queryKey: ["notification-preferences", session?.userId],
+    queryFn: () => gateways.notifications.getPreferences(session!),
+    enabled: !!session && allowed,
+  });
+  if (!allowed || !session) return null;
+  if (query.isError)
+    return (
+      <ErrorState
+        message="Não foi possível carregar as preferências."
+        retry={() => void query.refetch()}
+      />
+    );
+  if (query.isPending || !query.data)
+    return (
+      <Card>
+        <Label muted>Carregando preferências de notificações…</Label>
+      </Card>
+    );
+  return (
+    <NotificationPreferencesEditor
+      key={query.data.version}
+      initial={query.data}
+      save={(preferences) =>
+        gateways.notifications.updatePreferences(session, preferences)
+      }
+    />
+  );
+}
+
+function NotificationPreferencesEditor({
+  initial,
+  save: persist,
+}: {
+  initial: NotificationPreferences;
+  save: (
+    preferences: NotificationPreferences,
+  ) => Promise<NotificationPreferences>;
+}) {
+  const [draft, setDraft] = useState(initial);
+  const [message, setMessage] = useState("");
+  const mutation = useMutation({
+    mutationFn: persist,
+    onSuccess: (preferences) => {
+      setDraft(preferences);
+      setMessage("Preferências salvas.");
+    },
+    onError: (cause) =>
+      setMessage(
+        cause instanceof Error ? cause.message : "Não foi possível salvar.",
+      ),
+  });
+
+  function toggle(category: NotificationCategory) {
+    setDraft({
+      ...draft,
+      categories: draft.categories.includes(category)
+        ? draft.categories.filter((item) => item !== category)
+        : [...draft.categories, category],
+    });
+  }
+  function save() {
+    setMessage("");
+    const validTime = /^\d{2}:\d{2}$/;
+    if (
+      (draft.quietStart === null) !== (draft.quietEnd === null) ||
+      (draft.quietStart !== null &&
+        (!validTime.test(draft.quietStart) || !validTime.test(draft.quietEnd!)))
+    ) {
+      setMessage(
+        "Preencha início e fim no formato HH:MM, ou deixe ambos vazios.",
+      );
+      return;
+    }
+    mutation.mutate(draft);
+  }
+  return (
+    <Card>
+      <Label size={20}>Notificações</Label>
+      <Label muted>Escolha categorias e um horário silencioso.</Label>
+      {(Object.keys(categoryLabels) as NotificationCategory[]).map(
+        (category) => (
+          <Button
+            key={category}
+            secondary
+            title={`${draft.categories.includes(category) ? "● " : "○ "}${categoryLabels[category]}`}
+            onPress={() => toggle(category)}
+          />
+        ),
+      )}
+      <Field
+        label="Silêncio começa (HH:MM)"
+        placeholder="22:00"
+        value={draft.quietStart ?? ""}
+        onChangeText={(value) =>
+          setDraft({ ...draft, quietStart: value || null })
+        }
+      />
+      <Field
+        label="Silêncio termina (HH:MM)"
+        placeholder="07:00"
+        value={draft.quietEnd ?? ""}
+        onChangeText={(value) =>
+          setDraft({ ...draft, quietEnd: value || null })
+        }
+      />
+      <Field
+        label="Fuso horário"
+        value={draft.timezone}
+        onChangeText={(timezone) => setDraft({ ...draft, timezone })}
+      />
+      <Button
+        title={mutation.isPending ? "Salvando…" : "Salvar notificações"}
+        disabled={mutation.isPending}
+        onPress={save}
+      />
+      {!!message && <Label>{message}</Label>}
+    </Card>
+  );
+}
+
 export function Preferences() {
   const theme = useTheme();
   const { controller, state } = useGhost();
@@ -694,6 +833,7 @@ export function Preferences() {
         )}
         {!!message && <Label>{message}</Label>}
       </Card>
+      <NotificationPreferencesCard />
       {!environment.isRemote && (
         <Card>
           <Label size={20}>Laboratório de estados</Label>

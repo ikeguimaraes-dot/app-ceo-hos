@@ -4,11 +4,19 @@ import type {
   Capability,
   Session,
   DataMode,
+  NotificationPreferences,
 } from "../contracts/gateways";
 import { demo } from "./fixtures";
 export function createMockGateways(now = Date.now, delay = 240): Gateways {
   let mode: DataMode = "normal";
   const read = new Set<string>();
+  let preferences: NotificationPreferences = {
+    categories: ["pending", "operation", "people", "system"],
+    quietStart: null,
+    quietEnd: null,
+    timezone: "America/Sao_Paulo",
+    version: 0,
+  };
   const wait = () => new Promise<void>((resolve) => setTimeout(resolve, delay));
   const bootstrap = (session: Session) => ({
     status:
@@ -122,6 +130,19 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
       async unregister() {
         read.clear();
+      },
+      async getPreferences() {
+        await wait();
+        return { ...preferences, categories: [...preferences.categories] };
+      },
+      async updatePreferences(_session, next) {
+        await wait();
+        preferences = {
+          ...next,
+          categories: [...next.categories],
+          version: preferences.version + 1,
+        };
+        return { ...preferences, categories: [...preferences.categories] };
       },
     },
     simulation: {

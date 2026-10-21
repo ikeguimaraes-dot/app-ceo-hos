@@ -6,7 +6,7 @@
 | 1A — fundação mock | Concluída | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais |
 | 1B — backend dev | Concluída | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
 | 2A — distribuição controlada | Em andamento | Projeto EAS e builds internos; iOS físico/APNs aguardam aprovação Apple, FCM e conta KPH de teste ainda faltam |
-| 2B — notificações reais | Pendente | Worker, preferências, deduplicação, tentativas, receipts e limpeza de tokens |
+| 2B — notificações reais | Implementada em dev | Preferências, fila privada, deduplicação, retentativas, receipts, limpeza e worker Edge Function; entrega física aguarda APNs/FCM |
 | 2C — piloto operacional | Pendente | Paginação, Operação/Pessoas mínimos, revogação e grupo pequeno de usuários |
 | 2D — decisões | Pendente | Contrato transacional de aprovação, idempotência, conflito e auditoria |
 | 3 — expansão financeira/operacional | Pendente | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados |

@@ -1,0 +1,4 @@
+project_id = "iqgrvptrtphvbmvrqntm"
+
+[functions.ghost-push-worker]
+verify_jwt = false

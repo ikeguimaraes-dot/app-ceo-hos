@@ -7,8 +7,6 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 | Decidir aprovação | ID opaco, unidade, decisão, motivo, versão esperada e idempotency key → estado/version/timestamp | Transação única, item ainda pendente, capability de decisão, escopo do recurso e trilha de auditoria; conflito 409 |
 | Paginar pendências | unidade, cursor e filtros permitidos → itens mínimos, próximo cursor e updatedAt | Cursor estável e filtro autorizado; hoje a RPC v1 retorna somente manutenção/ponto sem paginação |
 | Paginar notificações | unidade/cursor → histórico e próximo cursor | Ownership do usuário; definir se avisos globais ou por unidade |
-| Preferências de push | categorias, quiet hours e timezone → versão confirmada | Usuário próprio; categorias permitidas e validação de timezone |
-| Worker de push | evento interno → fan-out, tentativas e receipts | Deduplicação, payload genérico, remoção de token inválido e isolamento por ambiente |
 | Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho |
 | Operação | unidade e período → resumo operacional mínimo | Fonte e capacidades ainda precisam ser escolhidas com o dono do domínio |
 | Pessoas | unidade e período → resumo minimizado | Repositório/fonte proprietária e regras de RH ainda não foram auditados |
@@ -18,6 +16,7 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 ## Decisões de produto e infraestrutura
 
 - Configurar APNs/FCM fora do cliente depois da aprovação Apple Developer e da criação do projeto Firebase; o projeto EAS já está vinculado.
+- Definir quais eventos de Operação e Pessoas geram notificações; a integração inicial enfileira apenas inserções no histórico `notifications` existente.
 - Confirmar `com.grupomeeteat.ghost` como ID de loja antes da primeira submissão; o preview isolado usa `com.grupomeeteat.ghost.preview`.
 - Testar e-mail real nos redirects nativos já cadastrados no Auth: `ghost-local://auth/reset-password`, `ghost-preview://auth/reset-password` e `ghost-production://auth/reset-password`, além do redirect web `https://app-ceo-hos.vercel.app/auth/reset-password`.
 - Disponibilizar uma conta KPH de desenvolvimento já vinculada para jornada positiva completa no app, sem criar papel por credencial administrativa.

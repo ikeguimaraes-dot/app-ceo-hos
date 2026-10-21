@@ -5,13 +5,15 @@ import React, {
   useState,
   useSyncExternalStore,
 } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
+import { router } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMockGateways } from "../data/mock-gateways";
 import { createRemoteGateways } from "../data/remote-gateways";
 import { environment } from "../config/environment";
 import { secureStorage } from "../security/storage";
 import { Controller } from "./controller";
+import { pushDestination } from "../notifications/navigation";
 const Context = createContext<Controller | null>(null);
 export function AppProvider({ children }: React.PropsWithChildren) {
   const [controller] = useState(
@@ -59,6 +61,39 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         void controller.logout(true);
     }, 1000);
     return () => clearInterval(timer);
+  }, [controller]);
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    let active = true;
+    let remove: (() => void) | undefined;
+    const handled = new Set<string>();
+    const open = (response: {
+      notification: {
+        request: { identifier: string; content: { data?: unknown } };
+      };
+    }) => {
+      const request = response.notification.request;
+      if (handled.has(request.identifier)) return;
+      handled.add(request.identifier);
+      const target = pushDestination(request.content.data);
+      const { status, unitId } = controller.state;
+      if (status === "ready" && unitId) router.push(target);
+      else if (status === "ready")
+        router.push({ pathname: "/units", params: { next: target } });
+      else router.push({ pathname: "/login", params: { next: target } });
+    };
+    void import("expo-notifications").then(async (Notifications) => {
+      if (!active) return;
+      const subscription =
+        Notifications.addNotificationResponseReceivedListener(open);
+      remove = () => subscription.remove();
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (active && response) open(response);
+    });
+    return () => {
+      active = false;
+      remove?.();
+    };
   }, [controller]);
   return (
     <Context.Provider value={controller}>

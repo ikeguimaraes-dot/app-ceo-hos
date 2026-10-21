@@ -4,7 +4,7 @@ Aplicativo móvel oficial KPH. Leia `docs/architecture.md`, `docs/backend-readin
 
 ## Estado
 
-Fase 1A concluída com mocks. Fase 1B conectada ao projeto Supabase de desenvolvimento `kph-os-dev` por Auth e RPCs Ghost v1. Não há publicação nem implantação em produção.
+Fase 1A concluída com mocks. Fase 1B conectada ao projeto Supabase de desenvolvimento `kph-os-dev` por Auth e RPCs Ghost v1. A Fase 2B adiciona o pipeline de push no mesmo ambiente de desenvolvimento. Não há implantação em produção.
 
 ## Limites permanentes
 
@@ -14,7 +14,7 @@ Fase 1A concluída com mocks. Fase 1B conectada ao projeto Supabase de desenvolv
 - Não adicionar `.from(...)`, acesso temporário a tabela ou lógica financeira no cliente.
 - Capabilities e unidades vêm do bootstrap do servidor. Ocultar tela é UX; toda RPC valida novamente usuário, unidade e capability.
 - Cache de negócio permanece em memória e separado por usuário/unidade. Logout limpa queries, contexto e SecureStore mesmo se a revogação remota falhar.
-- Push usa tabela no schema privado; payloads não levam informação financeira/pessoal. Envio e receipts são responsabilidade de worker futuro.
+- Push usa tabelas no schema privado; payloads não levam informação financeira/pessoal. Envio e receipts passam somente pelo worker `ghost-push-worker` autenticado por segredo de servidor.
 - Aprovações financeiras permanecem fora do cliente até existir contrato transacional, idempotente e auditável.
 
 ## Validação

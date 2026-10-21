@@ -8,7 +8,7 @@ A versão web de preview está disponível em **https://app-ceo-hos.vercel.app**
 
 O deploy é uma exportação estática do Expo Router com fallback de SPA para que links como `/pending`, `/notifications` e `/auth/reset-password` abram diretamente. A publicação móvel nas lojas continua separada e depende de EAS, APNs/FCM e dos identificadores definitivos.
 
-A distribuição móvel controlada da [Fase 2A](docs/phase-2a.md) usa o projeto EAS `@grupomeeteat/ghost-mobile`, APK interno e build iOS de simulador. O iOS físico/TestFlight aguarda a aprovação da inscrição Apple Developer; APNs e FCM permanecem sem credenciais no cliente.
+A distribuição móvel controlada da [Fase 2A](docs/phase-2a.md) usa o projeto EAS `@grupomeeteat/ghost-mobile`, APK interno e build iOS de simulador. O pipeline da [Fase 2B](docs/phase-2b.md) roda fora do cliente e mantém tokens, fila e recibos em schema privado. O iOS físico/TestFlight aguarda a aprovação da inscrição Apple Developer; APNs e FCM permanecem sem credenciais no cliente.
 
 ## Executar
 
@@ -44,7 +44,7 @@ O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [ve
 
 ## Backend da Fase 1B
 
-O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e somente sete RPCs versionadas:
+O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e nove RPCs autenticadas versionadas:
 
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v1`
@@ -53,6 +53,8 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_notification_mark_read_v1`
 - `ghost_register_installation_v1`
 - `ghost_unregister_installation_v1`
+- `ghost_notification_preferences_v1`
+- `ghost_notification_preferences_update_v1`
 
 As RPCs derivam o usuário de `auth.uid()`, validam vínculo, status, unidade e capability no servidor. `anon` não possui `EXECUTE`. O app usa Zod para rejeitar respostas fora do contrato e TanStack Query somente em memória. As migrations auditáveis estão em [supabase/migrations](supabase/migrations); nesta sessão foram aplicadas apenas ao projeto `kph-os-dev`.
 
@@ -64,7 +66,7 @@ As cinco áreas são Início, Pendências, Operação, Pessoas e Mais. Bootstrap
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications` e `/pending`; sem sessão, o destino fica pendente até login e seleção de unidade. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 
-Push pede permissão depois da explicação e do login. O token fica em tabela privada, associado ao usuário autenticado e à instalação. Envio, receipts e projeto EAS ainda dependem da infraestrutura descrita em [contratos restantes](docs/backend-contracts.md).
+Push pede permissão depois da explicação e do login. O token fica em tabela privada, associado ao usuário autenticado e à instalação. Preferências são versionadas, o payload é genérico e os toques em notificações aceitam apenas rotas locais permitidas. Envio e receipts passam pela Edge Function protegida por segredo; entrega em aparelhos ainda depende das credenciais APNs/FCM descritas em [contratos restantes](docs/backend-contracts.md).
 
 ## Verificações
 
@@ -89,7 +91,8 @@ python3 scripts/check_docs.py
 - `src/data/`: adapters mock e Supabase; telas recebem gateways pelo provider.
 - `src/state/`: sessão, capabilities, troca de unidade, cancelamento e limpeza.
 - `src/security/`: adapter chunked de SecureStore e identificador de instalação.
+- `src/notifications/`: validação de payload e destino local de notificações.
 - `src/ui/`: tokens, tema claro/escuro e componentes; catálogo interno em `/catalog`.
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

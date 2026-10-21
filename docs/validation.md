@@ -8,7 +8,7 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 |---|---|
 | `npm run lint` | PASS |
 | `npm run typecheck` | PASS |
-| `npm test` | PASS — 12 testes |
+| `npm test` | PASS — 17 testes |
 | `npm run check:boundaries` após export remoto | PASS |
 | `npm run test:remote:negative` | PASS — endpoint público, RPC anônima negada e credencial inválida negada |
 | `npm run test:e2e` | PASS — 6 jornadas |
@@ -35,7 +35,7 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Unidade fora do vínculo | negada com 42501 |
 | Inativo / sem vínculo | zero unidades |
 | RPC anônima | negada |
-| Grants | 0 grants `anon`; sete para `authenticated` |
+| Grants | 0 grants `anon`; nove RPCs móveis para `authenticated`; cinco RPCs internas somente para `service_role` |
 
 O advisor pós-migration não encontrou alerta de performance nos objetos Ghost. Ele sinaliza as sete RPCs `SECURITY DEFINER` porque são executáveis por `authenticated`; isso é intencional para a fachada móvel e cada função valida `auth.uid()`, status, vínculo, unidade e capability com `search_path` vazio. O passivo geral do projeto permanece: 16 views security-definer, 9 tabelas públicas sem RLS, 107 funções definer executáveis por anônimo, 162 por autenticado e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
 
