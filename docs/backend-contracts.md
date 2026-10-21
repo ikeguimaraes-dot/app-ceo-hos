@@ -2,16 +2,11 @@
 
 Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gateways.ts` e nas RPCs `ghost_*_v1`. Esta é a lista exata do que ainda falta para operação e distribuição.
 
-| Contrato restante | Entrada/saída necessária | Regra do servidor |
-|---|---|---|
-| Decidir aprovação | ID opaco, unidade, decisão, motivo, versão esperada e idempotency key → estado/version/timestamp | Transação única, item ainda pendente, capability de decisão, escopo do recurso e trilha de auditoria; conflito 409 |
-| Paginar pendências | unidade, cursor e filtros permitidos → itens mínimos, próximo cursor e updatedAt | Cursor estável e filtro autorizado; hoje a RPC v1 retorna somente manutenção/ponto sem paginação |
-| Paginar notificações | unidade/cursor → histórico e próximo cursor | Ownership do usuário; definir se avisos globais ou por unidade |
-| Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho |
-| Operação | unidade e período → resumo operacional mínimo | Fonte e capacidades ainda precisam ser escolhidas com o dono do domínio |
-| Pessoas | unidade e período → resumo minimizado | Repositório/fonte proprietária e regras de RH ainda não foram auditados |
-| Auditoria de revogação | accessVersion ou evento → sessão/contexto invalidado | Definir latência máxima para papel removido durante uso |
-| Observabilidade | request ID, código estável e duração → logs sem PII | Nunca registrar JWT, e-mail, valores, documentos ou payload completo |
+| Contrato restante                   | Entrada/saída necessária                                                                         | Regra do servidor                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Decidir aprovação                   | ID opaco, unidade, decisão, motivo, versão esperada e idempotency key → estado/version/timestamp | Transação única, item ainda pendente, capability de decisão, escopo do recurso e trilha de auditoria; conflito 409 |
+| Rotação/reconciliação de instalação | token renovado ou logout offline → vínculo atual                                                 | Evitar vínculo órfão sem impedir outro usuário no mesmo aparelho                                                   |
+| Observabilidade                     | request ID, código estável e duração → logs sem PII                                              | Nunca registrar JWT, e-mail, valores, documentos ou payload completo                                               |
 
 ## Decisões de produto e infraestrutura
 
@@ -31,3 +26,5 @@ Os contratos de leitura e sessão da Fase 1B já existem em `src/contracts/gatew
 - Definir SLA/semântica para indisponibilidade de fonte e valores ausentes do dashboard.
 
 Nenhum desses itens exige mudar telas para consultar tabelas. Novas capacidades entram no bootstrap e novas operações entram por RPC/Edge Function versionada.
+
+Os contratos paginados, os agregados mínimos de Operação/Pessoas e a revogação por `accessVersion` foram entregues na [Fase 2C](phase-2c.md). O SLA atual de revogação em primeiro plano é de até 60 segundos, além da revalidação em cada RPC.

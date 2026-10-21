@@ -56,6 +56,17 @@ export const demo = {
       priority: "normal" as const,
     },
   ],
+  operation: {
+    updatedAt: "2026-10-20T12:00:00Z",
+    pendingMaintenance: 3,
+    attentionMaintenance: 1,
+    oldestPendingDate: "2026-10-18",
+  },
+  people: {
+    updatedAt: "2026-10-20T12:00:00Z",
+    headcount: 42,
+    pendingPunchAdjustments: 2,
+  },
   notifications: [
     {
       id: "demo-alert",
@@ -63,6 +74,7 @@ export const demo = {
       body: "Aviso de demonstração. Toque para consultar as pendências.",
       read: false,
       target: "/pending" as const,
+      createdAt: "2026-10-20T12:00:00Z",
     },
   ],
 };

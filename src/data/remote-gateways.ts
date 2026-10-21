@@ -13,6 +13,9 @@ import type {
   Gateways,
   Notification,
   NotificationPreferences,
+  OperationSummary,
+  Page,
+  PeopleSummary,
   PendingItem,
   Session,
 } from "../contracts/gateways";
@@ -53,28 +56,53 @@ const dashboardSchema = z.object({
   goalProgress: z.number().nullable(),
   hasData: z.boolean(),
 });
-const pendingSchema = z.array(
+const pendingItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  detail: z.string(),
+  priority: z.enum(["attention", "normal"]),
+});
+const notificationItemSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  body: z.string(),
+  read: z.boolean(),
+  target: z.enum(["/pending", "/"]),
+  createdAt: z.string(),
+});
+const pageSchema = <T extends z.ZodType>(item: T) =>
   z.object({
-    id: z.string(),
-    title: z.string(),
-    detail: z.string(),
-    priority: z.enum(["attention", "normal"]),
-  }),
-);
-const notificationSchema = z.array(
-  z.object({
-    id: z.string().uuid(),
-    title: z.string(),
-    body: z.string(),
-    read: z.boolean(),
-    target: z.enum(["/pending", "/"]),
-  }),
-);
-const notificationCategory = z.enum(["pending", "operation", "people", "system"]);
+    items: z.array(item),
+    nextCursor: z.string().nullable(),
+    updatedAt: z.string(),
+  });
+const operationSchema = z.object({
+  updatedAt: z.string(),
+  pendingMaintenance: z.number().int().nonnegative(),
+  attentionMaintenance: z.number().int().nonnegative(),
+  oldestPendingDate: z.string().nullable(),
+});
+const peopleSchema = z.object({
+  updatedAt: z.string(),
+  headcount: z.number().int().nonnegative(),
+  pendingPunchAdjustments: z.number().int().nonnegative(),
+});
+const notificationCategory = z.enum([
+  "pending",
+  "operation",
+  "people",
+  "system",
+]);
 const notificationPreferencesSchema = z.object({
   categories: z.array(notificationCategory),
-  quietStart: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
-  quietEnd: z.string().regex(/^\d{2}:\d{2}$/).nullable(),
+  quietStart: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .nullable(),
+  quietEnd: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/)
+    .nullable(),
   timezone: z.string().min(1).max(80),
   version: z.number().int().nonnegative(),
 });
@@ -232,25 +260,47 @@ export function createRemoteGateways(): Gateways {
       },
     },
     pending: {
-      async list(scope) {
-        return pendingSchema.parse(
+      async list(scope, cursor) {
+        return pageSchema(pendingItemSchema).parse(
           await rpc(
-            "ghost_pending_items_v1",
+            "ghost_pending_items_v2",
+            { p_unit_id: scope.unitId, p_cursor: cursor ?? null, p_limit: 20 },
+            scope.signal,
+          ),
+        ) satisfies Page<PendingItem>;
+      },
+    },
+    operation: {
+      async get(scope) {
+        return operationSchema.parse(
+          await rpc(
+            "ghost_operation_summary_v1",
             { p_unit_id: scope.unitId },
             scope.signal,
           ),
-        ) satisfies PendingItem[];
+        ) satisfies OperationSummary;
+      },
+    },
+    people: {
+      async get(scope) {
+        return peopleSchema.parse(
+          await rpc(
+            "ghost_people_summary_v1",
+            { p_unit_id: scope.unitId },
+            scope.signal,
+          ),
+        ) satisfies PeopleSummary;
       },
     },
     notifications: {
-      async list(scope) {
-        return notificationSchema.parse(
+      async list(scope, cursor) {
+        return pageSchema(notificationItemSchema).parse(
           await rpc(
-            "ghost_notifications_v1",
-            { p_unit_id: scope.unitId },
+            "ghost_notifications_v2",
+            { p_unit_id: scope.unitId, p_cursor: cursor ?? null, p_limit: 20 },
             scope.signal,
           ),
-        ) satisfies Notification[];
+        ) satisfies Page<Notification>;
       },
       async markRead(scope, id) {
         await rpc(

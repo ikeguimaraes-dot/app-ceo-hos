@@ -30,7 +30,19 @@ test("login, dashboard, unit isolation, notifications and logout stay local", as
   await unit(page);
   await expect(page.getByText("R$ 24.850,00")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/home.png", fullPage: true });
-  await page.getByRole("button", { name: "Ver pendências" }).click();
+  await page.getByRole("tab", { name: "Operação" }).click();
+  await expect(page.getByText("MANUTENÇÕES PENDENTES")).toBeVisible();
+  await page.screenshot({
+    path: "docs/screenshots/operation.png",
+    fullPage: true,
+  });
+  await page.getByRole("tab", { name: "Pessoas" }).click();
+  await expect(page.getByText("COLABORADORES NA UNIDADE")).toBeVisible();
+  await page.screenshot({
+    path: "docs/screenshots/people.png",
+    fullPage: true,
+  });
+  await page.getByRole("tab", { name: "Pendências" }).click();
   await expect(page.getByText("Revisar fechamento")).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/pending.png",

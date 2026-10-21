@@ -39,8 +39,13 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     const subscription = AppState.addEventListener("change", (state) => {
       controller.gateways.auth.setAppActive?.(state === "active");
       if (state !== "active") controller.lock();
+      else void controller.revalidateAccess();
     });
     return () => subscription.remove();
+  }, [controller]);
+  useEffect(() => {
+    const timer = setInterval(() => void controller.revalidateAccess(), 60_000);
+    return () => clearInterval(timer);
   }, [controller]);
   useEffect(() => {
     return controller.gateways.auth.onSessionChange?.((session) => {

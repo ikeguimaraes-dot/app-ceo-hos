@@ -39,14 +39,32 @@ export type PendingItem = {
   detail: string;
   priority: "attention" | "normal";
 };
+export type Page<T> = {
+  items: T[];
+  nextCursor: string | null;
+  updatedAt: string;
+};
 export type Notification = {
   id: string;
   title: string;
   body: string;
   read: boolean;
   target: "/pending" | "/";
+  createdAt: string;
 };
-export type NotificationCategory = "pending" | "operation" | "people" | "system";
+export type OperationSummary = {
+  updatedAt: string;
+  pendingMaintenance: number;
+  attentionMaintenance: number;
+  oldestPendingDate: string | null;
+};
+export type PeopleSummary = {
+  updatedAt: string;
+  headcount: number;
+  pendingPunchAdjustments: number;
+};
+export type NotificationCategory =
+  "pending" | "operation" | "people" | "system";
 export type NotificationPreferences = {
   categories: NotificationCategory[];
   quietStart: string | null;
@@ -75,10 +93,16 @@ export interface DashboardGateway {
   get(scope: Scope): Promise<Dashboard>;
 }
 export interface PendingItemsGateway {
-  list(scope: Scope): Promise<PendingItem[]>;
+  list(scope: Scope, cursor?: string | null): Promise<Page<PendingItem>>;
+}
+export interface OperationGateway {
+  get(scope: Scope): Promise<OperationSummary>;
+}
+export interface PeopleGateway {
+  get(scope: Scope): Promise<PeopleSummary>;
 }
 export interface NotificationGateway {
-  list(scope: Scope): Promise<Notification[]>;
+  list(scope: Scope, cursor?: string | null): Promise<Page<Notification>>;
   markRead(scope: Scope, id: string): Promise<void>;
   register(session: Session): Promise<void>;
   unregister(): Promise<void>;
@@ -94,6 +118,8 @@ export interface Gateways {
   bootstrap: BootstrapGateway;
   dashboard: DashboardGateway;
   pending: PendingItemsGateway;
+  operation: OperationGateway;
+  people: PeopleGateway;
   notifications: NotificationGateway;
   simulation: { setMode(mode: DataMode): void; reset(): void };
 }

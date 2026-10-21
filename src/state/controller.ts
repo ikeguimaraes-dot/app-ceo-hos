@@ -43,6 +43,7 @@ export class Controller {
   state: State = { ...initial };
   private listeners = new Set<() => void>();
   private operation = 0;
+  private revalidating = false;
   constructor(
     readonly gateways: Gateways,
     readonly queries: QueryClient,
@@ -167,6 +168,43 @@ export class Controller {
       this.update({
         session: { ...session, displayName: this.state.session.displayName },
       });
+  }
+  async revalidateAccess() {
+    const session = this.state.session;
+    if (!session || this.state.status !== "ready" || this.revalidating) return;
+    this.revalidating = true;
+    const op = this.operation;
+    try {
+      const bootstrap = await this.gateways.bootstrap.load(session);
+      if (op !== this.operation || this.state.session !== session) return;
+      const changed =
+        bootstrap.accessVersion !== this.state.bootstrap?.accessVersion;
+      const currentUnitAllowed = bootstrap.units.some(
+        (unit) => unit.id === this.state.unitId,
+      );
+      if (!changed && bootstrap.status === "active" && currentUnitAllowed)
+        return;
+      await this.queries.cancelQueries();
+      this.queries.clear();
+      this.update({
+        bootstrap,
+        session: {
+          ...session,
+          displayName: bootstrap.displayName ?? session.displayName,
+        },
+        status: bootstrap.status === "active" ? "ready" : bootstrap.status,
+        unitId:
+          bootstrap.status === "active" && currentUnitAllowed
+            ? this.state.unitId
+            : null,
+        generation: this.state.generation + 1,
+        locked: false,
+      });
+    } catch {
+      return;
+    } finally {
+      this.revalidating = false;
+    }
   }
   setBiometric(value: boolean) {
     this.update({ biometric: value });

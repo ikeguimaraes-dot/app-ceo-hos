@@ -35,6 +35,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
                 ? u.capabilities.filter((c) => c === "dashboard.read")
                 : [...u.capabilities],
           })),
+    accessVersion: `demo-${session.scenario ?? "active"}`,
   });
   async function check(scope: Scope, capability: Capability) {
     await wait();
@@ -104,20 +105,45 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     pending: {
-      async list(scope) {
+      async list(scope, cursor) {
         await check(scope, "pending.read");
-        return mode === "empty" ? [] : demo.pending.map((p) => ({ ...p }));
+        const items =
+          mode === "empty" || cursor ? [] : demo.pending.map((p) => ({ ...p }));
+        return { items, nextCursor: null, updatedAt: "2026-10-20T12:00:00Z" };
+      },
+    },
+    operation: {
+      async get(scope) {
+        await check(scope, "operation.read");
+        return mode === "empty"
+          ? {
+              ...demo.operation,
+              pendingMaintenance: 0,
+              attentionMaintenance: 0,
+              oldestPendingDate: null,
+            }
+          : { ...demo.operation };
+      },
+    },
+    people: {
+      async get(scope) {
+        await check(scope, "people.read");
+        return mode === "empty"
+          ? { ...demo.people, headcount: 0, pendingPunchAdjustments: 0 }
+          : { ...demo.people };
       },
     },
     notifications: {
-      async list(scope) {
+      async list(scope, cursor) {
         await check(scope, "notifications.read");
-        return mode === "empty"
-          ? []
-          : demo.notifications.map((n) => ({
-              ...n,
-              read: read.has(`${scope.unitId}:${n.id}`),
-            }));
+        const items =
+          mode === "empty" || cursor
+            ? []
+            : demo.notifications.map((n) => ({
+                ...n,
+                read: read.has(`${scope.unitId}:${n.id}`),
+              }));
+        return { items, nextCursor: null, updatedAt: "2026-10-20T12:00:00Z" };
       },
       async markRead(scope, id) {
         await check(scope, "notifications.read");

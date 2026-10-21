@@ -178,12 +178,40 @@ describe("session and access boundaries", () => {
       await gateways.dashboard.get(scope),
     );
     await c.setMode("empty");
-    expect(await gateways.pending.list(scope)).toEqual([]);
+    expect((await gateways.pending.list(scope)).items).toEqual([]);
     await c.setMode("error");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow(
       "Falha simulada",
     );
     await c.setMode("offline");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow("offline");
+  });
+  it("revokes removed capabilities and clears cached data on access change", async () => {
+    const { controller: c, gateways, queries } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    queries.setQueryData(["private"], "cached");
+    const original = gateways.bootstrap.load;
+    gateways.bootstrap.load = async (session) => ({
+      ...(await original({ ...session, scenario: "restricted" })),
+      accessVersion: "revoked-v2",
+    });
+    await c.revalidateAccess();
+    expect(c.can("pending.read")).toBe(false);
+    expect(c.can("dashboard.read")).toBe(true);
+    expect(queries.getQueryCache().getAll()).toHaveLength(0);
+  });
+  it("removes a selected unit immediately when the refreshed scope no longer contains it", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    gateways.bootstrap.load = async () => ({
+      status: "active",
+      accessVersion: "unit-removed-v2",
+      units: [],
+    });
+    await c.revalidateAccess();
+    expect(c.state.unitId).toBeNull();
+    expect(protectedDestination(c.state)).toBe("/units");
   });
 });

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useGhost } from "../state/provider";
 import { safeDestination } from "../state/controller";
@@ -21,6 +21,8 @@ import type {
   Capability,
   NotificationCategory,
   NotificationPreferences,
+  OperationSummary,
+  PeopleSummary,
   Scenario,
   Scope,
 } from "../contracts/gateways";
@@ -401,10 +403,14 @@ export function PendingScreen() {
 function PendingContent() {
   const { state, gateways } = useGhost();
   const scope = useScope();
-  const q = useQuery({
+  const q = useInfiniteQuery({
     queryKey: ["pending", scope.session.userId, scope.unitId, state.generation],
-    queryFn: ({ signal }) => gateways.pending.list({ ...scope, signal }),
+    queryFn: ({ signal, pageParam }) =>
+      gateways.pending.list({ ...scope, signal }, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
+  const items = q.data?.pages.flatMap((page) => page.items) ?? [];
   return (
     <Screen
       title="O que pede sua atenção"
@@ -418,10 +424,10 @@ function PendingContent() {
         <Loading />
       ) : q.error ? (
         <ErrorState message={q.error.message} retry={() => void q.refetch()} />
-      ) : q.data.length === 0 ? (
+      ) : items.length === 0 ? (
         <Empty />
       ) : (
-        q.data.map((p) => (
+        items.map((p) => (
           <Card key={p.id}>
             <Label muted size={12}>
               {p.priority === "attention" ? "ATENÇÃO" : "PARA REVISAR"}
@@ -430,6 +436,14 @@ function PendingContent() {
             <Label muted>{p.detail}</Label>
           </Card>
         ))
+      )}
+      {q.hasNextPage && (
+        <Button
+          title={q.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+          secondary
+          disabled={q.isFetchingNextPage}
+          onPress={() => void q.fetchNextPage()}
+        />
       )}
     </Screen>
   );
@@ -446,15 +460,19 @@ function NotificationsContent() {
   const scope = useScope();
   const [error, setError] = useState("");
   const [registrationMessage, setRegistrationMessage] = useState("");
-  const q = useQuery({
+  const q = useInfiniteQuery({
     queryKey: [
       "notifications",
       scope.session.userId,
       scope.unitId,
       state.generation,
     ],
-    queryFn: ({ signal }) => gateways.notifications.list({ ...scope, signal }),
+    queryFn: ({ signal, pageParam }) =>
+      gateways.notifications.list({ ...scope, signal }, pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
+  const items = q.data?.pages.flatMap((page) => page.items) ?? [];
   async function open(id: string, target: "/" | "/pending") {
     try {
       await gateways.notifications.markRead(scope as Scope, id);
@@ -477,7 +495,7 @@ function NotificationsContent() {
         <Loading />
       ) : q.error ? (
         <ErrorState message={q.error.message} retry={() => void q.refetch()} />
-      ) : q.data.length === 0 ? (
+      ) : items.length === 0 ? (
         <Empty
           text={
             environment.isRemote
@@ -486,7 +504,7 @@ function NotificationsContent() {
           }
         />
       ) : (
-        q.data.map((n) => (
+        items.map((n) => (
           <Card key={n.id}>
             <Label muted size={12}>
               {n.read ? "LIDA" : "NOVA"}
@@ -500,6 +518,14 @@ function NotificationsContent() {
             />
           </Card>
         ))
+      )}
+      {q.hasNextPage && (
+        <Button
+          title={q.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+          secondary
+          disabled={q.isFetchingNextPage}
+          onPress={() => void q.fetchNextPage()}
+        />
       )}
       {!!error && <Label>{error}</Label>}
       <Card>
@@ -540,25 +566,78 @@ function NotificationsContent() {
 export function ModuleScreen({ kind }: { kind: "operation" | "people" }) {
   return (
     <Access capability={kind === "people" ? "people.read" : "operation.read"}>
-      <Screen
-        title={
-          kind === "people"
-            ? "Pessoas, em primeiro lugar."
-            : "A operação, mais perto."
-        }
-        subtitle={
-          environment.isRemote ? "Acesso validado pelo KPH" : "Fundação local"
-        }
-      >
-        <Empty
-          text={
-            environment.isRemote
-              ? "Nenhum resumo foi publicado para este módulo."
-              : "As jornadas deste módulo serão conectadas nas próximas fases. Nenhuma consulta ao KPH é feita aqui."
-          }
-        />
-      </Screen>
+      <ModuleContent kind={kind} />
     </Access>
+  );
+}
+function ModuleContent({ kind }: { kind: "operation" | "people" }) {
+  const { state, gateways } = useGhost();
+  const scope = useScope();
+  const q = useQuery<OperationSummary | PeopleSummary>({
+    queryKey: [kind, scope.session.userId, scope.unitId, state.generation],
+    queryFn: ({ signal }) =>
+      kind === "operation"
+        ? gateways.operation.get({ ...scope, signal })
+        : gateways.people.get({ ...scope, signal }),
+  });
+  return (
+    <Screen
+      title={
+        kind === "people"
+          ? "Pessoas, em primeiro lugar."
+          : "A operação, mais perto."
+      }
+      subtitle="Resumo mínimo autorizado para esta unidade"
+    >
+      {q.isPending ? (
+        <Loading />
+      ) : q.error ? (
+        <ErrorState message={q.error.message} retry={() => void q.refetch()} />
+      ) : kind === "operation" && "pendingMaintenance" in q.data ? (
+        <>
+          <Card>
+            <Label muted size={12}>
+              MANUTENÇÕES PENDENTES
+            </Label>
+            <Label size={34}>{q.data.pendingMaintenance}</Label>
+            <Label muted>
+              {q.data.attentionMaintenance} com prioridade alta ou urgente
+            </Label>
+          </Card>
+          <Card>
+            <Label>Mais antiga</Label>
+            <Label muted>
+              {q.data.oldestPendingDate
+                ? new Date(
+                    `${q.data.oldestPendingDate}T12:00:00`,
+                  ).toLocaleDateString("pt-BR")
+                : "Nenhuma pendência"}
+            </Label>
+          </Card>
+        </>
+      ) : "headcount" in q.data ? (
+        <>
+          <Card>
+            <Label muted size={12}>
+              COLABORADORES NA UNIDADE
+            </Label>
+            <Label size={34}>{q.data.headcount}</Label>
+          </Card>
+          <Card>
+            <Label>Ajustes de ponto pendentes</Label>
+            <Label size={28}>{q.data.pendingPunchAdjustments}</Label>
+            <Label muted>
+              Somente contagens. Nenhum dado pessoal é enviado ao app.
+            </Label>
+          </Card>
+        </>
+      ) : null}
+      {q.data && (
+        <Label muted size={12}>
+          Atualização: {new Date(q.data.updatedAt).toLocaleString("pt-BR")}
+        </Label>
+      )}
+    </Screen>
   );
 }
 export function More() {

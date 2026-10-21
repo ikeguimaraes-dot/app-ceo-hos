@@ -44,7 +44,7 @@ O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [ve
 
 ## Backend da Fase 1B
 
-O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e nove RPCs autenticadas versionadas:
+O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e RPCs autenticadas versionadas. A Fase 2C adiciona paginação e resumos mínimos:
 
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v1`
@@ -55,6 +55,10 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_unregister_installation_v1`
 - `ghost_notification_preferences_v1`
 - `ghost_notification_preferences_update_v1`
+- `ghost_pending_items_v2`
+- `ghost_notifications_v2`
+- `ghost_operation_summary_v1`
+- `ghost_people_summary_v1`
 
 As RPCs derivam o usuário de `auth.uid()`, validam vínculo, status, unidade e capability no servidor. `anon` não possui `EXECUTE`. O app usa Zod para rejeitar respostas fora do contrato e TanStack Query somente em memória. As migrations auditáveis estão em [supabase/migrations](supabase/migrations); nesta sessão foram aplicadas apenas ao projeto `kph-os-dev`.
 
@@ -96,4 +100,4 @@ python3 scripts/check_docs.py
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 - `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

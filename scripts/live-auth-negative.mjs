@@ -16,12 +16,17 @@ const client = createClient(
   env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
-for (const rpc of [
-  "ghost_bootstrap_v1",
-  "ghost_notification_preferences_v1",
-  "ghost_internal_push_claim_v1",
-]) {
-  const anonymousRpc = await client.rpc(rpc);
+const protectedRpcs = [
+  ["ghost_bootstrap_v1"],
+  ["ghost_notification_preferences_v1"],
+  ["ghost_internal_push_claim_v1"],
+  ["ghost_pending_items_v2", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+  ["ghost_notifications_v2", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+  ["ghost_operation_summary_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+  ["ghost_people_summary_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+];
+for (const [rpc, args] of protectedRpcs) {
+  const anonymousRpc = await client.rpc(rpc, args);
   if (!anonymousRpc.error)
     throw new Error(`${rpc} anônima deveria ser negada.`);
 }
@@ -34,7 +39,7 @@ if (!invalidLogin.error || invalidLogin.data.session)
 process.stdout.write(
   JSON.stringify({
     publicEndpoint: true,
-    anonymousRpcsDenied: 3,
+    anonymousRpcsDenied: protectedRpcs.length,
     invalidCredentialsDenied: true,
   }),
 );
