@@ -2,6 +2,12 @@
 
 Cliente móvel KPH em Expo, React Native e TypeScript estrito. A Fase 1A mantém uma demonstração determinística e desconectada; a Fase 1B adiciona autenticação real e uma API móvel mínima no projeto Supabase de desenvolvimento. O aplicativo nunca usa `service_role`, não consulta tabelas diretamente e não contém regras financeiras.
 
+## Aplicação publicada
+
+A versão web de preview está disponível em **https://app-ceo-hos.vercel.app**. Ela usa o adapter remoto e o projeto Supabase de desenvolvimento, com o selo `PREVIEW · REMOTO` visível na interface. As variáveis públicas ficam no Vercel; nenhuma credencial administrativa é aceita pelo build.
+
+O deploy é uma exportação estática do Expo Router com fallback de SPA para que links como `/pending`, `/notifications` e `/auth/reset-password` abram diretamente. A publicação móvel nas lojas continua separada e depende de EAS, APNs/FCM e dos identificadores definitivos.
+
 ## Executar
 
 Requer Node 22.23+ e npm 10+.
@@ -31,6 +37,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npx expo run:ios --no-b
 ```
 
 Nenhum desses comandos publica build, EAS Update ou app de loja.
+
+O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [vercel.json](vercel.json). Desenvolvimento local é opcional; a entrega compartilhável é a URL do Vercel acima.
 
 ## Backend da Fase 1B
 

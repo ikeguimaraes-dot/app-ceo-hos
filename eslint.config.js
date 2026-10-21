@@ -5,6 +5,7 @@ module.exports = defineConfig([
   {
     ignores: [
       "dist/**",
+      ".vercel/**",
       "android/**",
       "ios/**",
       "node_modules/**",

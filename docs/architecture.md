@@ -49,7 +49,7 @@ Logout: desativar vínculo push com autenticação ainda válida quando houver r
 
 ## Deep links e recuperação
 
-Schemes por ambiente são `ghost-local`, `ghost-preview` e `ghost-production`. Recuperação usa PKCE e `/auth/reset-password`; os três redirects estão cadastrados no painel Auth do desenvolvimento e ainda precisam ser validados por e-mail real. Callback de recuperação abre estado exclusivo de redefinição e não concede acesso a dados. Links de conteúdo usam allowlist de destinos internos; após login, bootstrap e capability são revalidados. Links pendentes são limpos no logout.
+Schemes por ambiente são `ghost-local`, `ghost-preview` e `ghost-production`. Recuperação usa PKCE e `/auth/reset-password`; os três redirects nativos estão cadastrados no painel Auth do desenvolvimento e o redirect web canônico é `https://app-ceo-hos.vercel.app/auth/reset-password`. Eles ainda precisam ser validados por e-mail real. Callback de recuperação abre estado exclusivo de redefinição e não concede acesso a dados. Links de conteúdo usam allowlist de destinos internos; após login, bootstrap e capability são revalidados. Links pendentes são limpos no logout.
 
 ## Dados, offline e falhas
 

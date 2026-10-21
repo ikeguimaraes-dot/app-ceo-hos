@@ -34,7 +34,14 @@ Logout tenta revogar primeiro a instalação push com a sessão válida, encerra
 - iOS: Xcode build concluído, app instalado e aberto; SecureStore real validado após corrigir separador incompatível.
 - Android: build/instalação local registrados em [validação](validation.md).
 - Lint, TypeScript, testes, boundary check, exportações e E2E registrados em [validação](validation.md).
+- Web de preview exportada pelo Expo, implantada no Vercel e validada em `/`, `/pending` e assets versionados; URL canônica `https://app-ceo-hos.vercel.app`.
+
+## Entrega web
+
+O Vercel compila `npm run vercel-build`, publica somente `dist/` e reescreve rotas de aplicação para `index.html`. Os ambientes Preview e Production do projeto Vercel usam `EXPO_PUBLIC_APP_ENV=preview` e `EXPO_PUBLIC_DATA_MODE=remote`, porque ambos apontam para o backend de desenvolvimento. Isso mantém a natureza de homologação explícita mesmo na URL estável.
+
+A configuração pública contém somente Project URL e publishable key. `service_role`, secret key e JWT administrativo permanecem rejeitados pelo boundary check e pela validação de ambiente.
 
 ## Fora desta entrega
 
-Não houve alteração no repositório KPH, implantação em produção, EAS Build, EAS Update, Submit, criação de conta, envio de push ou decisão financeira. A superfície legada ampla do banco continua sendo risco de plataforma e precisa de saneamento antes de produção; as RPCs Ghost não concedem novos acessos diretos a ela.
+Não houve alteração no repositório KPH, implantação no backend de produção, EAS Build, EAS Update, Submit, criação de conta, envio de push ou decisão financeira. A URL pública é uma homologação conectada ao projeto de desenvolvimento. A superfície legada ampla do banco continua sendo risco de plataforma e precisa de saneamento antes de produção; as RPCs Ghost não concedem novos acessos diretos a ela.

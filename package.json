@@ -15,6 +15,7 @@
     "export": "expo export --platform all",
     "export:mock": "EXPO_PUBLIC_DATA_MODE=mock EXPO_PUBLIC_SUPABASE_URL= EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY= expo export --platform web",
     "export:remote": "expo export --platform all",
+    "vercel-build": "expo export --platform web",
     "test:e2e": "npm run export:mock && playwright test",
     "check:boundaries": "node scripts/check-boundaries.mjs"
   },

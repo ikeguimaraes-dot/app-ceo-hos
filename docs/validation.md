@@ -16,6 +16,8 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 | `npm run export:remote` | PASS — Android, iOS e web |
 | `python3 scripts/check_docs.py` | PASS — 14 arquivos, links e ausência de JWT |
 | `npx expo install --check` | Dependências compatíveis pelo mapa local do SDK 58; endpoint online indisponível no sandbox |
+| `vercel build --prod` | PASS — exportação web estática em `dist/` |
+| Vercel staged deployment | PASS — `/`, `/pending` e bundle JS responderam 200; fallback SPA e cache imutável confirmados |
 
 Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade, capability ausente, sessão expirada, deep link, recovery simulado e limpeza no logout. As seis jornadas E2E mantêm os dados mock no processo local e validam estados vazio/erro/offline/retry e tema.
 
@@ -38,7 +40,7 @@ O advisor pós-migration não encontrou alerta de performance nos objetos Ghost.
 
 - iOS: Xcode 26.3, runtime iOS 26.3.1 e iPhone 17 Pro Simulator. Build concluído com zero erros, app instalado e aberto. A primeira execução revelou um separador inválido em chaves SecureStore; o adapter foi corrigido e reaberto sem erro. Evidência: [ios-phase1b-login.png](screenshots/ios-phase1b-login.png).
 - Android: AVD `Ghost_API_36`, compile SDK 37/target 36. Gradle concluiu 326 tarefas, instalou o APK e abriu o scheme `ghost-local`. Evidência: [android-phase1b-login.png](screenshots/android-phase1b-login.png).
-- Web: Metro responde em `127.0.0.1:8081`; Chrome exibiu o login remoto. O único warning observado é a limitação esperada do listener de token do Expo Notifications no web.
+- Web: a versão pública em `https://app-ceo-hos.vercel.app` exibe o login remoto com selo `PREVIEW · REMOTO`. A rota protegida `/pending` redireciona para login mantendo o destino. O único warning observado é a limitação esperada do listener de token do Expo Notifications no web.
 
 Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os três redirects de recovery foram salvos no Auth e a lista passou de cinco para oito URLs. Recuperação por e-mail, push APNs/FCM e jornada positiva de um usuário KPH ainda não foram executados porque dependem de um e-mail/conta de desenvolvimento vinculada e, para push, de projeto EAS.
 
@@ -48,7 +50,7 @@ Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os tr�
 
 ## Limitações verificáveis
 
-- Não houve publicação, EAS Update, Submit ou produção.
+- Não houve EAS Update, Submit, publicação em loja ou conexão ao backend de produção. O site Vercel publicado é explicitamente um preview do backend de desenvolvimento.
 - O repositório KPH não foi modificado.
 - A conta sintética não foi criada; teste SQL com claims em rollback não equivale a login real.
 - Nenhuma aprovação ou escrita financeira foi implementada.
