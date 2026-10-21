@@ -26,7 +26,8 @@
 - [ ] Tema, fonte ampliada, teclado, VoiceOver/TalkBack e touch targets.
 - [ ] Android e iPhone físicos; simulador não valida APNs/FCM nem biometria real.
 - [x] Projeto EAS vinculado, ambiente preview isolado e keystore Android gerada.
-- [ ] Preview Android instalado a partir do APK EAS.
+- [x] Preview Android gerado pelo EAS local, assinado, instalado e aberto; build cloud aguarda worker.
+- [x] Preview iOS do EAS instalado e aberto no simulador, sem Metro/localhost.
 - [ ] Preview iOS assinado; aguarda aprovação da inscrição Apple Developer.
 - [ ] Inspeção do bundle final por JWT, secret key, `service_role` e endpoint indevido.
 

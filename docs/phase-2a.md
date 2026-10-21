@@ -13,14 +13,15 @@ Iniciada em 2026-10-21. Esta fase transforma a fundação validada em artefatos 
 - Ícone próprio quadrado aplicado a iOS, Android adaptativo e web; sem texto ou referência a outra marca.
 - OTA permanece desativado.
 
-## Builds
+## Builds e instalações
 
-| Plataforma | Build EAS | Estado inicial |
+| Plataforma | Build EAS | Resultado |
 |---|---|---|
-| Android interno (APK) | `d171e1fe-f7ac-47cb-96d8-a2f227618a0f` | Enviado; keystore gerado e gerenciado pelo EAS |
-| iOS Simulator | `0bdedb7c-4420-41f0-9c26-284db873d475` | Enviado sem credencial Apple |
+| Android interno (APK) | EAS local `/tmp/ghost-preview-final.apk` | Concluído, assinado com a keystore gerenciada, instalado e aberto no `Ghost_API_36` |
+| Android cloud (APK) | `b0c4f0b0-be63-4e71-8ba7-60867a03790c` | Aguardando worker EAS; job preservado para gerar o link compartilhável |
+| iOS Simulator | `3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f` | Concluído, instalado e aberto no iPhone 17 Pro Simulator |
 
-Os estados finais, links dos artefatos e validações de instalação devem ser acrescentados quando os jobs terminarem.
+Os dois aplicativos usam `com.grupomeeteat.ghost.preview` e executam sem Metro ou servidor local. O artefato iOS está disponível na [página do build EAS](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/builds/3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f). Evidências: [iOS](screenshots/ios-eas-preview-login.png) e [Android](screenshots/android-eas-preview-login.png).
 
 ## Dependências externas abertas
 

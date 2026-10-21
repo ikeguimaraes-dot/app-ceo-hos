@@ -14,10 +14,13 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 | `npm run test:e2e` | PASS — 6 jornadas |
 | `npm run export:mock` | PASS — web |
 | `npm run export:remote` | PASS — Android, iOS e web |
-| `python3 scripts/check_docs.py` | PASS — 14 arquivos, links e ausência de JWT |
+| `python3 scripts/check_docs.py` | PASS — 16 arquivos, links e ausência de JWT |
 | `npx expo install --check` | Dependências compatíveis pelo mapa local do SDK 58; endpoint online indisponível no sandbox |
+| `npx expo-doctor` | PASS — 20/20 checks |
 | `vercel build --prod` | PASS — exportação web estática em `dist/` |
 | Vercel staged deployment | PASS — `/`, `/pending` e bundle JS responderam 200; fallback SPA e cache imutável confirmados |
+| EAS Android release local | PASS — 566 tarefas, APK assinado instalado e processo ativo sem Metro |
+| EAS iOS Simulator final | PASS — build `3acc52ba-8c22-43c4-9e5c-fbc94d1ae48f`, instalado e aberto sem Metro |
 
 Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade, capability ausente, sessão expirada, deep link, recovery simulado e limpeza no logout. As seis jornadas E2E mantêm os dados mock no processo local e validam estados vazio/erro/offline/retry e tema.
 
@@ -38,15 +41,15 @@ O advisor pós-migration não encontrou alerta de performance nos objetos Ghost.
 
 ## Android e iOS
 
-- iOS: Xcode 26.3, runtime iOS 26.3.1 e iPhone 17 Pro Simulator. Build concluído com zero erros, app instalado e aberto. A primeira execução revelou um separador inválido em chaves SecureStore; o adapter foi corrigido e reaberto sem erro. Evidência: [ios-phase1b-login.png](screenshots/ios-phase1b-login.png).
-- Android: AVD `Ghost_API_36`, compile SDK 37/target 36. Gradle concluiu 326 tarefas, instalou o APK e abriu o scheme `ghost-local`. Evidência: [android-phase1b-login.png](screenshots/android-phase1b-login.png).
+- iOS: Xcode 26.3, runtime iOS 26.3.1 e iPhone 17 Pro Simulator. O build EAS final concluiu, foi instalado e aberto sem Metro. A primeira execução local revelou um separador inválido em chaves SecureStore; o adapter foi corrigido e reaberto sem erro. Evidências: [ios-phase1b-login.png](screenshots/ios-phase1b-login.png) e [ios-eas-preview-login.png](screenshots/ios-eas-preview-login.png).
+- Android: AVD `Ghost_API_36`, compile SDK 37/target 36. O release de preview do EAS concluiu 566 tarefas, foi assinado com a keystore gerenciada, instalado e aberto com o processo ativo. Evidências: [android-phase1b-login.png](screenshots/android-phase1b-login.png) e [android-eas-preview-login.png](screenshots/android-eas-preview-login.png).
 - Web: a versão pública em `https://app-ceo-hos.vercel.app` exibe o login remoto com selo `PREVIEW · REMOTO`. A rota protegida `/pending` redireciona para login mantendo o destino. O único warning observado é a limitação esperada do listener de token do Expo Notifications no web.
 
-Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os três redirects nativos e o redirect web de recovery foram salvos no Auth; a lista passou de cinco para nove URLs. Recuperação por e-mail, push APNs/FCM e jornada positiva de um usuário KPH ainda não foram executados porque dependem de um e-mail/conta de desenvolvimento vinculada e, para push, de projeto EAS.
+Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os três redirects nativos e o redirect web de recovery foram salvos no Auth; a lista passou de cinco para nove URLs. Recuperação por e-mail, push APNs/FCM e jornada positiva de um usuário KPH ainda não foram executados porque dependem de um e-mail/conta de desenvolvimento vinculada e das credenciais APNs/FCM.
 
 ## Auditoria de dependências
 
-`npm audit --omit=dev` reporta 27 achados transitivos (19 high, 8 moderate, 0 critical), concentrados no toolchain Expo/Metro/React Native. A correção automática sugerida rebaixa para Expo 44/React Native 0.72, incompatível com SDK 58, portanto não foi aplicada. Achados específicos incluem `braces`, `node-forge` e `uuid` em caminhos de build/CLI. O app deve acompanhar releases corrigidas do SDK 58 antes de distribuição; não usar `npm audit fix --force`.
+`npm audit --omit=dev` reporta 22 achados transitivos (19 high, 3 moderate, 0 critical), concentrados no toolchain Expo/Metro/React Native. A correção automática sugerida rebaixa para Expo 44/React Native 0.72, incompatível com SDK 58, portanto não foi aplicada. Achados específicos incluem `braces`, `node-forge` e `uuid` em caminhos de build/CLI. O app deve acompanhar releases corrigidas do SDK 58 antes de distribuição; não usar `npm audit fix --force`.
 
 ## Limitações verificáveis
 
