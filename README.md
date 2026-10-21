@@ -81,6 +81,7 @@ npm run lint
 npm run typecheck
 npm test
 npm run check:boundaries
+npm run check:release
 npm run test:remote:negative
 npm run export:mock
 npm run export:remote
@@ -88,7 +89,7 @@ npm run test:e2e
 python3 scripts/check_docs.py
 ```
 
-`check:boundaries` rejeita segredo/JWT e acesso `.from(...)` no cliente. `test:remote:negative` lê somente a configuração gitignored e confirma endpoint público, rejeição de credencial inválida e bloqueio da RPC para anônimo.
+`check:boundaries` rejeita segredo/JWT e acesso `.from(...)` no cliente. `check:release` resolve as configurações públicas local, preview e produção e valida IDs nativos, perfis EAS, OTA desativado, declaração iOS e saída Vercel. `test:remote:negative` lê somente a configuração gitignored e confirma endpoint público, rejeição de credencial inválida e bloqueio da RPC para anônimo.
 
 ## Estrutura
 
@@ -102,4 +103,4 @@ python3 scripts/check_docs.py
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 - `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [prontidão de release da Fase 2F](docs/phase-2f.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

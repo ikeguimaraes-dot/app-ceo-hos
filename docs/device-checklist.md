@@ -26,10 +26,12 @@
 - [ ] Tema, fonte ampliada, teclado, VoiceOver/TalkBack e touch targets.
 - [ ] Android e iPhone físicos; simulador não valida APNs/FCM nem biometria real.
 - [x] Projeto EAS vinculado, ambiente preview isolado e keystore Android gerada.
-- [x] Preview Android gerado pelo EAS local, assinado, instalado e aberto; build cloud aguarda worker.
+- [x] Preview Android gerado pelo EAS local e cloud, assinado, instalado e aberto.
 - [x] Preview iOS do EAS instalado e aberto no simulador, sem Metro/localhost.
-- [ ] Preview iOS assinado; aguarda aprovação da inscrição Apple Developer.
-- [ ] Inspeção do bundle final por JWT, secret key, `service_role` e endpoint indevido.
+- [ ] Preview iOS assinado; a inscrição da organização Apple Developer continuava em processamento em 2026-10-21.
+- [ ] FCM V1 Android; a inspeção EAS de 2026-10-21 confirmou que nenhuma conta de serviço está associada.
+- [ ] APNs e App Store Connect; o perfil iOS ainda não possui credenciais enquanto a inscrição está pendente.
+- [x] Inspeção dos bundles por JWT, secret key e `service_role`; `check:release` valida também ambientes, IDs e OTA.
 
 ## Comandos
 

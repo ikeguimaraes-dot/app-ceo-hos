@@ -1,17 +1,23 @@
 name: Ghost verification
 on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ghost-verification-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
-      EXPO_NO_TELEMETRY: '1'
+      EXPO_NO_TELEMETRY: "1"
       EXPO_PUBLIC_APP_ENV: local
       EXPO_PUBLIC_DATA_MODE: mock
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -20,5 +26,6 @@ jobs:
       - run: python3 scripts/check_docs.py
       - run: npm run export
       - run: npm run check:boundaries
+      - run: npm run check:release
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

@@ -21,7 +21,8 @@
     "build:preview:ios": "npx --yes eas-cli@25.3.0 build --platform ios --profile preview",
     "build:preview:ios-simulator": "npx --yes eas-cli@25.3.0 build --platform ios --profile preview-simulator",
     "test:e2e": "npm run export:mock && playwright test",
-    "check:boundaries": "node scripts/check-boundaries.mjs"
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "check:release": "node scripts/check-release.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "15.1.1",
