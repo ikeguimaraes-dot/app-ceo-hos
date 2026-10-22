@@ -26,6 +26,17 @@ export const assistantDatasets = [
   "compras_pedidos",
   "compras_notas",
   "compras_itens",
+  "contas_pagar",
+  "vendas_produtos",
+  "pagamentos",
+  "descontos",
+  "cancelamentos",
+  "inventarios",
+  "contratos",
+  "eventos",
+  "reservas",
+  "operacao_diaria",
+  "folha_resumo",
   "manutencao",
   "pessoas",
   "ausencias",
@@ -165,6 +176,29 @@ export function preferPurchaseItems(
   );
 }
 
+export function preferredDatasetForQuestion(
+  question: string,
+  selected: KphQueryToolInput["dataset"],
+  search?: string,
+): KphQueryToolInput["dataset"] {
+  if (preferPurchaseItems(question, selected, search)) return "compras_itens";
+  const intents: [RegExp, KphQueryToolInput["dataset"]][] = [
+    [/\b(contas? a pagar|t[ií]tulos? a pagar|boletos?|vencid[ao]s?|a vencer)\b/i, "contas_pagar"],
+    [/\b(formas? de pagamento|pagamentos? por (?:forma|cart[aã]o)|pix|dinheiro)\b/i, "pagamentos"],
+    [/\b(descontos?)\b/i, "descontos"],
+    [/\b(cancelamentos?|cancelados?)\b/i, "cancelamentos"],
+    [/\b(invent[aá]rios?|estoques?)\b/i, "inventarios"],
+    [/\b(contratos?|contratuais?)\b/i, "contratos"],
+    [/\b(eventos?)\b/i, "eventos"],
+    [/\b(reservas?)\b/i, "reservas"],
+    [/\b(relat[oó]rio operacional|produto 86|itens? 86|feedbacks? de clientes?)\b/i, "operacao_diaria"],
+    [/\b(folha de pagamento|custo da folha|sal[aá]rios? por (?:cargo|fun[cç][aã]o))\b/i, "folha_resumo"],
+    [/\b(produtos? mais vendidos?|vendas? por produto|quantos? .+ vendid[oa]s?)\b/i, "vendas_produtos"],
+  ];
+  const matches = intents.filter(([pattern]) => pattern.test(question));
+  return matches.length === 1 ? matches[0]![1] : selected;
+}
+
 export type AssistantInput = {
   question: string;
   history: AssistantHistoryMessage[];
@@ -179,7 +213,7 @@ export function parseAssistantInput(value: unknown): AssistantInput {
     candidate.question.trim().length > 1000
   )
     throw new Error("invalid_question");
-  if (!Array.isArray(candidate.history) || candidate.history.length > 8)
+  if (!Array.isArray(candidate.history) || candidate.history.length > 16)
     throw new Error("invalid_history");
   const history = candidate.history.map((item) => {
     if (!item || typeof item !== "object") throw new Error("invalid_history");
@@ -215,6 +249,8 @@ export function systemPrompt(
     "Não invente números, causas, tendências ou comparações ausentes.",
     "Compare e consolide as empresas quando a pergunta pedir, sem somar percentuais entre casas.",
     "Antes de responder perguntas sobre as empresas, consulte o banco com consultar_kph. Você pode consultar mais de um dataset e refinar a busca.",
+    "Entenda perguntas de continuação usando o histórico: expressões como 'e no mês passado?', 'e na outra casa?' e 'por quê?' mantêm o assunto anterior.",
+    "Escolha a fonte pelo catálogo. Não use um resumo genérico para responder quando existir um dataset específico.",
     "Para períodos longos do financeiro, use grain month; para datas específicas, use grain day.",
     "Se uma consulta atingir o limite, refine período, casa ou busca antes de concluir.",
     "Para perguntas de quanto foi comprado ou gasto com produto ou categoria, use compras_itens e responda com summary.totalValue e summary.byUnit, que já são calculados pelo banco.",
@@ -230,6 +266,20 @@ export function systemPrompt(
     "Nunca apresente closedRevenue como total do dia quando closedShiftCount for menor que shiftCount.",
     "Traduza os campos para linguagem natural; não mostre nomes técnicos como reportedRevenue ou closedRevenue ao usuário.",
     `PORTFÓLIO AUTORIZADO: ${JSON.stringify(context)}`,
+  ].join("\n");
+}
+
+export function evidenceReviewPrompt(question: string, toolCallCount: number) {
+  return [
+    "Revise a resposta à pergunta original usando somente as evidências retornadas pelas ferramentas nesta conversa.",
+    `PERGUNTA ORIGINAL: ${question}`,
+    `CONSULTAS EXECUTADAS: ${toolCallCount}`,
+    "Confira período, casas, unidade monetária, totais e subtotais antes de responder.",
+    "Use os campos summary calculados pelo banco quando existirem; não refaça essas somas mentalmente.",
+    "Se duas fontes divergirem, explique a divergência e identifique a fonte de cada número.",
+    "Se a evidência não bastar, diga exatamente qual informação não está catalogada; nunca transforme ausência de evidência em zero.",
+    "Responda de forma natural e útil, como continuação da conversa, sem mencionar este processo de revisão.",
+    "Entregue somente a resposta final em português do Brasil, sem Markdown.",
   ].join("\n");
 }
 

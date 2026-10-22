@@ -3,12 +3,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import {
   assistantDatasets,
   assistantModel,
-  minimizeAssistantContext,
+  evidenceReviewPrompt,
   needsKphTool,
   normalizeAssistantSources,
   parseAssistantInput,
   parseKphQueryToolInput,
-  preferPurchaseItems,
+  preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
 } from "../_shared/assistant.ts";
@@ -185,62 +185,21 @@ Deno.serve(async (request) => {
     if (beginError) throw beginError;
     began = true;
 
-    const unitContexts = await Promise.all(
-      units.map(async (unit) => {
-        const context: Record<string, unknown> = {};
-        const load = async (
-          name: string,
-          rpc: string,
-          args: Record<string, unknown>,
-        ) => {
-          const { data, error } = await supabase!.rpc(rpc, args);
-          if (error) throw error;
-          context[name] = minimizeAssistantContext(name, data);
-        };
-        if (unit.capabilities.includes("dashboard.read"))
-          await load("Dashboard", "ghost_dashboard_v1", {
-            p_unit_id: unit.id,
-            p_month: new Date().toISOString().slice(0, 10),
-          });
-        if (unit.capabilities.includes("operation.read"))
-          await load("Operação", "ghost_operation_summary_v1", {
-            p_unit_id: unit.id,
-          });
-        if (unit.capabilities.includes("people.read"))
-          await load("Pessoas", "ghost_people_summary_v1", {
-            p_unit_id: unit.id,
-          });
-        if (unit.capabilities.includes("pending.read"))
-          await load("Pendências", "ghost_pending_items_v2", {
-            p_unit_id: unit.id,
-            p_cursor: null,
-            p_limit: 10,
-          });
-        return {
-          unit: { name: unit.name, brand: unit.brand, group: unit.group },
-          data: context,
-        };
-      }),
-    );
-
-    if (!unitContexts.some((unit) => Object.keys(unit.data).length))
-      throw new Error("unit_capability_denied");
     const { data: catalog, error: catalogError } = await supabase.rpc(
       "ghost_assistant_catalog_v1",
     );
     if (catalogError) throw catalogError;
     const context = {
       unitCount: units.length,
-      units: unitContexts,
+      units: units.map((unit) => ({
+        name: unit.name,
+        brand: unit.brand,
+        group: unit.group,
+        capabilities: unit.capabilities,
+      })),
       queryCatalog: catalog,
     };
-    const sources = ["Dashboard", "Operação", "Pessoas", "Pendências"]
-      .map((name) => ({
-        name,
-        count: unitContexts.filter((unit) => name in unit.data).length,
-      }))
-      .filter((source) => source.count > 0)
-      .map((source) => `${source.name} (${source.count} casas)`);
+    const sources: string[] = [];
 
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
@@ -318,6 +277,7 @@ Deno.serve(async (request) => {
     let modelMessage = payload?.choices?.[0]?.message;
     let promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
     let completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+    let toolCallCount = 0;
     for (let round = 0; round < 4; round += 1) {
       const toolCalls = Array.isArray(modelMessage?.tool_calls)
         ? modelMessage.tool_calls
@@ -334,9 +294,16 @@ Deno.serve(async (request) => {
         tool_calls: toolCalls,
       });
       for (const toolCall of toolCalls) {
+        toolCallCount += 1;
         let query = parseKphQueryToolInput(toolCall.function?.arguments);
-        if (preferPurchaseItems(input.question, query.dataset, query.search))
-          query = { ...query, dataset: "compras_itens" };
+        query = {
+          ...query,
+          dataset: preferredDatasetForQuestion(
+            input.question,
+            query.dataset,
+            query.search,
+          ),
+        };
         const { data, error } = await supabase.rpc("ghost_assistant_query_v1", {
           p_dataset: query.dataset,
           p_from: query.from ?? null,
@@ -362,11 +329,14 @@ Deno.serve(async (request) => {
       completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
     }
     let answer = modelMessage?.content;
-    if (typeof answer !== "string" || !answer.trim()) {
+    if (needsKphTool(input.question) && toolCallCount === 0)
+      throw new Error("assistant_no_evidence");
+    if (toolCallCount > 0) {
+      if (typeof answer === "string" && answer.trim())
+        messages.push({ role: "assistant", content: answer.trim() });
       messages.push({
         role: "user",
-        content:
-          "Responda agora à pergunta original usando os resultados já consultados. Não chame ferramentas. Entregue somente a resposta final em português do Brasil.",
+        content: evidenceReviewPrompt(input.question, toolCallCount),
       });
       payload = await callModel(messages, false);
       modelMessage = payload?.choices?.[0]?.message;

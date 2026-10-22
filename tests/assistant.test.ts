@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assistantDatasets,
   assistantModel,
+  evidenceReviewPrompt,
   minimizeAssistantContext,
   needsFinanceTool,
   needsKphTool,
@@ -10,6 +11,7 @@ import {
   parseFinanceToolInput,
   parseKphQueryToolInput,
   preferPurchaseItems,
+  preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
 } from "../supabase/functions/_shared/assistant";
@@ -75,6 +77,9 @@ describe("assistant boundary", () => {
   it("accepts broad, read-only KPH queries without the old 93-day limit", () => {
     expect(assistantDatasets).toContain("dre_mensal");
     expect(assistantDatasets).toContain("compras_itens");
+    expect(assistantDatasets).toContain("contas_pagar");
+    expect(assistantDatasets).toContain("vendas_produtos");
+    expect(assistantDatasets).toContain("folha_resumo");
     expect(needsKphTool("Quanto eu faturei no Meet ontem?")).toBe(true);
     expect(needsKphTool("Olá!")).toBe(false);
     expect(
@@ -119,6 +124,27 @@ describe("assistant boundary", () => {
     ).toBe(false);
   });
 
+  it("corrects clear business intents before querying the database", () => {
+    expect(
+      preferredDatasetForQuestion(
+        "Quais contas a pagar estão vencidas?",
+        "despesas",
+      ),
+    ).toBe("contas_pagar");
+    expect(
+      preferredDatasetForQuestion(
+        "Qual foi o produto mais vendido ontem?",
+        "financeiro",
+      ),
+    ).toBe("vendas_produtos");
+    expect(
+      preferredDatasetForQuestion(
+        "Compare descontos e cancelamentos",
+        "descontos",
+      ),
+    ).toBe("descontos");
+  });
+
   it("accepts a bounded conversation without client-selected unit scope", () => {
     const parsed = parseAssistantInput({
       question: "  Como está a meta?  ",
@@ -132,6 +158,22 @@ describe("assistant boundary", () => {
         history: [],
       }),
     ).toThrow("invalid_question");
+    expect(() =>
+      parseAssistantInput({
+        question: "continue",
+        history: Array.from({ length: 17 }, () => ({
+          role: "user",
+          content: "mensagem",
+        })),
+      }),
+    ).toThrow("invalid_history");
+  });
+
+  it("requires a final evidence review with database summaries", () => {
+    const prompt = evidenceReviewPrompt("Quanto comprei?", 2);
+    expect(prompt).toContain("summary calculados pelo banco");
+    expect(prompt).toContain("CONSULTAS EXECUTADAS: 2");
+    expect(prompt).toContain("nunca transforme ausência de evidência em zero");
   });
 
   it("marks database context as untrusted and read-only", () => {

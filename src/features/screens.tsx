@@ -552,7 +552,7 @@ function AssistantContent() {
   function ask(text = question) {
     const prompt = text.trim();
     if (!prompt || mutation.isPending) return;
-    const history = messages.slice(-8);
+    const history = messages.slice(-16);
     setError("");
     setSources([]);
     setQuestion("");
