@@ -9,6 +9,7 @@ import {
   parseAssistantInput,
   parseFinanceToolInput,
   parseKphQueryToolInput,
+  preferPurchaseItems,
   shouldRetryModelRequest,
   systemPrompt,
 } from "../supabase/functions/_shared/assistant";
@@ -73,6 +74,7 @@ describe("assistant boundary", () => {
 
   it("accepts broad, read-only KPH queries without the old 93-day limit", () => {
     expect(assistantDatasets).toContain("dre_mensal");
+    expect(assistantDatasets).toContain("compras_itens");
     expect(needsKphTool("Quanto eu faturei no Meet ontem?")).toBe(true);
     expect(needsKphTool("Olá!")).toBe(false);
     expect(
@@ -99,6 +101,22 @@ describe("assistant boundary", () => {
     expect(() =>
       parseKphQueryToolInput({ dataset: "pessoas", limit: 201 }),
     ).toThrow("invalid_assistant_query");
+  });
+
+  it("routes purchase totals with a product filter to invoice items", () => {
+    expect(
+      preferPurchaseItems(
+        "Quanto comprei de carne esse mês?",
+        "compras_notas",
+        "carne",
+      ),
+    ).toBe(true);
+    expect(
+      preferPurchaseItems("Quais são as notas deste mês?", "compras_notas"),
+    ).toBe(false);
+    expect(
+      preferPurchaseItems("Qual foi a conta de luz?", "despesas", "luz"),
+    ).toBe(false);
   });
 
   it("accepts a bounded conversation without client-selected unit scope", () => {
@@ -128,6 +146,8 @@ describe("assistant boundary", () => {
     expect(prompt).toContain("closedShiftCount for menor que shiftCount");
     expect(prompt).toContain("vendas de todos os turnos");
     expect(prompt).toContain("conciliação dos pagamentos");
+    expect(prompt).toContain("summary.totalValue");
+    expect(prompt).toContain("fonte Everest atual");
     expect(prompt).toContain('"revenue":100');
   });
 

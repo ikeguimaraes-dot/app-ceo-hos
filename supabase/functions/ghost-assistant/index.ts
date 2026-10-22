@@ -8,6 +8,7 @@ import {
   normalizeAssistantSources,
   parseAssistantInput,
   parseKphQueryToolInput,
+  preferPurchaseItems,
   shouldRetryModelRequest,
   systemPrompt,
 } from "../_shared/assistant.ts";
@@ -32,7 +33,7 @@ const kphTool = {
           type: "string",
           enum: assistantDatasets,
           description:
-            "Área de dados: financeiro, DRE, despesas, compras, manutenção, pessoas, ausências, planos ou pedidos de venda.",
+            "Área de dados. Para valores comprados por produto ou categoria use compras_itens; para listar notas use compras_notas.",
         },
         from: {
           type: "string",
@@ -333,7 +334,9 @@ Deno.serve(async (request) => {
         tool_calls: toolCalls,
       });
       for (const toolCall of toolCalls) {
-        const query = parseKphQueryToolInput(toolCall.function?.arguments);
+        let query = parseKphQueryToolInput(toolCall.function?.arguments);
+        if (preferPurchaseItems(input.question, query.dataset, query.search))
+          query = { ...query, dataset: "compras_itens" };
         const { data, error } = await supabase.rpc("ghost_assistant_query_v1", {
           p_dataset: query.dataset,
           p_from: query.from ?? null,

@@ -25,6 +25,7 @@ export const assistantDatasets = [
   "despesas",
   "compras_pedidos",
   "compras_notas",
+  "compras_itens",
   "manutencao",
   "pessoas",
   "ausencias",
@@ -152,6 +153,18 @@ export function needsKphTool(question: string) {
   );
 }
 
+export function preferPurchaseItems(
+  question: string,
+  dataset: KphQueryToolInput["dataset"],
+  search?: string,
+) {
+  return (
+    (dataset === "compras_notas" || dataset === "compras_pedidos") &&
+    !!search &&
+    /\b(quanto|valor|total)\b/i.test(question)
+  );
+}
+
 export type AssistantInput = {
   question: string;
   history: AssistantHistoryMessage[];
@@ -204,6 +217,8 @@ export function systemPrompt(
     "Antes de responder perguntas sobre as empresas, consulte o banco com consultar_kph. Você pode consultar mais de um dataset e refinar a busca.",
     "Para períodos longos do financeiro, use grain month; para datas específicas, use grain day.",
     "Se uma consulta atingir o limite, refine período, casa ou busca antes de concluir.",
+    "Para perguntas de quanto foi comprado ou gasto com produto ou categoria, use compras_itens e responda com summary.totalValue e summary.byUnit, que já são calculados pelo banco.",
+    "Nunca conclua que não há notas atuais usando purchase_invoices; compras_notas e compras_itens usam a fonte Everest atual da tela NF/CMV.",
     "Informe o período ou horário de atualização quando isso for relevante.",
     "Não sugira que executou ações; este assistente é somente leitura.",
     `DATA ATUAL EM AMERICA/SAO_PAULO: ${currentDate ?? "não informada"}.`,
