@@ -188,14 +188,25 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     assistant: {
-      async ask(scope, question) {
-        await check(scope, "assistant.ask");
+      async ask(session, question, _history, signal) {
+        await wait();
+        if (signal?.aborted) throw new Error("Consulta cancelada.");
+        if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
+        const units = bootstrap(session).units.filter((unit) =>
+          unit.capabilities.includes("assistant.ask"),
+        );
+        if (!units.length) throw new Error("Acesso não permitido.");
         if (!question.trim()) throw new Error("Escreva uma pergunta.");
-        const dashboard =
-          demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
+        const revenue = units.reduce(
+          (total, unit) =>
+            total +
+            (demo.dashboards[unit.id as keyof typeof demo.dashboards]
+              ?.revenue ?? 0),
+          0,
+        );
         return {
-          answer: `Na demonstração, o faturamento da unidade é ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(dashboard.revenue ?? 0)} e existem ${demo.operation.pendingMaintenance} manutenções pendentes.`,
-          sources: ["Dashboard", "Operação"],
+          answer: `Na demonstração, consultei ${units.length} casas. O faturamento consolidado é ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(revenue)} e existem ${demo.operation.pendingMaintenance} manutenções pendentes.`,
+          sources: ["Dashboard de todas as casas", "Operação"],
           updatedAt: "2026-10-20T12:00:00Z",
         };
       },

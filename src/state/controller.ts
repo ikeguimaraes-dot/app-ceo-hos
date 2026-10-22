@@ -150,6 +150,15 @@ export class Controller {
         ?.capabilities.includes(capability)
     );
   }
+  canAny(capability: Capability) {
+    return (
+      this.state.status === "ready" &&
+      !this.state.locked &&
+      this.state.bootstrap?.units.some((unit) =>
+        unit.capabilities.includes(capability),
+      ) === true
+    );
+  }
   async selectUnit(id: string) {
     if (
       this.state.status !== "ready" ||

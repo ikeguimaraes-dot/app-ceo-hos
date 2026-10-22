@@ -63,19 +63,16 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     path: "docs/screenshots/pending.png",
     fullPage: true,
   });
-  await page.getByRole("tab", { name: "Mais" }).click();
+  await page.getByRole("tab", { name: "IA", exact: true }).click();
   await page
-    .getByRole("button", { name: "Perguntar ao Ghost", exact: true })
+    .getByRole("button", { name: "Como estão minhas empresas este mês?" })
     .click();
-  await page
-    .getByRole("button", { name: "Como está o faturamento e a meta?" })
-    .click();
-  await expect(page.getByText(/Na demonstração, o faturamento/)).toBeVisible();
+  await expect(page.getByText(/consultei 2 casas/)).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/assistant.png",
     fullPage: true,
   });
-  await page.goBack();
+  await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Notificações", exact: true }).click();
   await expect(page.getByText("Um fechamento espera por você")).toBeVisible();
   await page.screenshot({

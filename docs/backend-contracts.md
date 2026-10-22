@@ -34,4 +34,4 @@ O contrato transacional de decisão, com versão esperada, idempotência, confli
 
 A reconciliação atômica de instalações, expiração de vínculos sem contato e observabilidade técnica sem PII foram entregues na [Fase 2E](phase-2e.md).
 
-O contrato inicial do assistente foi entregue na [Fase 2G](phase-2g.md). Ele cobre somente a unidade atual e os agregados já existentes do mês corrente. Perguntas sobre outras competências, comparação entre unidades, caixa, DRE, CMV, produtos, orçamento, conciliação, escalas ou folha dependem de novos RPCs minimizados e respectivas capabilities.
+O contrato inicial do assistente foi entregue na [Fase 2G](phase-2g.md). Ele consolida e compara todas as unidades autorizadas usando os agregados já existentes do mês corrente. Perguntas sobre outras competências, caixa, DRE, CMV, produtos, orçamento, conciliação, escalas ou folha dependem de novos RPCs minimizados e respectivas capabilities.

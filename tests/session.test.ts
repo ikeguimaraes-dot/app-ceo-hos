@@ -96,6 +96,7 @@ describe("session and access boundaries", () => {
     expect(c.can("dashboard.read")).toBe(true);
     expect(c.can("pending.read")).toBe(false);
     expect(c.can("assistant.ask")).toBe(false);
+    expect(c.canAny("assistant.ask")).toBe(false);
     await expect(
       gateways.pending.list({
         session: c.state.session!,
@@ -202,25 +203,23 @@ describe("session and access boundaries", () => {
     const { controller: c, gateways } = setup();
     await enter(c);
     await c.selectUnit("demo-garden");
-    const scope = { session: c.state.session!, unitId: "demo-garden" };
+    expect(c.canAny("assistant.ask")).toBe(true);
     const answer = await gateways.assistant.ask(
-      scope,
-      "Como está a unidade?",
+      c.state.session!,
+      "Como estão as empresas?",
       [],
     );
-    expect(answer.answer).toContain("24.850,00");
-    expect(answer.sources).toEqual(["Dashboard", "Operação"]);
+    expect(answer.answer).toContain("2 casas");
+    expect(answer.answer).toContain("43.170,00");
+    expect(answer.sources).toEqual(["Dashboard de todas as casas", "Operação"]);
 
     const restricted = setup();
     await enter(restricted.controller, "restricted");
     await restricted.controller.selectUnit("demo-garden");
     await expect(
       restricted.gateways.assistant.ask(
-        {
-          session: restricted.controller.state.session!,
-          unitId: "demo-garden",
-        },
-        "Como está a unidade?",
+        restricted.controller.state.session!,
+        "Como estão as empresas?",
         [],
       ),
     ).rejects.toThrow("Acesso não permitido");

@@ -62,6 +62,16 @@ export function Access({
     </Screen>
   );
 }
+function PortfolioAccess({ children }: React.PropsWithChildren) {
+  const { controller } = useGhost();
+  return controller.canAny("assistant.ask") ? (
+    <>{children}</>
+  ) : (
+    <Screen title="Acesso restrito">
+      <Empty text="O assistente não está disponível para seus vínculos." />
+    </Screen>
+  );
+}
 export function Login() {
   const { controller, state } = useGhost();
   const params = useLocalSearchParams<{ next?: string }>();
@@ -374,11 +384,6 @@ function DashboardContent() {
           </Label>
         </>
       )}
-      <CapabilityButton
-        capability="assistant.ask"
-        title="Perguntar ao Ghost"
-        path="/assistant"
-      />
       <CapabilityButton
         capability="pending.read"
         title="Ver pendências"
@@ -781,11 +786,6 @@ export function More() {
         onPress={() => router.push("/units")}
       />
       <CapabilityButton
-        capability="assistant.ask"
-        title="Perguntar ao Ghost"
-        path="/assistant"
-      />
-      <CapabilityButton
         capability="notifications.read"
         title="Notificações"
         path="/notifications"
@@ -809,17 +809,16 @@ export function More() {
 
 export function AssistantScreen() {
   return (
-    <Access capability="assistant.ask">
+    <PortfolioAccess>
       <AssistantContent />
-    </Access>
+    </PortfolioAccess>
   );
 }
 
 function AssistantContent() {
   const { state, gateways } = useGhost();
-  const scope = useScope();
   const { colors } = useTheme();
-  const unit = state.bootstrap?.units.find((item) => item.id === scope.unitId);
+  const session = state.session!;
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [error, setError] = useState("");
@@ -831,7 +830,7 @@ function AssistantContent() {
     }: {
       prompt: string;
       history: AssistantMessage[];
-    }) => gateways.assistant.ask(scope, prompt, history),
+    }) => gateways.assistant.ask(session, prompt, history),
     onSuccess: (result) => {
       setMessages((current) => [
         ...current,
@@ -858,27 +857,43 @@ function AssistantContent() {
   }
   return (
     <Screen
-      title="Pergunte sobre sua empresa"
-      subtitle={`${unit?.name ?? "Unidade atual"} · respostas baseadas apenas nos dados autorizados`}
+      title="Ghost IA"
+      subtitle="Conversa com a visão de todas as suas empresas autorizadas"
     >
       {messages.length === 0 && (
-        <Card>
-          <Label size={20}>O que você quer entender?</Label>
-          <Label muted>
-            O Ghost consulta faturamento, metas, pendências, operação e pessoas
-            conforme suas permissões nesta unidade.
-          </Label>
+        <>
+          <View
+            accessibilityLabel="Mensagem do Ghost"
+            style={{
+              alignSelf: "stretch",
+              borderRadius: 18,
+              padding: 16,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.line,
+            }}
+          >
+            <Text style={{ color: colors.text, fontSize: 16, lineHeight: 24 }}>
+              Olá. Posso analisar suas casas em conjunto ou comparar os dados
+              que você tem permissão para ver. O que você quer saber?
+            </Text>
+          </View>
+          <Label muted>Sugestões para começar</Label>
           <Button
-            title="Como está o faturamento e a meta?"
+            title="Como estão minhas empresas este mês?"
             secondary
-            onPress={() => ask("Como está o faturamento e a meta deste mês?")}
+            onPress={() =>
+              ask("Como estão minhas empresas em faturamento e meta este mês?")
+            }
           />
           <Button
-            title="O que precisa da minha atenção?"
+            title="Qual casa precisa de mais atenção?"
             secondary
-            onPress={() => ask("O que precisa da minha atenção agora?")}
+            onPress={() =>
+              ask("Qual casa precisa de mais atenção agora e por quê?")
+            }
           />
-        </Card>
+        </>
       )}
       {messages.map((message, index) => (
         <View
@@ -920,7 +935,7 @@ function AssistantContent() {
           label="Sua pergunta"
           value={question}
           onChangeText={setQuestion}
-          placeholder="Ex.: qual unidade exige mais atenção?"
+          placeholder="Converse com o Ghost…"
           multiline
           maxLength={1000}
         />
@@ -934,7 +949,6 @@ function AssistantContent() {
           origem antes de tomar uma decisão.
         </Label>
       </Card>
-      <Button title="Voltar" secondary onPress={() => router.back()} />
     </Screen>
   );
 }

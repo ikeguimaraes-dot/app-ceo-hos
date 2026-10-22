@@ -47,6 +47,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="assistant"
+        options={{
+          title: "IA",
+          href: controller.canAny("assistant.ask") ? "/assistant" : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={size}
+              color={typeof color === "string" ? color : colors.muted}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="operation"
         options={{
           title: "Operação",

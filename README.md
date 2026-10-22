@@ -10,7 +10,7 @@ O deploy é uma exportação estática do Expo Router com fallback de SPA para q
 
 A distribuição móvel controlada da [Fase 2A](docs/phase-2a.md) usa o projeto EAS `@grupomeeteat/ghost-mobile`, APK interno e build iOS de simulador. O pipeline da [Fase 2B](docs/phase-2b.md) roda fora do cliente e mantém tokens, fila e recibos em schema privado. O iOS físico/TestFlight aguarda a aprovação da inscrição Apple Developer; APNs e FCM permanecem sem credenciais no cliente.
 
-O assistente executivo da [Fase 2G](docs/phase-2g.md) consulta somente as RPCs que a unidade e o usuário já podem acessar. A chave do modelo fica em segredo da Edge Function. O app não recebe essa chave e não envia consultas diretamente ao OpenRouter.
+O assistente executivo da [Fase 2G](docs/phase-2g.md) consulta somente as RPCs permitidas em cada casa do portfólio autorizado. A chave do modelo fica em segredo da Edge Function. O app não recebe essa chave e não envia consultas diretamente ao OpenRouter.
 
 ## Executar
 
@@ -68,7 +68,7 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 
 As RPCs derivam o usuário de `auth.uid()`, validam vínculo, status, unidade e capability no servidor. `anon` não possui `EXECUTE`. O app usa Zod para rejeitar respostas fora do contrato e TanStack Query somente em memória. As migrations auditáveis estão em [supabase/migrations](supabase/migrations); nesta sessão foram aplicadas apenas ao projeto `kph-os-dev`.
 
-O chat é somente leitura. A Edge Function envia ao provedor externo apenas agregados autorizados da unidade atual: faturamento/meta do mês, contagens de manutenção, headcount, ajustes de ponto e até dez títulos de pendências. IDs, versões, direitos de decisão, detalhes livres e identidades de funcionários são removidos. Perguntas e respostas ficam somente na memória da tela; o banco registra apenas metadados técnicos por 30 dias para limite e auditoria.
+O chat é somente leitura e aparece como **IA** no rodapé. Ele não depende da unidade selecionada nas telas: a Edge Function deriva do bootstrap todas as casas autorizadas e envia ao provedor externo somente seus agregados permitidos — faturamento/meta do mês, contagens de manutenção, headcount, ajustes de ponto e até dez títulos de pendências por casa. IDs, versões, direitos de decisão, detalhes livres e identidades de funcionários são removidos. Perguntas e respostas ficam somente na memória da tela; o banco registra apenas metadados técnicos por 30 dias para limite e auditoria.
 
 Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O teste positivo completo pelo aplicativo requer uma conta KPH de desenvolvimento já vinculada; uma conta sintética não foi criada com credencial administrativa.
 

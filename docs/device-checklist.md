@@ -18,7 +18,7 @@
 - [ ] Usuário sem vínculo, inativo e papel removido durante uso.
 - [ ] Troca A → B com request em voo; resposta A nunca aparece em B.
 - [ ] Deep links `/pending`, `/notifications` e `/assistant` a frio/quente e após logout.
-- [ ] Assistente autenticado: resposta com fontes da unidade atual, capability removida, limite e indisponibilidade do modelo.
+- [ ] Assistente autenticado: botão IA no rodapé, resposta consolidada sem seletor de casa, capability removida, limite e indisponibilidade do modelo.
 - [ ] Recovery PKCE por e-mail, link expirado/replay e nova senha.
 - [ ] Biometria: sucesso, cancelamento, sem cadastro e mudança de cadastro.
 - [ ] Push: negado/permitido, token rotacionado, dois usuários no aparelho e logout offline.

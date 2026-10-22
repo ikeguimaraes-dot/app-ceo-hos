@@ -87,62 +87,77 @@ Deno.serve(async (request) => {
     if (identityError || !identity.user)
       return reply({ error: "authentication_required" }, 401);
 
+    const { data: bootstrap, error: bootstrapError } =
+      await supabase.rpc("ghost_bootstrap_v1");
+    if (bootstrapError) throw bootstrapError;
+    const units = (bootstrap?.units ?? []).filter(
+      (candidate: { capabilities?: string[] }) =>
+        candidate.capabilities?.includes("assistant.ask"),
+    ) as {
+      id: string;
+      name: string;
+      brand: string;
+      group: string;
+      capabilities: string[];
+    }[];
+    if (!units.length) throw new Error("unit_capability_denied");
+    if (units.length > 20) throw new Error("portfolio_too_large");
+
     const { error: beginError } = await supabase.rpc(
       "ghost_assistant_begin_v1",
-      { p_unit_id: input.unitId, p_request_id: requestId },
+      { p_unit_id: units[0].id, p_request_id: requestId },
     );
     if (beginError) throw beginError;
     began = true;
 
-    const { data: bootstrap, error: bootstrapError } =
-      await supabase.rpc("ghost_bootstrap_v1");
-    if (bootstrapError) throw bootstrapError;
-    const unit = bootstrap?.units?.find(
-      (candidate: { id?: string }) => candidate.id === input.unitId,
-    ) as
-      | {
-          id: string;
-          name: string;
-          brand: string;
-          group: string;
-          capabilities: string[];
-        }
-      | undefined;
-    if (!unit || !unit.capabilities.includes("assistant.ask"))
-      throw new Error("unit_capability_denied");
+    const unitContexts = await Promise.all(
+      units.map(async (unit) => {
+        const context: Record<string, unknown> = {};
+        const load = async (
+          name: string,
+          rpc: string,
+          args: Record<string, unknown>,
+        ) => {
+          const { data, error } = await supabase!.rpc(rpc, args);
+          if (error) throw error;
+          context[name] = minimizeAssistantContext(name, data);
+        };
+        if (unit.capabilities.includes("dashboard.read"))
+          await load("Dashboard", "ghost_dashboard_v1", {
+            p_unit_id: unit.id,
+            p_month: new Date().toISOString().slice(0, 10),
+          });
+        if (unit.capabilities.includes("operation.read"))
+          await load("Operação", "ghost_operation_summary_v1", {
+            p_unit_id: unit.id,
+          });
+        if (unit.capabilities.includes("people.read"))
+          await load("Pessoas", "ghost_people_summary_v1", {
+            p_unit_id: unit.id,
+          });
+        if (unit.capabilities.includes("pending.read"))
+          await load("Pendências", "ghost_pending_items_v2", {
+            p_unit_id: unit.id,
+            p_cursor: null,
+            p_limit: 10,
+          });
+        return {
+          unit: { name: unit.name, brand: unit.brand, group: unit.group },
+          data: context,
+        };
+      }),
+    );
 
-    const context: Record<string, unknown> = {};
-    const sources: string[] = [];
-    const load = async (
-      name: string,
-      rpc: string,
-      args: Record<string, unknown>,
-    ) => {
-      const { data, error } = await supabase!.rpc(rpc, args);
-      if (error) throw error;
-      context[name] = minimizeAssistantContext(name, data);
-      sources.push(name);
-    };
-    if (unit.capabilities.includes("dashboard.read"))
-      await load("Dashboard", "ghost_dashboard_v1", {
-        p_unit_id: unit.id,
-        p_month: new Date().toISOString().slice(0, 10),
-      });
-    if (unit.capabilities.includes("operation.read"))
-      await load("Operação", "ghost_operation_summary_v1", {
-        p_unit_id: unit.id,
-      });
-    if (unit.capabilities.includes("people.read"))
-      await load("Pessoas", "ghost_people_summary_v1", {
-        p_unit_id: unit.id,
-      });
-    if (unit.capabilities.includes("pending.read"))
-      await load("Pendências", "ghost_pending_items_v2", {
-        p_unit_id: unit.id,
-        p_cursor: null,
-        p_limit: 10,
-      });
-    if (!sources.length) throw new Error("unit_capability_denied");
+    if (!unitContexts.some((unit) => Object.keys(unit.data).length))
+      throw new Error("unit_capability_denied");
+    const context = { unitCount: units.length, units: unitContexts };
+    const sources = ["Dashboard", "Operação", "Pessoas", "Pendências"]
+      .map((name) => ({
+        name,
+        count: unitContexts.filter((unit) => name in unit.data).length,
+      }))
+      .filter((source) => source.count > 0)
+      .map((source) => `${source.name} (${source.count} casas)`);
 
     const response = await fetch(openRouterUrl, {
       method: "POST",
@@ -156,7 +171,7 @@ Deno.serve(async (request) => {
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: systemPrompt(unit, context) },
+          { role: "system", content: systemPrompt(context) },
           ...input.history,
           { role: "user", content: input.question },
         ],

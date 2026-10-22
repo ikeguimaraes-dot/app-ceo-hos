@@ -361,16 +361,15 @@ export function createRemoteGateways(): Gateways {
       },
     },
     assistant: {
-      async ask(scope, question, history) {
+      async ask(_session, question, history, signal) {
         const { data, error } = await client.functions.invoke(
           "ghost-assistant",
           {
             body: {
-              unitId: scope.unitId,
               question,
               history,
             },
-            signal: scope.signal,
+            signal,
           },
         );
         if (error) throw friendlyError(error);

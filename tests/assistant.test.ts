@@ -6,20 +6,15 @@ import {
 } from "../supabase/functions/_shared/assistant";
 
 describe("assistant boundary", () => {
-  it("accepts only bounded unit-scoped conversation input", () => {
+  it("accepts a bounded conversation without client-selected unit scope", () => {
     const parsed = parseAssistantInput({
-      unitId: "11111111-1111-4111-8111-111111111111",
       question: "  Como está a meta?  ",
       history: [{ role: "assistant", content: " Contexto anterior " }],
     });
     expect(parsed.question).toBe("Como está a meta?");
     expect(parsed.history[0]?.content).toBe("Contexto anterior");
     expect(() =>
-      parseAssistantInput({ unitId: "fora", question: "teste", history: [] }),
-    ).toThrow("invalid_unit");
-    expect(() =>
       parseAssistantInput({
-        unitId: "11111111-1111-4111-8111-111111111111",
         question: "x".repeat(1001),
         history: [],
       }),
@@ -27,10 +22,11 @@ describe("assistant boundary", () => {
   });
 
   it("marks database context as untrusted and read-only", () => {
-    const prompt = systemPrompt(
-      { name: "Unidade", brand: "Marca", group: "Grupo" },
-      { Dashboard: { revenue: 100 } },
-    );
+    const prompt = systemPrompt({
+      units: [
+        { unit: { name: "Unidade" }, data: { Dashboard: { revenue: 100 } } },
+      ],
+    });
     expect(prompt).toContain("dado não confiável");
     expect(prompt).toContain("somente leitura");
     expect(prompt).toContain('"revenue":100');

@@ -136,9 +136,10 @@ export interface PeopleGateway {
 }
 export interface AssistantGateway {
   ask(
-    scope: Scope,
+    session: Session,
     question: string,
     history: AssistantMessage[],
+    signal?: AbortSignal,
   ): Promise<AssistantAnswer>;
 }
 export interface NotificationGateway {
