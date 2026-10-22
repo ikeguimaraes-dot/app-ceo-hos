@@ -165,7 +165,10 @@ export class Controller {
       !this.state.bootstrap?.units.some((u) => u.id === id)
     )
       throw new Error("Unidade não autorizada.");
-    this.update({ unitId: null, generation: this.state.generation + 1 });
+    // Keep the authorized current unit rendered while in-memory queries are
+    // cancelled. Clearing it here made the protected router briefly redirect
+    // to the onboarding selector during an in-app house switch.
+    this.update({ generation: this.state.generation + 1 });
     const generation = this.state.generation;
     await this.queries.cancelQueries();
     this.queries.clear();

@@ -12,6 +12,8 @@ A distribuição móvel controlada da [Fase 2A](docs/phase-2a.md) usa o projeto 
 
 O assistente executivo da [Fase 2G](docs/phase-2g.md) consulta somente as RPCs permitidas em cada casa do portfólio autorizado. A chave do modelo fica em segredo da Edge Function. O app não recebe essa chave e não envia consultas diretamente ao OpenRouter.
 
+O cockpit executivo da [Fase 2H](docs/phase-2h.md) reúne o faturamento mensal de Meet, Mdna, Freneze e Match na home e abre dashboards por casa com gráficos diários animados, metas e situação de conciliação.
+
 ## Executar
 
 Requer Node 22.23+ e npm 10+.
@@ -49,7 +51,7 @@ O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [ve
 O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e RPCs autenticadas versionadas. A Fase 2C adiciona paginação e resumos mínimos; a Fase 2E preserva a identidade da instalação entre sessões para reconciliar push com segurança:
 
 - `ghost_bootstrap_v1`
-- `ghost_dashboard_v1`
+- `ghost_dashboard_v2`
 - `ghost_pending_items_v1`
 - `ghost_notifications_v1`
 - `ghost_notification_mark_read_v1`
@@ -81,7 +83,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 ## Navegação e links
 
-As cinco áreas são Início, Pendências, Operação, Pessoas e Mais. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
+As seis áreas são Início, Pendências, IA, Operação, Pessoas e Mais. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até login e seleção de unidade. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 
@@ -116,4 +118,4 @@ python3 scripts/check_docs.py
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 - `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [prontidão de release da Fase 2F](docs/phase-2f.md), [assistente executivo da Fase 2G](docs/phase-2g.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [prontidão de release da Fase 2F](docs/phase-2f.md), [assistente executivo da Fase 2G](docs/phase-2g.md), [cockpit executivo da Fase 2H](docs/phase-2h.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

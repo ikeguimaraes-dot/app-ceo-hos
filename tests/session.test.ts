@@ -126,6 +126,19 @@ describe("session and access boundaries", () => {
     expect(queries.getQueryData(["slow"])).toBeUndefined();
     expect(c.can("people.read")).toBe(false);
   });
+  it("delivers month-to-date revenue and a daily chart through the dashboard gateway", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    const dashboard = await gateways.dashboard.get({
+      session: c.state.session!,
+      unitId: c.state.unitId!,
+    });
+    expect(dashboard.periodStart).toBe("2026-10-01");
+    expect(dashboard.revenue).toBe(864250);
+    expect(dashboard.series).toHaveLength(14);
+    expect(dashboard.series.every((point) => point.date.startsWith("2026-10-"))).toBe(true);
+  });
   it("expires session and removes business cache, identity and local marker", async () => {
     const { controller: c, storage, queries } = setup();
     await enter(c);
@@ -209,8 +222,8 @@ describe("session and access boundaries", () => {
       "Como estão as empresas?",
       [],
     );
-    expect(answer.answer).toContain("2 casas");
-    expect(answer.answer).toContain("43.170,00");
+    expect(answer.answer).toContain("4 casas");
+    expect(answer.answer).toContain("2.482.380,00");
     expect(answer.sources).toEqual(["Dashboard de todas as casas", "Operação"]);
 
     const restricted = setup();

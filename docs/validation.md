@@ -36,7 +36,7 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Unidade fora do vínculo          | negada com 42501                                                                                                             |
 | Inativo / sem vínculo            | zero unidades                                                                                                                |
 | RPC anônima                      | negada                                                                                                                       |
-| Grants                           | 0 funções Ghost para `anon`; 15 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role`             |
+| Grants                           | 0 funções Ghost para `anon`; 16 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role`             |
 | Pipeline push v1                 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200               |
 | Worker sem/com segredo           | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia                                                              |
 | Confiabilidade push 2E           | reconciliação autenticada; instalação ativa única; `last_seen_at`; expiração em 45 dias                                      |
@@ -46,6 +46,8 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Grants do agente                 | `ghost_assistant_catalog_v1` e `ghost_assistant_query_v1`: `anon=false`, `authenticated=true`                                |
 | Consolidação por turno           | Meet & Eat em 21/10/2026: dois turnos; almoço fechado e jantar parcial; total disponível marcado como provisório             |
 | Linguagem de conciliação         | resposta confirma todos os turnos incluídos e distingue vendas importadas de pagamentos ainda sem conciliação                |
+| Cockpit executivo                | quatro cards mensais, seletor de casa, progresso de meta e gráfico diário animado                                             |
+| Dashboard remoto v2              | RPC executada em escopo autorizado e bloqueada para chamada anônima                                                           |
 | Edge Function `ghost-assistant`  | versão 9 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                                    |
 
 O Performance Advisor pós-migration permaneceu sem erros. Os 25 erros do Security Advisor pertencem ao passivo geral já registrado: 16 views security-definer e 9 tabelas expostas sem RLS. A superfície Ghost adicionada na Fase 2E usa `search_path` vazio, RLS, grants explícitos e schema privado. O passivo geral também inclui funções definer legadas executáveis por clientes e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).

@@ -102,10 +102,14 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
         return mode === "empty"
           ? {
               updatedAt: "2026-10-20T12:00:00Z",
+              periodStart: "2026-10-01",
+              periodEnd: "2026-10-20",
               revenue: null,
               goal: null,
               goalProgress: null,
               hasData: false,
+              provisional: false,
+              series: [],
               summary: "Nenhum fechamento neste período simulado.",
             }
           : demo.dashboards[scope.unitId as keyof typeof demo.dashboards];

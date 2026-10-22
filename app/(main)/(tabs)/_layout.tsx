@@ -12,10 +12,20 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.elevated,
           borderTopColor: colors.line,
+          borderTopWidth: 1,
+          height: 72,
+          paddingTop: 8,
+          paddingBottom: 8,
+          shadowColor: "#000000",
+          shadowOpacity: 0.12,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: -6 },
+          elevation: 16,
         },
-        tabBarLabelStyle: { fontSize: 11 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
+        tabBarItemStyle: { borderRadius: 16 },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

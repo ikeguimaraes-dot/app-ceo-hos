@@ -90,6 +90,13 @@ const protectedRpcs = [
   ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
   ["ghost_assistant_catalog_v1"],
   [
+    "ghost_dashboard_v2",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_month: "2026-10-01",
+    },
+  ],
+  [
     "ghost_assistant_query_v1",
     {
       p_dataset: "financeiro",

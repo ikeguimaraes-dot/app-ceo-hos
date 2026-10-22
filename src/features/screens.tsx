@@ -35,15 +35,8 @@ import type {
   Scope,
 } from "../contracts/gateways";
 import { environment } from "../config/environment";
+import { DashboardExperience } from "./dashboard-experience";
 
-const money = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
-const percent = new Intl.NumberFormat("pt-BR", {
-  style: "percent",
-  maximumFractionDigits: 0,
-});
 function useScope() {
   const { state } = useGhost();
   if (!state.session || !state.unitId) throw new Error("Contexto ausente");
@@ -297,103 +290,12 @@ export function Units() {
   );
 }
 export function DashboardScreen() {
-  return (
-    <Access capability="dashboard.read">
-      <DashboardContent />
-    </Access>
-  );
-}
-function DashboardContent() {
-  const { state, gateways } = useGhost();
-  const scope = useScope();
-  const { colors } = useTheme();
-  const unit = state.bootstrap?.units.find((u) => u.id === scope.unitId);
-  const q = useQuery({
-    queryKey: [
-      "dashboard",
-      scope.session.userId,
-      scope.unitId,
-      state.generation,
-    ],
-    queryFn: ({ signal }) => gateways.dashboard.get({ ...scope, signal }),
-  });
-  return (
-    <Screen
-      title="Um olhar para o que importa."
-      subtitle={
-        environment.isRemote
-          ? "Visão do mês · dados consolidados pelo KPH"
-          : "Visão do dia · dados inteiramente simulados"
-      }
-    >
-      <Button
-        title={`${unit?.name}   ⇄ Trocar unidade`}
-        secondary
-        onPress={() => router.push("/units")}
-      />
-      {state.mode === "offline" && (
-        <Label>Offline simulado • dados podem estar desatualizados</Label>
-      )}
-      {q.isPending ? (
-        <Loading />
-      ) : q.error ? (
-        <ErrorState message={q.error.message} retry={() => void q.refetch()} />
-      ) : (
-        <>
-          <View
-            style={{
-              padding: 26,
-              borderRadius: 24,
-              backgroundColor: colors.accent,
-              gap: 14,
-            }}
-          >
-            <Text
-              style={{
-                color: colors.accentText,
-                fontSize: 13,
-                letterSpacing: 1,
-              }}
-            >
-              FATURAMENTO{environment.isRemote ? "" : " · DEMO"}
-            </Text>
-            <Text
-              style={{
-                color: colors.accentText,
-                fontSize: 38,
-                fontWeight: "600",
-                fontVariant: ["tabular-nums"],
-              }}
-            >
-              {q.data.revenue === null
-                ? "Sem dados"
-                : money.format(q.data.revenue)}
-            </Text>
-            <Text style={{ color: colors.accentText }}>
-              {q.data.goalProgress === null
-                ? "Sem meta disponível"
-                : `${percent.format(q.data.goalProgress)} da meta`}
-            </Text>
-          </View>
-          <Card>
-            <Label size={22}>{q.data.summary}</Label>
-            <Label muted>Consulte os avisos e organize sua próxima ação.</Label>
-          </Card>
-          <Label muted size={12}>
-            Atualização: {new Date(q.data.updatedAt).toLocaleString("pt-BR")}
-          </Label>
-        </>
-      )}
-      <CapabilityButton
-        capability="pending.read"
-        title="Ver pendências"
-        path="/pending"
-      />
-      <CapabilityButton
-        capability="notifications.read"
-        title="Central de notificações"
-        path="/notifications"
-      />
+  const { controller } = useGhost();
+  return controller.canAny("dashboard.read") ? (
+    <DashboardExperience />
+  ) : (
+    <Screen title="Acesso restrito">
+      <Empty text="O dashboard não está disponível para seus vínculos." />
     </Screen>
   );
 }

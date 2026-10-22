@@ -30,11 +30,21 @@ export type Bootstrap = {
 export type Scope = { session: Session; unitId: string; signal?: AbortSignal };
 export type Dashboard = {
   updatedAt: string;
+  periodStart: string;
+  periodEnd: string;
   revenue: number | null;
   goal: number | null;
   goalProgress: number | null;
   hasData: boolean;
+  provisional: boolean;
+  series: DashboardPoint[];
   summary: string;
+};
+export type DashboardPoint = {
+  date: string;
+  revenue: number | null;
+  goal: number | null;
+  provisional: boolean;
 };
 export type PendingItem = {
   id: string;

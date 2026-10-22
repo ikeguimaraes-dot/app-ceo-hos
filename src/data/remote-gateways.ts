@@ -55,10 +55,21 @@ const bootstrapSchema = z.object({
 });
 const dashboardSchema = z.object({
   updatedAt: z.string(),
+  periodStart: z.string(),
+  periodEnd: z.string(),
   revenue: z.number().nullable(),
   goal: z.number().nullable(),
   goalProgress: z.number().nullable(),
   hasData: z.boolean(),
+  provisional: z.boolean(),
+  series: z.array(
+    z.object({
+      date: z.string(),
+      revenue: z.number().nullable(),
+      goal: z.number().nullable(),
+      provisional: z.boolean(),
+    }),
+  ),
 });
 const pendingItemSchema = z.object({
   id: z.string(),
@@ -295,7 +306,7 @@ export function createRemoteGateways(): Gateways {
       async get(scope) {
         const data = dashboardSchema.parse(
           await rpc(
-            "ghost_dashboard_v1",
+            "ghost_dashboard_v2",
             {
               p_unit_id: scope.unitId,
               p_month: new Date().toISOString().slice(0, 10),

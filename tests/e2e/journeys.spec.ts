@@ -5,7 +5,7 @@ async function login(page: Page, scenario?: string) {
     await page.getByRole("button", { name: scenario, exact: true }).click();
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
 }
-async function unit(page: Page, name = "Jardim") {
+async function unit(page: Page, name = "Meet & Eat") {
   await page.getByRole("button", { name: `Abrir ${name} · Demo` }).click();
 }
 test("login, dashboard, unit isolation, notifications and logout stay inside the app boundary", async ({
@@ -31,7 +31,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await expect(page.getByText("Sua próxima perspectiva")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/units.png", fullPage: true });
   await unit(page);
-  await expect(page.getByText("R$ 24.850,00")).toBeVisible();
+  await expect(page.getByText("R$ 864.250")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/home.png", fullPage: true });
   await page.getByRole("tab", { name: "Operação" }).click();
   await expect(page.getByText("MANUTENÇÕES PENDENTES")).toBeVisible();
@@ -67,7 +67,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page
     .getByRole("button", { name: "Como estão minhas empresas este mês?" })
     .click();
-  await expect(page.getByText(/consultei 2 casas/)).toBeVisible();
+  await expect(page.getByText(/consultei 4 casas/)).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/assistant.png",
     fullPage: true,
@@ -83,11 +83,18 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page
     .getByRole("button", { name: "Trocar unidade", exact: true })
     .click();
-  await unit(page, "Costa");
+  await unit(page, "Mdna");
+  await page.getByRole("button", { name: "Abrir dashboard Mdna" }).click();
   await expect(
-    page.getByText("R$ 18.320,00").filter({ visible: true }),
+    page.getByText("R$ 628.430").filter({ visible: true }),
   ).toBeVisible();
-  await expect(page.getByText("R$ 24.850,00")).toHaveCount(0);
+  await page.screenshot({
+    path: "docs/screenshots/dashboard-house.png",
+    fullPage: true,
+  });
+  await expect(
+    page.getByText("R$ 864.250").filter({ visible: true }),
+  ).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "Pessoas" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
@@ -126,13 +133,13 @@ test("missing capability hides tab and logout protects history", async ({
 }) => {
   await login(page, "Acesso restrito");
   await unit(page);
-  await expect(page.getByText("R$ 24.850,00")).toBeVisible();
+  await expect(page.getByText("R$ 864.250")).toBeVisible();
   await expect(page.getByRole("tab", { name: "Pendências" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Sair da demonstração" }).click();
   await expect(page).toHaveURL(/login/);
   await page.goBack();
-  await expect(page.getByText("R$ 24.850,00")).toHaveCount(0);
+  await expect(page.getByText("R$ 864.250")).toHaveCount(0);
 });
 test("recovery, empty, offline, retry and dark appearance", async ({
   page,
