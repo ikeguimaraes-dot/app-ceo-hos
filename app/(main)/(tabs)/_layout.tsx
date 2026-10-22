@@ -24,27 +24,23 @@ function TabIcon({ focused, active, inactive }: { focused: boolean; active: TabI
   return (
     <Animated.View
       style={{
-        width: 43,
-        height: 34,
-        borderRadius: 17,
+        width: 36,
+        height: 30,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: focused ? colors.soft : "transparent",
-        borderWidth: focused ? 1 : 0,
-        borderColor: focused ? `${colors.neon}55` : "transparent",
         shadowColor: colors.neon,
-        shadowOpacity: focused ? 0.7 : 0,
-        shadowRadius: focused ? 11 : 0,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: focused ? 9 : 0,
+        shadowOpacity: focused ? 0.5 : 0,
+        shadowRadius: focused ? 8 : 0,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: focused ? 5 : 0,
         transform: [
-          { translateY: scale.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) },
-          { scale: scale.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }) },
+          { translateY: scale.interpolate({ inputRange: [0, 1], outputRange: [0, -1] }) },
+          { scale: scale.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) },
         ],
       }}
     >
-      <Ionicons name={focused ? active : inactive} size={focused ? 25 : 22} color={focused ? colors.neon : colors.muted} />
-      {focused ? <Animated.View style={{ position: "absolute", bottom: -5, width: 16, height: 3, borderRadius: 2, backgroundColor: colors.neon, opacity: scale }} /> : null}
+      {focused ? <Animated.View style={{ position: "absolute", width: 30, height: 30, borderRadius: 15, backgroundColor: `${colors.neon}18`, opacity: scale }} /> : null}
+      <Ionicons name={focused ? active : inactive} size={focused ? 26 : 22} color={focused ? colors.neon : colors.muted} />
     </Animated.View>
   );
 }
@@ -58,13 +54,12 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.muted,
-        tabBarActiveBackgroundColor: colors.soft,
         tabBarStyle: {
           backgroundColor: colors.elevated,
           borderTopColor: colors.line,
           borderTopWidth: 1,
-          height: 76,
-          paddingTop: 7,
+          height: 72,
+          paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 8 : 7,
           shadowColor: "#000000",
           shadowOpacity: 0.12,
@@ -72,8 +67,8 @@ export default function TabLayout() {
           shadowOffset: { width: 0, height: -6 },
           elevation: 16,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "800", marginTop: 2 },
-        tabBarItemStyle: { borderRadius: 18, marginHorizontal: 2, marginVertical: 3 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginTop: 1 },
+        tabBarItemStyle: { borderRadius: 16 },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

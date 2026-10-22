@@ -50,6 +50,13 @@ describe("session and access boundaries", () => {
     );
   });
 
+  it("stores and updates the daily reminder through the notification gateway", async () => {
+    const { gateways } = setup();
+    expect(await gateways.notifications.getDailyReminder()).toEqual({ enabled: false, time: "09:00" });
+    await gateways.notifications.setDailyReminder({ enabled: true, time: "08:30" });
+    expect(await gateways.notifications.getDailyReminder()).toEqual({ enabled: true, time: "08:30" });
+  });
+
   it("protects deep links before login, including initial startup", async () => {
     const { controller: c } = setup();
     expect(protectedDestination(c.state)).toBe("/login");

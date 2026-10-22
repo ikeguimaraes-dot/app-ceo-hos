@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
+import { AndroidImportance } from "expo-notifications";
 import {
   createClient,
   type Session as SupabaseSession,
@@ -15,6 +16,7 @@ import type {
   Gateways,
   Notification,
   NotificationPreferences,
+  DailyReminder,
   OperationSummary,
   Page,
   PeopleSummary,
@@ -29,6 +31,59 @@ import {
   secureSessionStorage,
   secureStorageKeys,
 } from "../security/storage";
+
+const dailyReminderId = "ghost-daily-summary";
+
+async function getDailyReminder(): Promise<DailyReminder> {
+  if (Platform.OS === "web") return { enabled: false, time: "09:00" };
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const reminder = scheduled.find((item) => item.identifier === dailyReminderId);
+  const time = reminder?.content.data?.time;
+  return {
+    enabled: !!reminder,
+    time: typeof time === "string" && /^\d{2}:\d{2}$/.test(time) ? time : "09:00",
+  };
+}
+
+async function setDailyReminder(reminder: DailyReminder): Promise<DailyReminder> {
+  if (Platform.OS !== "ios" && Platform.OS !== "android")
+    throw new Error("O lembrete diário está disponível no aplicativo móvel.");
+  if (!reminder.enabled) {
+    await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(() => undefined);
+    return reminder;
+  }
+  const match = /^(\d{2}):(\d{2})$/.exec(reminder.time);
+  if (!match) throw new Error("Informe o horário no formato HH:MM.");
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) throw new Error("Informe um horário válido.");
+  const current = await Notifications.getPermissionsAsync();
+  const permission = current.status === "granted" ? current : await Notifications.requestPermissionsAsync();
+  if (permission.status !== "granted")
+    throw new Error("Permita notificações nos Ajustes do aparelho para ativar o lembrete.");
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("ghost-daily", {
+      name: "Resumo diário",
+      importance: AndroidImportance.DEFAULT,
+    });
+  }
+  await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(() => undefined);
+  await Notifications.scheduleNotificationAsync({
+    identifier: dailyReminderId,
+    content: {
+      title: "Seu resumo diário está pronto",
+      body: "Abra o Ghost para acompanhar faturamento, contas e operação.",
+      data: { kind: "ghost_daily_summary", time: reminder.time, target: "/" },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour,
+      minute,
+      ...(Platform.OS === "android" ? { channelId: "ghost-daily" } : {}),
+    },
+  });
+  return reminder;
+}
 
 const capability = z.enum([
   "dashboard.read",
@@ -576,6 +631,8 @@ export function createRemoteGateways(): Gateways {
         );
         return { ...preferences, version: result.version };
       },
+      getDailyReminder,
+      setDailyReminder,
     },
     simulation: {
       setMode() {},

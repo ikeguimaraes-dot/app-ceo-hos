@@ -204,6 +204,10 @@ export type NotificationPreferences = {
   timezone: string;
   version: number;
 };
+export type DailyReminder = {
+  enabled: boolean;
+  time: string;
+};
 export interface AuthGateway {
   restore(): Promise<Session | null>;
   signIn(
@@ -265,6 +269,8 @@ export interface NotificationGateway {
     session: Session,
     preferences: NotificationPreferences,
   ): Promise<NotificationPreferences>;
+  getDailyReminder(): Promise<DailyReminder>;
+  setDailyReminder(reminder: DailyReminder): Promise<DailyReminder>;
 }
 export type DataMode = "normal" | "empty" | "error" | "offline";
 export interface Gateways {

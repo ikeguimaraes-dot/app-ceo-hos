@@ -5,6 +5,7 @@ import type {
   Session,
   DataMode,
   NotificationPreferences,
+  DailyReminder,
   DecidePendingInput,
   PendingDecisionResult,
 } from "../contracts/gateways";
@@ -24,6 +25,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
     timezone: "America/Sao_Paulo",
     version: 0,
   };
+  let dailyReminder: DailyReminder = { enabled: false, time: "09:00" };
   const wait = () => new Promise<void>((resolve) => setTimeout(resolve, delay));
   const bootstrap = (session: Session) => ({
     status:
@@ -358,6 +360,15 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           version: preferences.version + 1,
         };
         return { ...preferences, categories: [...preferences.categories] };
+      },
+      async getDailyReminder() {
+        await wait();
+        return { ...dailyReminder };
+      },
+      async setDailyReminder(next) {
+        await wait();
+        dailyReminder = { ...next };
+        return { ...dailyReminder };
       },
     },
     simulation: {

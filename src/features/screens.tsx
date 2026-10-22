@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   useInfiniteQuery,
@@ -714,6 +714,76 @@ function NotificationPreferencesCard() {
   );
 }
 
+function DeviceNotificationsCard() {
+  const { controller, gateways, state } = useGhost();
+  const mobile = Platform.OS === "ios" || Platform.OS === "android";
+  const query = useQuery({
+    queryKey: ["daily-reminder"],
+    queryFn: () => gateways.notifications.getDailyReminder(),
+    enabled: mobile,
+  });
+  const [time, setTime] = useState("09:00");
+  const [timeEdited, setTimeEdited] = useState(false);
+  const [message, setMessage] = useState("");
+  const reminder = query.data;
+  const displayedTime = timeEdited ? time : (reminder?.time ?? time);
+  const mutation = useMutation({
+    mutationFn: (enabled: boolean) => gateways.notifications.setDailyReminder({ enabled, time: displayedTime }),
+    onSuccess: (next) => {
+      setTime(next.time);
+      setTimeEdited(true);
+      void query.refetch();
+      setMessage(next.enabled ? `Lembrete diário ativado para ${next.time}.` : "Lembrete diário desativado.");
+    },
+    onError: (cause) => setMessage(cause instanceof Error ? cause.message : "Não foi possível alterar o lembrete."),
+  });
+  async function activatePush() {
+    setMessage("");
+    try {
+      await controller.register();
+      setMessage("Push remoto ativado neste aparelho.");
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : "Não foi possível ativar o push remoto.");
+    }
+  }
+  return (
+    <Card>
+      <Label size={20}>Notificações no aparelho</Label>
+      <Label muted>Ative os avisos do Ghost e escolha um horário para receber seu resumo todos os dias.</Label>
+      <Button
+        title={state.registered ? "Push remoto ativo" : "Ativar push remoto"}
+        secondary
+        disabled={!mobile || state.registered}
+        onPress={() => void activatePush()}
+      />
+      <Field
+        label="Horário do resumo diário"
+        placeholder="09:00"
+        value={displayedTime}
+        onChangeText={(value) => {
+          setTime(value);
+          setTimeEdited(true);
+        }}
+      />
+      <Button
+        title={mutation.isPending ? "Salvando…" : reminder?.enabled ? "Atualizar horário" : "Ativar resumo diário"}
+        disabled={!mobile || mutation.isPending}
+        onPress={() => mutation.mutate(true)}
+      />
+      {reminder?.enabled ? (
+        <Button
+          title="Desativar resumo diário"
+          secondary
+          disabled={mutation.isPending}
+          onPress={() => mutation.mutate(false)}
+        />
+      ) : null}
+      {!mobile ? <Label muted>Configure esta opção pelo aplicativo no iPhone ou Android.</Label> : null}
+      {!!message && <Label>{message}</Label>}
+    </Card>
+  );
+}
+
 function NotificationPreferencesEditor({
   initial,
   save: persist,
@@ -879,6 +949,7 @@ export function Preferences() {
         )}
         {!!message && <Label>{message}</Label>}
       </Card>
+      <DeviceNotificationsCard />
       <NotificationPreferencesCard />
       {!environment.isRemote && (
         <Card>
