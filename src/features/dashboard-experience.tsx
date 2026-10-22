@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Animated,
   Easing,
+  LayoutAnimation,
   Modal,
   Platform,
   Pressable,
@@ -434,9 +435,54 @@ function UnitDetail({ unit, dashboard, month, onMonth, onBack, onPick }: { unit:
         <View style={{ flex: 1 }}><Reveal delay={310}><Metric icon="trophy-outline" label="Melhor dia" value={bestDay?.revenue == null ? "—" : compactCurrency.format(bestDay.revenue)} color={brand.glow} /></Reveal></View>
       </View>
       <RevenueOverview dashboard={dashboard} color={brand.glow} />
+      <DailyRevenueList points={dashboard.series} color={brand.glow} />
       <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Atualizado em {new Date(dashboard.updatedAt).toLocaleString("pt-BR")}</Text>
     </>
   );
+}
+
+function DailyRevenueList({ points, color }: { points: DashboardPoint[]; color: string }) {
+  const { colors } = useTheme();
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set());
+  const days = points.filter((point) => point.revenue !== null).sort((a, b) => b.date.localeCompare(a.date));
+  const allExpanded = days.length > 0 && days.every((day) => expandedDates.has(day.date));
+  const toggle = (date: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedDates((current) => {
+      const next = new Set(current);
+      if (next.has(date)) next.delete(date); else next.add(date);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedDates(allExpanded ? new Set() : new Set(days.filter((day) => day.shifts.length > 0).map((day) => day.date)));
+  };
+  return <Reveal delay={420}>
+    <View style={{ borderRadius: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, overflow: "hidden" }}>
+      <View style={{ padding: 19, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Faturamento dia a dia</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Toque em um dia para ver os turnos</Text></View>{days.some((day) => day.shifts.length > 0) && <Pressable accessibilityRole="button" onPress={toggleAll} style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: colors.soft, opacity: pressed ? 0.7 : 1 })}><Text style={{ color, fontSize: 10, fontWeight: "800" }}>{allExpanded ? "RECOLHER" : "EXPANDIR"}</Text></Pressable>}</View>
+      {days.length === 0 ? <Text style={{ color: colors.muted, padding: 20 }}>Nenhum fechamento neste mês.</Text> : days.map((day) => {
+        const expanded = expandedDates.has(day.date);
+        const goalProgress = day.goal && day.goal > 0 && day.revenue != null ? day.revenue / day.goal : null;
+        const statusColor = goalProgress == null ? colors.muted : goalProgress >= 1 ? colors.neon : goalProgress >= 0.7 ? colors.warning : "#FF6B72";
+        const date = new Date(`${day.date}T12:00:00`);
+        return <View key={day.date} style={{ borderTopWidth: 1, borderTopColor: colors.line }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Faturamento de ${date.toLocaleDateString("pt-BR")}`} accessibilityState={{ expanded }} onPress={() => day.shifts.length > 0 && toggle(day.date)} style={({ pressed }) => ({ padding: 16, gap: 12, opacity: pressed ? 0.72 : 1, borderLeftWidth: 3, borderLeftColor: statusColor })}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 11 }}><View style={{ width: 32, alignItems: "center" }}>{day.shifts.length > 0 && <Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={17} color={color} />}</View><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>{date.toLocaleDateString("pt-BR")} <Text style={{ color: colors.muted, fontWeight: "500" }}>{date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")}</Text></Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>{day.shifts.length} {day.shifts.length === 1 ? "turno" : "turnos"}{day.provisional ? " · provisório" : ""}</Text></View><View style={{ alignItems: "flex-end" }}><Text style={{ color: colors.text, fontSize: 16, fontWeight: "900" }}>{currency.format(day.revenue ?? 0)}</Text><Text style={{ color: statusColor, fontSize: 10, fontWeight: "800" }}>{goalProgress == null ? "SEM META" : `${Math.round(goalProgress * 100)}% DA META`}</Text></View></View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><DayMetric label="Meta" value={day.goal == null ? "—" : compactCurrency.format(day.goal)} /><DayMetric label="Desconto" value={day.discount == null ? "—" : compactCurrency.format(day.discount)} /><DayMetric label="Gorjeta" value={day.tips == null ? "—" : compactCurrency.format(day.tips)} /><DayMetric label="Clientes" value={day.customers?.toLocaleString("pt-BR") ?? "—"} /><DayMetric label="Ticket" value={day.averageTicket == null ? "—" : currency.format(day.averageTicket)} /></View>
+          </Pressable>
+          {expanded && <View style={{ paddingHorizontal: 16, paddingBottom: 15, gap: 8, backgroundColor: colors.soft }}>
+            {day.shifts.map((shift) => <View key={shift.id} style={{ padding: 13, borderRadius: 17, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 9 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shift.name === "almoco" ? "#F5A623" : shift.name === "jantar" ? "#8B7CFF" : color }} /><Text style={{ color: colors.text, fontWeight: "800" }}>{shift.name === "almoco" ? "Almoço" : shift.name === "jantar" ? "Jantar" : "Dia inteiro"}</Text>{shift.derived && <Text style={{ color: colors.muted, fontSize: 8, fontWeight: "800", borderWidth: 1, borderColor: colors.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 }}>DERIVADO</Text>}</View><Text style={{ color: colors.text, fontWeight: "900" }}>{currency.format(shift.revenue)}</Text></View><View style={{ flexDirection: "row", gap: 12 }}><Text style={{ color: colors.muted, fontSize: 11 }}>Gorjeta: {shift.tips == null ? "—" : currency.format(shift.tips)}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Clientes: {shift.customers ?? "—"}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Ticket: {shift.averageTicket == null ? "—" : currency.format(shift.averageTicket)}</Text></View></View>)}
+          </View>}
+        </View>;
+      })}
+    </View>
+  </Reveal>;
+}
+
+function DayMetric({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  return <View style={{ minWidth: 78, flexGrow: 1, padding: 9, borderRadius: 12, backgroundColor: colors.glass }}><Text style={{ color: colors.text, fontSize: 11, fontWeight: "800" }}>{value}</Text><Text style={{ color: colors.muted, fontSize: 8, marginTop: 2 }}>{label}</Text></View>;
 }
 
 function RevenueOverview({ dashboard, color }: { dashboard: Dashboard; color: string }) {

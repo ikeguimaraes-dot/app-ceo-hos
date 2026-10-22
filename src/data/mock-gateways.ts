@@ -136,7 +136,17 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               discount: Math.round(base.discount * scale),
               tips: Math.round(base.tips * scale),
               projection: Math.round(base.projection * scale),
-              series: base.series.map((point) => ({ ...point, date: moveDate(point.date), revenue: point.revenue == null ? null : Math.round(point.revenue * scale), goal: point.goal == null ? null : Math.round(point.goal * scale) })),
+              series: base.series.map((point) => ({
+                ...point,
+                date: moveDate(point.date),
+                revenue: point.revenue == null ? null : Math.round(point.revenue * scale),
+                goal: point.goal == null ? null : Math.round(point.goal * scale),
+                received: point.received == null ? null : Math.round(point.received * scale),
+                debt: point.debt == null ? null : Math.round(point.debt * scale),
+                discount: point.discount == null ? null : Math.round(point.discount * scale),
+                tips: point.tips == null ? null : Math.round(point.tips * scale),
+                shifts: point.shifts.map((shift) => ({ ...shift, revenue: Math.round(shift.revenue * scale), tips: shift.tips == null ? null : Math.round(shift.tips * scale) })),
+              })),
             };
       },
     },
@@ -237,7 +247,21 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       async get(scope, month) {
         await check(scope, "operation.read");
         const source = demo.productInvoices[scope.unitId as keyof typeof demo.productInvoices] ?? [];
-        const items = mode === "empty" ? [] : source.map((item) => ({ ...item, issueDate: `${month.slice(0, 7)}-${item.issueDate.slice(8, 10)}` }));
+        const items = mode === "empty" ? [] : source.map((item) => ({
+          ...item,
+          issueDate: `${month.slice(0, 7)}-${item.issueDate.slice(8, 10)}`,
+          items: Array.from({ length: Math.min(item.itemCount, 4) }, (_, index) => ({
+            id: `${item.id}-item-${index}`,
+            description: ["Produto fresco", "Bebida", "Insumo de cozinha", "Material de apoio"][index]!,
+            category: index === 3 ? "Material" : "Alimentos e bebidas",
+            quantity: index + 1,
+            unit: "UN",
+            unitCost: item.totalValue / item.itemCount,
+            totalCost: item.totalValue / Math.min(item.itemCount, 4),
+            variation: index === 0 ? 0.032 : null,
+            includedInCmv: index !== 3,
+          })),
+        }));
         return {
           updatedAt: "2026-10-22T15:00:00Z",
           periodStart: `${month.slice(0, 7)}-01`,

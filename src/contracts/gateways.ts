@@ -57,6 +57,18 @@ export type ProductInvoice = {
   status: string | null;
   totalValue: number;
   itemCount: number;
+  items: ProductInvoiceItem[];
+};
+export type ProductInvoiceItem = {
+  id: string;
+  description: string;
+  category: string | null;
+  quantity: number | null;
+  unit: string | null;
+  unitCost: number | null;
+  totalCost: number;
+  variation: number | null;
+  includedInCmv: boolean | null;
 };
 export type ProductInvoices = {
   updatedAt: string;
@@ -72,6 +84,23 @@ export type DashboardPoint = {
   revenue: number | null;
   goal: number | null;
   provisional: boolean;
+  received: number | null;
+  debt: number | null;
+  discount: number | null;
+  tips: number | null;
+  customers: number | null;
+  averageTicket: number | null;
+  cmvPercentage: number | null;
+  shifts: DashboardShift[];
+};
+export type DashboardShift = {
+  id: string;
+  name: "almoco" | "jantar" | "dia_inteiro";
+  revenue: number;
+  tips: number | null;
+  customers: number | null;
+  averageTicket: number | null;
+  derived: boolean;
 };
 export type PendingItem = {
   id: string;

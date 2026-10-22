@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,12 +11,14 @@ import { currentMonth, MonthSelector, monthLabel } from "../ui/month-selector";
 import { brandStyle } from "./dashboard-experience";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const exactMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export function ProductInvoicesExperience() {
   const { state, controller, gateways } = useGhost();
   const { colors } = useTheme();
   const [month, setMonth] = useState(currentMonth);
   const [search, setSearch] = useState("");
+  const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
   const session = state.session;
   const units = (state.bootstrap?.units ?? []).filter((unit) => unit.capabilities.includes("operation.read"));
   const unit = units.find((item) => item.id === state.unitId) ?? units[0];
@@ -51,7 +53,22 @@ export function ProductInvoicesExperience() {
           </LinearGradient>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 15, height: 50, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}><Ionicons name="search-outline" size={18} color={colors.muted} /><TextInput accessibilityLabel="Buscar nota ou fornecedor" value={search} onChangeText={setSearch} placeholder="Buscar nota ou fornecedor" placeholderTextColor={colors.muted} style={{ flex: 1, color: colors.text, fontSize: 14 }} /></View>
           <View style={{ gap: 10 }}><View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>NFs de produto</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{items.length} exibidas</Text></View>
-            {items.length === 0 ? <View style={{ padding: 24, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}><Text style={{ color: colors.text, fontWeight: "700" }}>Nenhuma nota encontrada</Text><Text style={{ color: colors.muted, marginTop: 5 }}>Ajuste a busca ou selecione outro mês.</Text></View> : items.map((item) => <View key={item.id} style={{ padding: 16, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 10 }}><View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}><View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${brand.glow}20`, alignItems: "center", justifyContent: "center" }}><Ionicons name="receipt-outline" size={19} color={brand.glow} /></View><View style={{ flex: 1 }}><Text numberOfLines={2} style={{ color: colors.text, fontWeight: "700", fontSize: 14 }}>{item.supplier}</Text><Text style={{ color: colors.muted, fontSize: 11, marginTop: 3 }}>NF {item.invoiceNumber} · {new Date(`${item.issueDate}T12:00:00`).toLocaleDateString("pt-BR")}</Text></View><Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>{money.format(item.totalValue)}</Text></View><View style={{ flexDirection: "row", gap: 8 }}><Tag text={`${item.itemCount} ${item.itemCount === 1 ? "item" : "itens"}`} />{item.status && <Tag text={item.status} />}{item.cfop && <Tag text={`CFOP ${item.cfop}`} />}</View></View>)}
+            {items.length === 0 ? <View style={{ padding: 24, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}><Text style={{ color: colors.text, fontWeight: "700" }}>Nenhuma nota encontrada</Text><Text style={{ color: colors.muted, marginTop: 5 }}>Ajuste a busca ou selecione outro mês.</Text></View> : items.map((item) => {
+              const expanded = expandedInvoice === item.id;
+              return <View key={item.id} style={{ borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: expanded ? `${brand.glow}80` : colors.line, overflow: "hidden" }}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`${expanded ? "Fechar" : "Abrir"} itens da nota ${item.invoiceNumber}`} accessibilityState={{ expanded }} onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setExpandedInvoice(expanded ? null : item.id); }} style={({ pressed }) => ({ padding: 16, gap: 10, opacity: pressed ? 0.72 : 1 })}>
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}><View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: `${brand.glow}20`, alignItems: "center", justifyContent: "center" }}><Ionicons name="receipt-outline" size={19} color={brand.glow} /></View><View style={{ flex: 1 }}><Text numberOfLines={2} style={{ color: colors.text, fontWeight: "700", fontSize: 14 }}>{item.supplier}</Text><Text style={{ color: colors.muted, fontSize: 11, marginTop: 3 }}>NF {item.invoiceNumber} · {new Date(`${item.issueDate}T12:00:00`).toLocaleDateString("pt-BR")}</Text></View><View style={{ alignItems: "flex-end", gap: 7 }}><Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>{money.format(item.totalValue)}</Text><Ionicons name={expanded ? "chevron-up" : "chevron-down"} size={17} color={brand.glow} /></View></View>
+                  <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}><Tag text={`${item.itemCount} ${item.itemCount === 1 ? "item" : "itens"}`} />{item.status && <Tag text={item.status} />}{item.cfop && <Tag text={`CFOP ${item.cfop}`} />}</View>
+                </Pressable>
+                {expanded && <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 9, borderTopWidth: 1, borderTopColor: colors.line }}>
+                  <Text style={{ color: colors.muted, fontSize: 10, fontWeight: "800", letterSpacing: 1, marginTop: 14 }}>ITENS DA DANFE</Text>
+                  {item.items.map((invoiceItem, index) => <View key={invoiceItem.id} style={{ paddingVertical: 10, borderBottomWidth: index === item.items.length - 1 ? 0 : 1, borderBottomColor: colors.line, gap: 6 }}>
+                    <View style={{ flexDirection: "row", gap: 12 }}><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 13, fontWeight: "700" }}>{invoiceItem.description}</Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 2 }}>{invoiceItem.category ?? "Sem categoria"}</Text></View><Text style={{ color: colors.text, fontSize: 13, fontWeight: "800" }}>{exactMoney.format(invoiceItem.totalCost)}</Text></View>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}><Tag text={`${invoiceItem.quantity?.toLocaleString("pt-BR") ?? "—"} ${invoiceItem.unit ?? ""}`.trim()} />{invoiceItem.unitCost != null && <Tag text={`${exactMoney.format(invoiceItem.unitCost)} / ${invoiceItem.unit ?? "un."}`} />}{invoiceItem.includedInCmv != null && <Tag text={invoiceItem.includedInCmv ? "Entra no CMV" : "Fora do CMV"} />}</View>
+                  </View>)}
+                </View>}
+              </View>;
+            })}
           </View>
           <Text style={{ color: colors.muted, fontSize: 10, textAlign: "center" }}>Leitura somente para a casa autorizada · atualizada em {new Date(query.data.updatedAt).toLocaleString("pt-BR")}</Text>
         </> : null}

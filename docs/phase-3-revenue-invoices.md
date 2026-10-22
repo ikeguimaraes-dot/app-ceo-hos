@@ -6,4 +6,6 @@ A home usa a série autorizada do dashboard para destacar o fechamento do dia an
 
 Os dois contratos validam `auth.uid()` e a capability da unidade no servidor. `ghost_dashboard_v2` exige `dashboard.read`; `ghost_product_invoices_v1` exige `operation.read`. `anon` e `public` não executam as funções, e nenhuma tabela financeira é consultada diretamente pelo aplicativo.
 
+O dashboard também entrega o fechamento de cada dia e os turnos. Caixas separados preservam o turno gravado; um caixa de dia inteiro usa primeiro a divisão por horários do Lorean e depois a seção de turnos, seguindo a regra do Financeiro. A lista de NF inclui as linhas da DANFE vindas da fachada Everest e permite abrir quantidade, unidade, custo e classificação CMV de cada item.
+
 Referências funcionais: [Receita e metas do KPH](https://kph-os-financeiro.vercel.app/financeiro/dre/receita) e [CMV e produtos do KPH](https://kph-os-financeiro.vercel.app/financeiro/dre/cmv).
