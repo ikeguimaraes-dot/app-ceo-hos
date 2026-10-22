@@ -13,6 +13,8 @@ O Ghost oferece um chat somente leitura no botão **IA** do rodapé. Ele convers
 
 O limite inicial é de oito perguntas por minuto e cem por dia por usuário. Metadados técnicos expiram em 30 dias. Pergunta, resposta e contexto empresarial não são gravados pelo Ghost.
 
+O modelo de resposta configurado é `deepseek/deepseek-v4.1-flash` no OpenRouter. A seleção fica exclusivamente na Edge Function e pode ser trocada pelo segredo de servidor `OPENROUTER_MODEL`; o aplicativo não escolhe nem recebe o identificador do provedor.
+
 ## Dados enviados ao modelo
 
 - nome, marca e grupo de cada casa autorizada;

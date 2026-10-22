@@ -1,13 +1,13 @@
 // eslint-disable-next-line import/no-unresolved
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import {
+  assistantModel,
   minimizeAssistantContext,
   parseAssistantInput,
   systemPrompt,
 } from "../_shared/assistant.ts";
 
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
-const defaultModel = "openai/gpt-5.6-luna";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -48,7 +48,7 @@ Deno.serve(async (request) => {
   const startedAt = performance.now();
   const requestId = crypto.randomUUID();
   const authorization = request.headers.get("authorization") ?? "";
-  const model = Deno.env.get("OPENROUTER_MODEL") ?? defaultModel;
+  const model = Deno.env.get("OPENROUTER_MODEL") ?? assistantModel;
   let supabase: ReturnType<typeof createClient> | null = null;
   let began = false;
   const finish = async (

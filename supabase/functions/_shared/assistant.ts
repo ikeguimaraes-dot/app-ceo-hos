@@ -3,6 +3,8 @@ export type AssistantHistoryMessage = {
   content: string;
 };
 
+export const assistantModel = "deepseek/deepseek-v4.1-flash";
+
 export type AssistantInput = {
   question: string;
   history: AssistantHistoryMessage[];

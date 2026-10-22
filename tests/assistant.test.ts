@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  assistantModel,
   minimizeAssistantContext,
   parseAssistantInput,
   systemPrompt,
 } from "../supabase/functions/_shared/assistant";
 
 describe("assistant boundary", () => {
+  it("uses the approved OpenRouter model", () => {
+    expect(assistantModel).toBe("deepseek/deepseek-v4.1-flash");
+  });
+
   it("accepts a bounded conversation without client-selected unit scope", () => {
     const parsed = parseAssistantInput({
       question: "  Como está a meta?  ",

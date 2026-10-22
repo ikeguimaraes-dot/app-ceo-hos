@@ -70,6 +70,8 @@ As RPCs derivam o usuário de `auth.uid()`, validam vínculo, status, unidade e 
 
 O chat é somente leitura e aparece como **IA** no rodapé. Ele não depende da unidade selecionada nas telas: a Edge Function deriva do bootstrap todas as casas autorizadas e envia ao provedor externo somente seus agregados permitidos — faturamento/meta do mês, contagens de manutenção, headcount, ajustes de ponto e até dez títulos de pendências por casa. IDs, versões, direitos de decisão, detalhes livres e identidades de funcionários são removidos. Perguntas e respostas ficam somente na memória da tela; o banco registra apenas metadados técnicos por 30 dias para limite e auditoria.
 
+As respostas usam o modelo OpenRouter `deepseek/deepseek-v4.1-flash` (DeepSeek V4.1 Flash). A chave e a escolha do modelo existem somente no ambiente da Edge Function.
+
 Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O teste positivo completo pelo aplicativo requer uma conta KPH de desenvolvimento já vinculada; uma conta sintética não foi criada com credencial administrativa.
 
 ## Navegação e links
