@@ -8,12 +8,21 @@ import {
   parseAssistantInput,
   parseFinanceToolInput,
   parseKphQueryToolInput,
+  shouldRetryModelRequest,
   systemPrompt,
 } from "../supabase/functions/_shared/assistant";
 
 describe("assistant boundary", () => {
   it("uses the approved OpenRouter model", () => {
     expect(assistantModel).toBe("deepseek/deepseek-v4.1-flash");
+  });
+
+  it("retries only transient model-provider failures", () => {
+    expect(shouldRetryModelRequest(429)).toBe(true);
+    expect(shouldRetryModelRequest(502)).toBe(true);
+    expect(shouldRetryModelRequest(504)).toBe(true);
+    expect(shouldRetryModelRequest(400)).toBe(false);
+    expect(shouldRetryModelRequest(401)).toBe(false);
   });
 
   it("routes financial questions to a bounded server-side period", () => {

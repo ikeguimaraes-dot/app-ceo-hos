@@ -5,6 +5,10 @@ export type AssistantHistoryMessage = {
 
 export const assistantModel = "deepseek/deepseek-v4.1-flash";
 
+export function shouldRetryModelRequest(status: number) {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
 export type FinanceToolInput = { from: string; to: string };
 
 export const assistantDatasets = [

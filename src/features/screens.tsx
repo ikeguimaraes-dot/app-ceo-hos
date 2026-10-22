@@ -519,6 +519,10 @@ function AssistantContent() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [error, setError] = useState("");
+  const [failedRequest, setFailedRequest] = useState<{
+    prompt: string;
+    history: AssistantMessage[];
+  } | null>(null);
   const [sources, setSources] = useState<string[]>([]);
   const mutation = useMutation({
     mutationFn: ({
@@ -529,18 +533,21 @@ function AssistantContent() {
       history: AssistantMessage[];
     }) => gateways.assistant.ask(session, prompt, history),
     onSuccess: (result) => {
+      setFailedRequest(null);
       setMessages((current) => [
         ...current,
         { role: "assistant", content: result.answer },
       ]);
       setSources(result.sources);
     },
-    onError: (cause) =>
+    onError: (cause, variables) => {
+      setFailedRequest(variables);
       setError(
         cause instanceof Error
           ? cause.message
           : "Não foi possível responder agora.",
-      ),
+      );
+    },
   });
   function ask(text = question) {
     const prompt = text.trim();
@@ -626,7 +633,15 @@ function AssistantContent() {
           Fontes: {sources.join(" · ")}
         </Label>
       )}
-      {!!error && <Text accessibilityRole="alert">{error}</Text>}
+      {!!error && failedRequest && (
+        <ErrorState
+          message={error}
+          retry={() => {
+            setError("");
+            mutation.mutate(failedRequest);
+          }}
+        />
+      )}
       <Card>
         <Field
           label="Sua pergunta"

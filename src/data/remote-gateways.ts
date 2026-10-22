@@ -336,6 +336,39 @@ function friendlyError(error: { message: string; code?: string } | null) {
   return new Error("Não foi possível concluir a operação.");
 }
 
+async function friendlyFunctionError(error: unknown) {
+  const candidate = error as {
+    message?: string;
+    code?: string;
+    context?: Response;
+  };
+  let serverCode = "";
+  if (candidate.context instanceof Response) {
+    try {
+      const body = (await candidate.context.clone().json()) as {
+        error?: unknown;
+      };
+      if (typeof body.error === "string") serverCode = body.error;
+    } catch {
+      // The generic mapping below still handles non-JSON failures.
+    }
+  }
+  if (serverCode === "model_unavailable")
+    return new Error(
+      "O DeepSeek está temporariamente indisponível. Tente novamente em instantes.",
+    );
+  if (serverCode === "rate_limited")
+    return new Error(
+      "Muitas perguntas foram enviadas em pouco tempo. Aguarde um instante e tente novamente.",
+    );
+  if (serverCode === "forbidden")
+    return new Error("Seu vínculo não permite usar o Ghost IA.");
+  return friendlyError({
+    message: candidate.message ?? String(error),
+    code: candidate.code,
+  });
+}
+
 export function createRemoteGateways(): Gateways {
   const { url, publishableKey } = backendConfig();
   const client = createClient(url, publishableKey, {
@@ -583,7 +616,7 @@ export function createRemoteGateways(): Gateways {
             signal,
           },
         );
-        if (error) throw friendlyError(error);
+        if (error) throw await friendlyFunctionError(error);
         return assistantAnswerSchema.parse(data) satisfies AssistantAnswer;
       },
     },

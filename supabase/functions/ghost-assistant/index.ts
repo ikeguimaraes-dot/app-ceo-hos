@@ -7,6 +7,7 @@ import {
   needsKphTool,
   parseAssistantInput,
   parseKphQueryToolInput,
+  shouldRetryModelRequest,
   systemPrompt,
 } from "../_shared/assistant.ts";
 
@@ -82,6 +83,22 @@ function errorCode(error: unknown) {
   if (/invalid_/i.test(text)) return "invalid_request";
   if (/openrouter_/i.test(text)) return "model_unavailable";
   return "assistant_failed";
+}
+
+function providerStatus(error: unknown) {
+  const text = error instanceof Error ? error.message : String(error);
+  return /openrouter_http_(\d{3})/i.exec(text)?.[1] ?? null;
+}
+
+function retryAfterMs(response: Response, attempt: number) {
+  const seconds = Number(response.headers.get("retry-after"));
+  if (Number.isFinite(seconds) && seconds > 0)
+    return Math.min(seconds * 1_000, 2_000);
+  return 450 * (attempt + 1);
+}
+
+async function wait(milliseconds: number) {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 async function anonymousUserId(userId: string) {
@@ -240,37 +257,59 @@ Deno.serve(async (request) => {
       withTools: boolean,
       forceTool = false,
     ) => {
-      const response = await fetch(openRouterUrl, {
-        method: "POST",
-        signal: AbortSignal.timeout(30_000),
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://app-ceo-hos.vercel.app",
-          "X-OpenRouter-Title": "Ghost KPH",
-        },
-        body: JSON.stringify({
-          model,
-          messages: conversation,
-          temperature: 0.2,
-          max_tokens: 700,
-          user,
-          provider: { data_collection: "deny", zdr: true },
-          ...(withTools
-            ? {
-                tools: [kphTool],
-                tool_choice: forceTool
-                  ? {
-                      type: "function",
-                      function: { name: "consultar_kph" },
-                    }
-                  : "auto",
-              }
-            : {}),
-        }),
+      const body = JSON.stringify({
+        model,
+        messages: conversation,
+        temperature: 0.2,
+        max_tokens: 700,
+        user,
+        provider: { data_collection: "deny", zdr: true },
+        ...(withTools
+          ? {
+              tools: [kphTool],
+              tool_choice: forceTool
+                ? {
+                    type: "function",
+                    function: { name: "consultar_kph" },
+                  }
+                : "auto",
+            }
+          : {}),
       });
-      if (!response.ok) throw new Error(`openrouter_http_${response.status}`);
-      return response.json();
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const response = await fetch(openRouterUrl, {
+            method: "POST",
+            signal: AbortSignal.timeout(25_000),
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://app-ceo-hos.vercel.app",
+              "X-OpenRouter-Title": "Ghost KPH",
+            },
+            body,
+          });
+          if (response.ok) return response.json();
+          lastError = new Error(`openrouter_http_${response.status}`);
+          if (attempt === 0 && shouldRetryModelRequest(response.status)) {
+            await wait(retryAfterMs(response, attempt));
+            continue;
+          }
+          throw lastError;
+        } catch (error) {
+          lastError = error;
+          const status = Number(providerStatus(error));
+          const transient =
+            !status || (Number.isFinite(status) && shouldRetryModelRequest(status));
+          if (attempt === 0 && transient) {
+            await wait(450);
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw lastError;
     };
 
     let payload = await callModel(messages, true, needsKphTool(input.question));
@@ -337,12 +376,14 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     const code = errorCode(error);
+    const upstreamStatus = providerStatus(error);
     await finish("error", code);
     console.error(
       JSON.stringify({
         operation: "assistant.ask",
         outcome: "error",
         code,
+        upstreamStatus,
         requestId,
         durationMs: Math.round(performance.now() - startedAt),
       }),
