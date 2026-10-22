@@ -63,7 +63,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     path: "docs/screenshots/pending.png",
     fullPage: true,
   });
-  await page.getByRole("tab", { name: "IA", exact: true }).click();
+  await page.getByRole("tab", { name: /IA$/ }).click();
   await page
     .getByRole("button", { name: "Como estão minhas empresas este mês?" })
     .click();
