@@ -5,6 +5,7 @@ import {
   minimizeAssistantContext,
   needsFinanceTool,
   needsKphTool,
+  normalizeAssistantSources,
   parseAssistantInput,
   parseFinanceToolInput,
   parseKphQueryToolInput,
@@ -23,6 +24,26 @@ describe("assistant boundary", () => {
     expect(shouldRetryModelRequest(504)).toBe(true);
     expect(shouldRetryModelRequest(400)).toBe(false);
     expect(shouldRetryModelRequest(401)).toBe(false);
+  });
+
+  it("keeps assistant sources within the mobile response contract", () => {
+    const sources = normalizeAssistantSources([
+      "Dashboard",
+      "Operação",
+      "Pessoas",
+      "Pendências",
+      "compras_notas · 2026-10-01 a 2026-10-22",
+      "compras_notas · 2026-10-01 a 2026-10-22",
+      "despesas · 2026-10-01 a 2026-10-22",
+      "dre_detalhes · 2026-10-01 a 2026-10-22",
+      "compras_pedidos · 2026-10-01 a 2026-10-22",
+      "financeiro · 2026-10-01 a 2026-10-22",
+      "dre_mensal · 2026-10-01 a 2026-10-22",
+    ]);
+    expect(sources).toHaveLength(8);
+    expect(sources).toContain("Dashboard");
+    expect(sources).toContain("compras_notas · 2026-10-01 a 2026-10-22");
+    expect(new Set(sources).size).toBe(sources.length);
   });
 
   it("routes financial questions to a bounded server-side period", () => {

@@ -617,7 +617,12 @@ export function createRemoteGateways(): Gateways {
           },
         );
         if (error) throw await friendlyFunctionError(error);
-        return assistantAnswerSchema.parse(data) satisfies AssistantAnswer;
+        const parsed = assistantAnswerSchema.safeParse(data);
+        if (!parsed.success)
+          throw new Error(
+            "A resposta do Ghost chegou incompleta. Tente novamente.",
+          );
+        return parsed.data satisfies AssistantAnswer;
       },
     },
     notifications: {

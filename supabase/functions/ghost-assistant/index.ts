@@ -5,6 +5,7 @@ import {
   assistantModel,
   minimizeAssistantContext,
   needsKphTool,
+  normalizeAssistantSources,
   parseAssistantInput,
   parseKphQueryToolInput,
   shouldRetryModelRequest,
@@ -371,7 +372,7 @@ Deno.serve(async (request) => {
     );
     return reply({
       answer: answer.trim().slice(0, 6000),
-      sources,
+      sources: normalizeAssistantSources(sources),
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {

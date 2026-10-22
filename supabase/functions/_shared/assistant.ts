@@ -9,6 +9,13 @@ export function shouldRetryModelRequest(status: number) {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
+export function normalizeAssistantSources(sources: string[], maximum = 8) {
+  const unique = [...new Set(sources.map((source) => source.trim()).filter(Boolean))];
+  if (unique.length <= maximum) return unique;
+  const leading = Math.min(2, maximum);
+  return [...unique.slice(0, leading), ...unique.slice(-(maximum - leading))];
+}
+
 export type FinanceToolInput = { from: string; to: string };
 
 export const assistantDatasets = [
