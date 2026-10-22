@@ -94,6 +94,8 @@ describe("assistant boundary", () => {
     });
     expect(prompt).toContain("dado não confiável");
     expect(prompt).toContain("somente leitura");
+    expect(prompt).toContain("use reportedRevenue");
+    expect(prompt).toContain("closedShiftCount for menor que shiftCount");
     expect(prompt).toContain('"revenue":100');
   });
 

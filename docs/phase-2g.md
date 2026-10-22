@@ -21,6 +21,8 @@ O resumo pré-carregado serve apenas como contexto inicial. Antes de responder u
 
 O catálogo `ghost_assistant_catalog_v1` expõe 11 datasets: financeiro, DRE mensal, linhas da DRE, despesas, pedidos e notas de compra, manutenção, pessoas, ausências, planos de ação e pedidos de venda. A IA pode fazer até quatro rodadas de consulta para cruzar áreas e refinar filtros. Cada resposta do banco é limitada a 200 linhas.
 
+O financeiro consolida cada turno separadamente. `reportedRevenue` usa o pagamento fechado quando disponível e recorre à receita bruta do turno quando a importação do fechamento ainda está parcial. Nesse caso `provisional`, `incompleteShifts`, `shiftCount` e `closedShiftCount` obrigam a resposta a identificar o total como provisório; o agente não pode apresentar apenas os turnos fechados como faturamento do dia inteiro.
+
 O escopo vem de `auth.uid()` e das capabilities da área; nenhum ID de casa vem do aplicativo ou do modelo. As consultas são somente leitura. Credenciais, hashes, tokens, CPF, documentos, dados bancários, endereços, contatos e anexos médicos não fazem parte do catálogo.
 
 ## Dados enviados ao modelo

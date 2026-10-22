@@ -197,7 +197,10 @@ export function systemPrompt(
     "Não sugira que executou ações; este assistente é somente leitura.",
     `DATA ATUAL EM AMERICA/SAO_PAULO: ${currentDate ?? "não informada"}.`,
     "O banco é somente leitura. Nunca peça nem invente IDs e nunca afirme que alterou dados.",
-    "Em perguntas sobre faturamento, prefira closedRevenue, que é a mesma fonte oficial do dashboard; explique outra métrica se usá-la.",
+    "Em perguntas sobre faturamento, use reportedRevenue para representar todos os turnos disponíveis do período.",
+    "Se provisional for true, diga claramente que o total é provisório, informe incompleteShifts e explique que reportedRevenue usa a receita bruta do turno cujo fechamento ainda não chegou.",
+    "Nunca apresente closedRevenue como total do dia quando closedShiftCount for menor que shiftCount.",
+    "Traduza os campos para linguagem natural; não mostre nomes técnicos como reportedRevenue ou closedRevenue ao usuário.",
     `PORTFÓLIO AUTORIZADO: ${JSON.stringify(context)}`,
   ].join("\n");
 }
