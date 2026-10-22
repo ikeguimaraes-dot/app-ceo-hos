@@ -292,18 +292,18 @@ export const demo = {
   },
   productInvoices: {
     "demo-garden": [
-      { id: "nf-meet-98983", invoiceNumber: "98983", issueDate: "2026-10-20", supplier: "Bonas Comércio e Distribuição", cfop: "5102", status: "Recebida", totalValue: 5148.22 },
-      { id: "nf-meet-12609", invoiceNumber: "12609", issueDate: "2026-10-18", supplier: "Carvoaria Martins", cfop: "5102", status: "Recebida", totalValue: 3920 },
-      { id: "nf-meet-15747", invoiceNumber: "15747", issueDate: "2026-10-16", supplier: "Batard Padaria Artesanal", cfop: "5102", status: "Recebida", totalValue: 1620 },
+      { id: "nf-meet-98983", invoiceNumber: "98983", issueDate: "2026-10-20", supplier: "Bonas Comércio e Distribuição", cfop: "5102", status: "Recebida", totalValue: 5148.22, itemCount: 18 },
+      { id: "nf-meet-12609", invoiceNumber: "12609", issueDate: "2026-10-18", supplier: "Carvoaria Martins", cfop: "5102", status: "Recebida", totalValue: 3920, itemCount: 7 },
+      { id: "nf-meet-15747", invoiceNumber: "15747", issueDate: "2026-10-16", supplier: "Batard Padaria Artesanal", cfop: "5102", status: "Recebida", totalValue: 1620, itemCount: 12 },
     ],
     "demo-coast": [
-      { id: "nf-mdna-7742", invoiceNumber: "7742", issueDate: "2026-10-19", supplier: "Pescados Atlântico", cfop: "5102", status: "Recebida", totalValue: 8320 },
+      { id: "nf-mdna-7742", invoiceNumber: "7742", issueDate: "2026-10-19", supplier: "Pescados Atlântico", cfop: "5102", status: "Recebida", totalValue: 8320, itemCount: 9 },
     ],
     "demo-freneze": [
-      { id: "nf-freneze-11082", invoiceNumber: "11082", issueDate: "2026-10-18", supplier: "Hortifruti Paulista", cfop: "5102", status: "Recebida", totalValue: 6400 },
+      { id: "nf-freneze-11082", invoiceNumber: "11082", issueDate: "2026-10-18", supplier: "Hortifruti Paulista", cfop: "5102", status: "Recebida", totalValue: 6400, itemCount: 24 },
     ],
     "demo-match": [
-      { id: "nf-match-99201", invoiceNumber: "99201", issueDate: "2026-10-20", supplier: "Bebidas Arena", cfop: "5102", status: "Recebida", totalValue: 5280 },
+      { id: "nf-match-99201", invoiceNumber: "99201", issueDate: "2026-10-20", supplier: "Bebidas Arena", cfop: "5102", status: "Recebida", totalValue: 5280, itemCount: 14 },
     ],
   },
   people: {

@@ -96,6 +96,7 @@ const productInvoicesSchema = z.object({
     cfop: z.string().nullable(),
     status: z.string().nullable(),
     totalValue: z.number().nonnegative(),
+    itemCount: z.number().int().nonnegative(),
   })),
 });
 const pendingItemSchema = z.object({

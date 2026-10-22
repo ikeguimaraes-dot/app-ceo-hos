@@ -56,6 +56,7 @@ export type ProductInvoice = {
   cfop: string | null;
   status: string | null;
   totalValue: number;
+  itemCount: number;
 };
 export type ProductInvoices = {
   updatedAt: string;
