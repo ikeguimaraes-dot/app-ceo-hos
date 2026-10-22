@@ -65,12 +65,17 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_people_summary_v1`
 - `ghost_assistant_begin_v1`
 - `ghost_assistant_finish_v1`
+- `ghost_assistant_finance_v1`
+- `ghost_assistant_catalog_v1`
+- `ghost_assistant_query_v1`
 
 As RPCs derivam o usuário de `auth.uid()`, validam vínculo, status, unidade e capability no servidor. `anon` não possui `EXECUTE`. O app usa Zod para rejeitar respostas fora do contrato e TanStack Query somente em memória. As migrations auditáveis estão em [supabase/migrations](supabase/migrations); nesta sessão foram aplicadas apenas ao projeto `kph-os-dev`.
 
-O chat é somente leitura e aparece como **IA** no rodapé. Ele não depende da unidade selecionada nas telas: a Edge Function deriva do bootstrap todas as casas autorizadas e envia ao provedor externo somente seus agregados permitidos — faturamento/meta do mês, contagens de manutenção, headcount, ajustes de ponto e até dez títulos de pendências por casa. IDs, versões, direitos de decisão, detalhes livres e identidades de funcionários são removidos. Perguntas e respostas ficam somente na memória da tela; o banco registra apenas metadados técnicos por 30 dias para limite e auditoria.
+O chat é somente leitura e aparece como **IA** no rodapé. Ele não depende da unidade selecionada nas telas: a Edge Function deriva do bootstrap todas as casas autorizadas, pré-carrega resumos e oferece ao modelo um catálogo de consultas KPH. Cada dataset repete a autorização por casa e área. Credenciais, tokens, documentos, dados bancários e IDs internos são removidos; nomes de colaboradores só aparecem no dataset operacional de Pessoas quando o usuário possui `people.read`. Perguntas e respostas ficam somente na memória da tela; o banco registra apenas metadados técnicos por 30 dias para limite e auditoria.
 
 As respostas usam o modelo OpenRouter `deepseek/deepseek-v4.1-flash` (DeepSeek V4.1 Flash). A chave e a escolha do modelo existem somente no ambiente da Edge Function.
+
+Perguntas sobre as empresas usam function calling: o modelo escolhe dataset, período e filtros, e a Edge Function executa `ghost_assistant_query_v1`. A RPC deriva todas as casas de `auth.uid()`, aplica a capability de cada área e consulta o KPH em modo somente leitura. O catálogo inicial cobre financeiro diário ou mensal sem o antigo limite de 93 dias, DRE, despesas, compras, manutenção, pessoas, ausências, planos de ação e pedidos de venda. O modelo pode fazer até quatro rodadas de consulta para cruzar ou refinar resultados; não recebe credenciais, não escolhe IDs de unidades e não consegue executar comandos de escrita.
 
 Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O teste positivo completo pelo aplicativo requer uma conta KPH de desenvolvimento já vinculada; uma conta sintética não foi criada com credencial administrativa.
 

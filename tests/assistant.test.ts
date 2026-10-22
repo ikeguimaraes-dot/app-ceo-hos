@@ -1,14 +1,74 @@
 import { describe, expect, it } from "vitest";
 import {
+  assistantDatasets,
   assistantModel,
   minimizeAssistantContext,
+  needsFinanceTool,
+  needsKphTool,
   parseAssistantInput,
+  parseFinanceToolInput,
+  parseKphQueryToolInput,
   systemPrompt,
 } from "../supabase/functions/_shared/assistant";
 
 describe("assistant boundary", () => {
   it("uses the approved OpenRouter model", () => {
     expect(assistantModel).toBe("deepseek/deepseek-v4.1-flash");
+  });
+
+  it("routes financial questions to a bounded server-side period", () => {
+    expect(needsFinanceTool("Quanto eu faturei no Meet ontem?")).toBe(true);
+    expect(needsFinanceTool("Quantas manutenções estão pendentes?")).toBe(
+      false,
+    );
+    expect(
+      parseFinanceToolInput(
+        '{"from":"2026-10-21","to":"2026-10-21"}',
+        "2026-10-22",
+      ),
+    ).toEqual({ from: "2026-10-21", to: "2026-10-21" });
+    expect(() =>
+      parseFinanceToolInput(
+        { from: "2026-02-30", to: "2026-10-21" },
+        "2026-10-22",
+      ),
+    ).toThrow("invalid_finance_period");
+    expect(() =>
+      parseFinanceToolInput(
+        { from: "2026-01-01", to: "2026-10-21" },
+        "2026-10-22",
+      ),
+    ).toThrow("invalid_finance_period");
+  });
+
+  it("accepts broad, read-only KPH queries without the old 93-day limit", () => {
+    expect(assistantDatasets).toContain("dre_mensal");
+    expect(needsKphTool("Quanto eu faturei no Meet ontem?")).toBe(true);
+    expect(needsKphTool("Olá!")).toBe(false);
+    expect(
+      parseKphQueryToolInput({
+        dataset: "financeiro",
+        from: "2020-01-01",
+        to: "2026-10-21",
+        unit: " Meet ",
+        grain: "month",
+        limit: 50,
+      }),
+    ).toEqual({
+      dataset: "financeiro",
+      from: "2020-01-01",
+      to: "2026-10-21",
+      unit: "Meet",
+      search: undefined,
+      grain: "month",
+      limit: 50,
+    });
+    expect(() => parseKphQueryToolInput({ dataset: "employee_auth" })).toThrow(
+      "invalid_assistant_query",
+    );
+    expect(() =>
+      parseKphQueryToolInput({ dataset: "pessoas", limit: 201 }),
+    ).toThrow("invalid_assistant_query");
   });
 
   it("accepts a bounded conversation without client-selected unit scope", () => {

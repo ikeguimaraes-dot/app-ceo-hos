@@ -8,9 +8,9 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `npm run lint`                                | PASS                                                                                          |
 | `npm run typecheck`                           | PASS                                                                                          |
-| `npm test`                                    | PASS — 27 testes                                                                              |
+| `npm test`                                    | PASS — 30 testes                                                                              |
 | `npm run check:boundaries` após export remoto | PASS                                                                                          |
-| `npm run test:remote:negative`                | PASS — 12 RPCs anônimas e credencial inválida negadas                                         |
+| `npm run test:remote:negative`                | PASS — 15 RPCs anônimas e credencial inválida negadas                                         |
 | `npm run test:e2e`                            | PASS — 6 jornadas                                                                             |
 | `npm run export:mock`                         | PASS — web                                                                                    |
 | `npm run export:remote`                       | PASS — Android, iOS e web                                                                     |
@@ -27,22 +27,24 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 
 ## Backend
 
-| Caso                             | Resultado                                                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Migration Ghost API v1           | aplicada em desenvolvimento                                                                                      |
-| Migration de token push revogado | aplicada; índice parcial presente e constraint antiga ausente                                                    |
-| Registro push sem vínculo        | negado; usuário vinculado aceito em rollback                                                                     |
-| Bootstrap vinculado              | ativo, quatro unidades e capabilities                                                                            |
-| Unidade fora do vínculo          | negada com 42501                                                                                                 |
-| Inativo / sem vínculo            | zero unidades                                                                                                    |
-| RPC anônima                      | negada                                                                                                           |
-| Grants                           | 0 funções Ghost para `anon`; 15 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role` |
-| Pipeline push v1                 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200   |
-| Worker sem/com segredo           | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia                                                  |
-| Confiabilidade push 2E           | reconciliação autenticada; instalação ativa única; `last_seen_at`; expiração em 45 dias                          |
-| Observabilidade 2E               | tabela privada com RLS e zero grants de cliente; execução agendada `success`/`ok`, request ID e 168 ms           |
-| Assistente 2G                    | capability em 27 papéis; duas RPCs somente para autenticado; tabela privada com RLS e zero grants de cliente     |
-| Edge Function `ghost-assistant`  | versão 1 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                        |
+| Caso                             | Resultado                                                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Migration Ghost API v1           | aplicada em desenvolvimento                                                                                                  |
+| Migration de token push revogado | aplicada; índice parcial presente e constraint antiga ausente                                                                |
+| Registro push sem vínculo        | negado; usuário vinculado aceito em rollback                                                                                 |
+| Bootstrap vinculado              | ativo, quatro unidades e capabilities                                                                                        |
+| Unidade fora do vínculo          | negada com 42501                                                                                                             |
+| Inativo / sem vínculo            | zero unidades                                                                                                                |
+| RPC anônima                      | negada                                                                                                                       |
+| Grants                           | 0 funções Ghost para `anon`; 15 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role`             |
+| Pipeline push v1                 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200               |
+| Worker sem/com segredo           | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia                                                              |
+| Confiabilidade push 2E           | reconciliação autenticada; instalação ativa única; `last_seen_at`; expiração em 45 dias                                      |
+| Observabilidade 2E               | tabela privada com RLS e zero grants de cliente; execução agendada `success`/`ok`, request ID e 168 ms                       |
+| Assistente 2G                    | capability em 27 papéis; catálogo e consulta ampla somente para autenticado; tabela privada com RLS e zero grants de cliente |
+| Consulta KPH                     | 11 datasets; financeiro diário validado em quatro casas para 21/10/2026; nomes/valores vieram das fontes KPH reais           |
+| Grants do agente                 | `ghost_assistant_catalog_v1` e `ghost_assistant_query_v1`: `anon=false`, `authenticated=true`                                |
+| Edge Function `ghost-assistant`  | versão 7 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                                    |
 
 O Performance Advisor pós-migration permaneceu sem erros. Os 25 erros do Security Advisor pertencem ao passivo geral já registrado: 16 views security-definer e 9 tabelas expostas sem RLS. A superfície Ghost adicionada na Fase 2E usa `search_path` vazio, RLS, grants explícitos e schema privado. O passivo geral também inclui funções definer legadas executáveis por clientes e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
 

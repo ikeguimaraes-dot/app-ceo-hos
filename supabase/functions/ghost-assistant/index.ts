@@ -1,9 +1,12 @@
 // eslint-disable-next-line import/no-unresolved
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import {
+  assistantDatasets,
   assistantModel,
   minimizeAssistantContext,
+  needsKphTool,
   parseAssistantInput,
+  parseKphQueryToolInput,
   systemPrompt,
 } from "../_shared/assistant.ts";
 
@@ -14,6 +17,59 @@ const cors = {
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+const kphTool = {
+  type: "function",
+  function: {
+    name: "consultar_kph",
+    description:
+      "Consulta o banco KPH real, em modo somente leitura, para todas as casas autorizadas. Pode ser chamada várias vezes para cruzar áreas ou refinar resultados.",
+    parameters: {
+      type: "object",
+      properties: {
+        dataset: {
+          type: "string",
+          enum: assistantDatasets,
+          description:
+            "Área de dados: financeiro, DRE, despesas, compras, manutenção, pessoas, ausências, planos ou pedidos de venda.",
+        },
+        from: {
+          type: "string",
+          description:
+            "Data inicial inclusiva em YYYY-MM-DD. Pode abranger todo o histórico desde 2000.",
+        },
+        to: {
+          type: "string",
+          description: "Data final inclusiva em YYYY-MM-DD.",
+        },
+        unit: {
+          type: "string",
+          description:
+            "Nome ou trecho da casa, marca ou grupo. Omita para todas as casas autorizadas.",
+        },
+        search: {
+          type: "string",
+          description:
+            "Texto opcional para filtrar nomes, descrições, fornecedores, cargos ou estados.",
+        },
+        grain: {
+          type: "string",
+          enum: ["day", "month"],
+          description:
+            "Granularidade do financeiro. Use month para períodos longos.",
+        },
+        limit: {
+          type: "integer",
+          minimum: 1,
+          maximum: 200,
+          description:
+            "Máximo de linhas. Use filtros para manter o resultado preciso.",
+        },
+      },
+      required: ["dataset"],
+      additionalProperties: false,
+    },
+  },
+} as const;
 
 function reply(body: Record<string, unknown>, status = 200) {
   return Response.json(body, { status, headers: cors });
@@ -150,7 +206,15 @@ Deno.serve(async (request) => {
 
     if (!unitContexts.some((unit) => Object.keys(unit.data).length))
       throw new Error("unit_capability_denied");
-    const context = { unitCount: units.length, units: unitContexts };
+    const { data: catalog, error: catalogError } = await supabase.rpc(
+      "ghost_assistant_catalog_v1",
+    );
+    if (catalogError) throw catalogError;
+    const context = {
+      unitCount: units.length,
+      units: unitContexts,
+      queryCatalog: catalog,
+    };
     const sources = ["Dashboard", "Operação", "Pessoas", "Pendências"]
       .map((name) => ({
         name,
@@ -159,35 +223,104 @@ Deno.serve(async (request) => {
       .filter((source) => source.count > 0)
       .map((source) => `${source.name} (${source.count} casas)`);
 
-    const response = await fetch(openRouterUrl, {
-      method: "POST",
-      signal: AbortSignal.timeout(30_000),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://app-ceo-hos.vercel.app",
-        "X-OpenRouter-Title": "Ghost KPH",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt(context) },
-          ...input.history,
-          { role: "user", content: input.question },
-        ],
-        temperature: 0.2,
-        max_tokens: 700,
-        user: await anonymousUserId(identity.user.id),
-        provider: { data_collection: "deny", zdr: true },
-      }),
-    });
-    if (!response.ok) throw new Error(`openrouter_http_${response.status}`);
-    const payload = await response.json();
-    const answer = payload?.choices?.[0]?.message?.content;
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const messages: Record<string, unknown>[] = [
+      { role: "system", content: systemPrompt(context, today) },
+      ...input.history,
+      { role: "user", content: input.question },
+    ];
+    const user = await anonymousUserId(identity.user.id);
+    const callModel = async (
+      conversation: Record<string, unknown>[],
+      withTools: boolean,
+      forceTool = false,
+    ) => {
+      const response = await fetch(openRouterUrl, {
+        method: "POST",
+        signal: AbortSignal.timeout(30_000),
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://app-ceo-hos.vercel.app",
+          "X-OpenRouter-Title": "Ghost KPH",
+        },
+        body: JSON.stringify({
+          model,
+          messages: conversation,
+          temperature: 0.2,
+          max_tokens: 700,
+          user,
+          provider: { data_collection: "deny", zdr: true },
+          ...(withTools
+            ? {
+                tools: [kphTool],
+                tool_choice: forceTool
+                  ? {
+                      type: "function",
+                      function: { name: "consultar_kph" },
+                    }
+                  : "auto",
+              }
+            : {}),
+        }),
+      });
+      if (!response.ok) throw new Error(`openrouter_http_${response.status}`);
+      return response.json();
+    };
+
+    let payload = await callModel(messages, true, needsKphTool(input.question));
+    let modelMessage = payload?.choices?.[0]?.message;
+    let promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
+    let completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+    for (let round = 0; round < 4; round += 1) {
+      const toolCalls = Array.isArray(modelMessage?.tool_calls)
+        ? modelMessage.tool_calls
+            .filter(
+              (call: { function?: { name?: string } }) =>
+                call.function?.name === "consultar_kph",
+            )
+            .slice(0, 3)
+        : [];
+      if (!toolCalls.length) break;
+      messages.push({
+        role: "assistant",
+        content: modelMessage.content ?? null,
+        tool_calls: toolCalls,
+      });
+      for (const toolCall of toolCalls) {
+        const query = parseKphQueryToolInput(toolCall.function?.arguments);
+        const { data, error } = await supabase.rpc("ghost_assistant_query_v1", {
+          p_dataset: query.dataset,
+          p_from: query.from ?? null,
+          p_to: query.to ?? null,
+          p_unit: query.unit ?? null,
+          p_search: query.search ?? null,
+          p_grain: query.grain,
+          p_limit: query.limit,
+        });
+        if (error) throw error;
+        const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
+        sources.push(`${query.dataset} · ${period}`);
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name: "consultar_kph",
+          content: JSON.stringify(data),
+        });
+      }
+      payload = await callModel(messages, round < 3);
+      modelMessage = payload?.choices?.[0]?.message;
+      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
+      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
+    }
+    const answer = modelMessage?.content;
     if (typeof answer !== "string" || !answer.trim())
       throw new Error("openrouter_empty_response");
-    const promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
-    const completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
     await finish("success", "ok", promptTokens, completionTokens);
     console.log(
       JSON.stringify({

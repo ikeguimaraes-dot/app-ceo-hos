@@ -87,6 +87,20 @@ const protectedRpcs = [
       p_completion_tokens: 0,
     },
   ],
+  ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
+  ["ghost_assistant_catalog_v1"],
+  [
+    "ghost_assistant_query_v1",
+    {
+      p_dataset: "financeiro",
+      p_from: "2026-10-21",
+      p_to: "2026-10-21",
+      p_unit: null,
+      p_search: null,
+      p_grain: "day",
+      p_limit: 20,
+    },
+  ],
 ];
 for (const [rpc, args] of protectedRpcs) {
   const anonymousRpc = await client.rpc(rpc, args);

@@ -34,4 +34,6 @@ O contrato transacional de decisão, com versão esperada, idempotência, confli
 
 A reconciliação atômica de instalações, expiração de vínculos sem contato e observabilidade técnica sem PII foram entregues na [Fase 2E](phase-2e.md).
 
-O contrato inicial do assistente foi entregue na [Fase 2G](phase-2g.md). Ele consolida e compara todas as unidades autorizadas usando os agregados já existentes do mês corrente. Perguntas sobre outras competências, caixa, DRE, CMV, produtos, orçamento, conciliação, escalas ou folha dependem de novos RPCs minimizados e respectivas capabilities.
+O contrato do assistente entregue na [Fase 2G](phase-2g.md) consolida e compara todas as unidades autorizadas. `ghost_assistant_catalog_v1` descreve as áreas liberadas e `ghost_assistant_query_v1` consulta histórico financeiro diário ou mensal, DRE, despesas, compras, manutenção, quadro operacional, ausências, planos de ação e pedidos de venda. O servidor deriva o escopo por usuário e capability, limita cada resultado a 200 linhas e não permite escrita.
+
+Ainda precisam de contratos próprios antes de entrarem no catálogo: caixa e conciliação bancária, orçamento, CMV por produto e ficha técnica, inventário, escala e ponto detalhados, folha e benefícios individuais, documentos e saúde ocupacional, marketing e contratos. Esses domínios exigem capabilities mais específicas do que as disponíveis hoje para evitar que `people.read` ou `dashboard.read` liberem dados excessivos.
