@@ -43,7 +43,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page.getByRole("tab", { name: "A pagar" }).click();
   await expect(page.getByText("Contas a pagar")).toBeVisible();
   await expect(page.getByText("Distribuidora Horizonte")).toBeVisible();
-  await expect(page.getByText("R$ 184.320")).toBeVisible();
+  await expect(page.getByText("R$ 496.891")).toBeVisible();
   await page.waitForTimeout(700);
   await page.screenshot({
     path: "docs/screenshots/payables.png",
@@ -51,8 +51,8 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   });
   await page.getByRole("tab", { name: "Fluxo da semana" }).click();
   await expect(page.getByText("Ritmo diário")).toBeVisible();
-  await expect(page.getByText("-R$ 310.463").first()).toBeVisible();
-  await expect(page.getByText(/ENTRADAS · D\+1/)).toBeVisible();
+  await expect(page.getByText(/realizado · .*projetado/)).toBeVisible();
+  await expect(page.getByText(/ENTRADAS DA SEMANA/)).toBeVisible();
   await page.waitForTimeout(800);
   await page.screenshot({
     path: "docs/screenshots/cash-flow-week.png",
@@ -152,7 +152,7 @@ test("recovery, empty, offline, retry and dark appearance", async ({
   await page.getByRole("button", { name: "Vazio", exact: true }).click();
   await page.goBack();
   await page.getByRole("tab", { name: "A pagar" }).click();
-  await expect(page.getByText("Nenhuma conta em aberto para esta casa.")).toBeVisible();
+  await expect(page.getByText("Nenhuma conta nesta situação.")).toBeVisible();
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
   await page.getByRole("button", { name: "Offline", exact: true }).click();

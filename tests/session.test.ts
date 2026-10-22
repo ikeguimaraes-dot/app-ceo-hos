@@ -227,9 +227,16 @@ describe("session and access boundaries", () => {
     );
     expect((await gateways.payables.get(scope)).openAmount).toBe(184320.45);
     const cashFlow = await gateways.cashFlow.getWeek(scope, 0);
-    expect(cashFlow.incoming).toBe(46035.54);
+    expect(cashFlow.weekStart).toBe("2026-10-19");
+    expect(cashFlow.weekEnd).toBe("2026-10-25");
+    expect(cashFlow.incoming).toBeCloseTo(cashFlow.actualIncoming + cashFlow.projectedIncoming);
+    expect(cashFlow.actualIncoming).toBeGreaterThan(0);
+    expect(cashFlow.projectedIncoming).toBeGreaterThan(0);
+    expect(cashFlow.historyWeeks).toBe(5);
     expect(cashFlow.outgoing).toBe(356498.28);
     expect(cashFlow.days).toHaveLength(7);
+    expect(cashFlow.days.slice(0, 3).every((day) => !day.projected)).toBe(true);
+    expect(cashFlow.days.slice(3).every((day) => day.projected)).toBe(true);
     expect(cashFlow.days.at(-1)?.balance).toBe(cashFlow.balance);
     await c.setMode("empty");
     expect((await gateways.pending.list(scope)).items).toEqual([]);

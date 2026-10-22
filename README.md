@@ -14,9 +14,9 @@ O assistente executivo da [Fase 2G](docs/phase-2g.md) consulta somente as RPCs p
 
 O cockpit executivo da [Fase 2H](docs/phase-2h.md) reúne o faturamento mensal de Meet, Mdna, Freneze e Match na home e abre dashboards por casa com gráficos diários animados, metas e situação de conciliação.
 
-A [Fase 2I](docs/phase-2i.md) substitui a antiga aba Pendências por Contas a pagar, com resumo de vencimentos e títulos reais por casa por meio de uma RPC financeira somente leitura.
+A [Fase 2I](docs/phase-2i.md) substitui a antiga aba Pendências por Contas a pagar, com visão por casa ou consolidada e filtros de contas em aberto, a vencer, vencidas e pagas.
 
-A [Fase 2J](docs/phase-2j.md) acrescenta, na mesma área, o fluxo de caixa da semana e das três semanas seguintes, com entrada D+1, saídas, acumulado diário e alerta de caixa negativo.
+A [Fase 2J](docs/phase-2j.md) acrescenta o fluxo de segunda a domingo por casa ou consolidado. Vendas até ontem são realizadas; hoje e os próximos dias usam a média daquele dia nas últimas cinco semanas.
 
 ## Executar
 
@@ -59,6 +59,8 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_product_invoices_v1`
 - `ghost_payables_v1`
 - `ghost_cash_flow_week_v1`
+- `ghost_payables_v2`
+- `ghost_cash_flow_week_v2`
 - `ghost_pending_items_v1`
 - `ghost_notifications_v1`
 - `ghost_notification_mark_read_v1`
@@ -90,7 +92,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 ## Navegação e links
 
-As seis áreas são Início, A pagar, IA, NF, Pessoas e Mais. A home mostra o portfólio do mês, o faturamento do dia anterior das quatro casas e abre o dashboard de cada casa. O dashboard possui seletor dos últimos 13 meses e detalha projeção, receita bruta e líquida, recebido, descontos, gorjeta, clientes e ticket médio. NF lista notas de produto por casa e mês. A área financeira alterna entre contas a pagar e fluxo semanal, com quatro janelas de sete dias, entrada D+1, saídas e acumulado por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
+As seis áreas são Início, A pagar, IA, NF, Pessoas e Mais. A home mostra o portfólio do mês, o faturamento do dia anterior das quatro casas e abre o dashboard de cada casa. O dashboard possui seletor dos últimos 13 meses e detalha projeção, receita bruta e líquida, recebido, descontos, gorjeta, clientes e ticket médio. NF lista notas de produto por casa e mês. A área financeira alterna entre contas a pagar e fluxo semanal, aceita uma casa ou todas as casas, filtra títulos por situação e projeta a semana civil com cinco semanas de histórico. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até o login. A primeira unidade autorizada fornece o contexto inicial automaticamente, e a troca de casa acontece na home. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 

@@ -127,11 +127,14 @@ export type PendingDecisionResult = {
 };
 export type PayableItem = {
   id: string;
+  unitId: string;
+  unitName: string;
   supplier: string;
   document: string;
   dueDate: string | null;
+  paidDate: string | null;
   amount: number;
-  status: "overdue" | "due_today" | "upcoming";
+  status: "overdue" | "due_today" | "upcoming" | "paid";
   daysOverdue: number;
   paymentMethod: string | null;
 };
@@ -142,12 +145,18 @@ export type Payables = {
   overdueAmount: number;
   dueTodayAmount: number;
   next7DaysAmount: number;
+  paidAmount: number;
   openCount: number;
   overdueCount: number;
+  paidCount: number;
+  scope: "unit" | "all";
   items: PayableItem[];
 };
 export type CashFlowDay = {
   date: string;
+  actualIncoming: number;
+  projectedIncoming: number;
+  projected: boolean;
   incoming: number;
   outgoing: number;
   balance: number;
@@ -157,9 +166,13 @@ export type CashFlowWeek = {
   weekStart: string;
   weekEnd: string;
   incoming: number;
+  actualIncoming: number;
+  projectedIncoming: number;
   outgoing: number;
   balance: number;
   goesNegative: boolean;
+  historyWeeks: number;
+  scope: "unit" | "all";
   days: CashFlowDay[];
 };
 export type Page<T> = {
@@ -239,10 +252,11 @@ export interface PendingItemsGateway {
   ): Promise<PendingDecisionResult>;
 }
 export interface PayablesGateway {
-  get(scope: Scope): Promise<Payables>;
+  get(scope: Scope, filter?: PayableFilter, allUnits?: boolean): Promise<Payables>;
 }
+export type PayableFilter = "open" | "upcoming" | "overdue" | "paid";
 export interface CashFlowGateway {
-  getWeek(scope: Scope, weekOffset: number): Promise<CashFlowWeek>;
+  getWeek(scope: Scope, weekOffset: number, allUnits?: boolean): Promise<CashFlowWeek>;
 }
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;

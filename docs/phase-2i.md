@@ -2,17 +2,17 @@
 
 Status: implementada no app e no projeto Supabase de desenvolvimento em 22/10/2026.
 
-A antiga aba **Pendências** passou a ser **A pagar**. A tela apresenta uma visão financeira por casa com saldo total em aberto, valores vencidos, vencimentos do dia, próximos sete dias e a lista priorizada de títulos. O seletor horizontal troca a unidade sem abrir uma tela intermediária.
+A antiga aba **Pendências** passou a ser **A pagar**. A tela apresenta uma visão financeira por casa ou consolidada em **Todas as casas**, com saldo total em aberto, valores vencidos, vencimentos do dia, próximos sete dias e a lista priorizada de títulos. Os filtros separam **Em aberto**, **A vencer**, **Vencidas** e **Pagas**.
 
 ## Contrato remoto
 
-`ghost_payables_v1(unit, asOf, limit)` consulta a visão consolidada `everest_titulos_fornecedor_completo` somente no servidor. O retorno contém apenas os campos necessários: fornecedor, documento, vencimento, saldo, situação calculada, dias em atraso e forma de pagamento.
+`ghost_payables_v2(unit?, status, asOf, limit)` consulta a visão consolidada `everest_titulos_fornecedor_completo` somente no servidor. Unidade nula representa todas as casas autorizadas. O retorno contém apenas os campos necessários: casa, fornecedor, documento, vencimento ou liquidação, valor, situação calculada, dias em atraso e forma de pagamento.
 
 A RPC:
 
 - deriva o usuário de `auth.uid()`;
-- exige vínculo com a unidade e `dashboard.read`;
-- limita a lista a no máximo 100 títulos;
+- monta no servidor a lista de unidades com `dashboard.read` e impede que a consolidação ultrapasse esse conjunto;
+- limita a lista a no máximo 200 títulos;
 - não expõe a visão financeira à Data API;
 - concede execução somente a `authenticated`;
 - não oferece aprovação, baixa ou pagamento pelo aplicativo.

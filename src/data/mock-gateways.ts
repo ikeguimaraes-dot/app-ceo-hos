@@ -8,6 +8,10 @@ import type {
   DailyReminder,
   DecidePendingInput,
   PendingDecisionResult,
+  PayableFilter,
+  Payables,
+  CashFlowWeek,
+  PayableItem,
 } from "../contracts/gateways";
 import { demo } from "./fixtures";
 export function createMockGateways(now = Date.now, delay = 240): Gateways {
@@ -208,40 +212,81 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     payables: {
-      async get(scope) {
+      async get(scope, filter: PayableFilter = "open", allUnits = false) {
         await check(scope, "dashboard.read");
-        if (mode === "empty")
-          return {
-            ...demo.payables[scope.unitId as keyof typeof demo.payables],
+        const unitIds = allUnits ? demo.units.map((unit) => unit.id) : [scope.unitId];
+        const sources = unitIds.map((id) => demo.payables[id as keyof typeof demo.payables]).filter(Boolean);
+        const normalized: PayableItem[] = sources.flatMap((source, sourceIndex) => source.items.map((item): PayableItem => ({
+          ...item,
+          unitId: unitIds[sourceIndex]!,
+          unitName: demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)?.name ?? "Unidade",
+          paidDate: null,
+        })));
+        const paid: PayableItem[] = sources.map((source, sourceIndex): PayableItem => {
+          const item = source.items[0]! as PayableItem;
+          return { ...item, id: `${item.id}-paid`, unitId: unitIds[sourceIndex]!, unitName: demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)?.name ?? "Unidade", paidDate: "2026-10-20", dueDate: "2026-10-18", status: "paid" as const, daysOverdue: 0 };
+        });
+        const items = filter === "paid" ? paid : normalized.filter((item) => filter === "open" || (filter === "overdue" ? item.status === "overdue" : item.status !== "overdue"));
+        const result: Payables = {
+          updatedAt: sources[0]?.updatedAt ?? "2026-10-22T15:00:00Z",
+          asOf: "2026-10-22",
+          scope: allUnits ? "all" : "unit",
+          openAmount: sources.reduce((total, source) => total + source.openAmount, 0),
+          overdueAmount: sources.reduce((total, source) => total + source.overdueAmount, 0),
+          dueTodayAmount: sources.reduce((total, source) => total + source.dueTodayAmount, 0),
+          next7DaysAmount: sources.reduce((total, source) => total + source.next7DaysAmount, 0),
+          paidAmount: paid.reduce((total, item) => total + item.amount, 0),
+          openCount: sources.reduce((total, source) => total + source.openCount, 0),
+          overdueCount: sources.reduce((total, source) => total + source.overdueCount, 0),
+          paidCount: paid.length,
+          items,
+        };
+        if (mode === "empty") return {
+            ...result,
             openAmount: 0,
             overdueAmount: 0,
             dueTodayAmount: 0,
             next7DaysAmount: 0,
+            paidAmount: 0,
             openCount: 0,
             overdueCount: 0,
+            paidCount: 0,
             items: [],
           };
-        return demo.payables[scope.unitId as keyof typeof demo.payables];
+        return result;
       },
     },
     cashFlow: {
-      async getWeek(scope, weekOffset) {
+      async getWeek(scope, weekOffset, allUnits = false) {
         await check(scope, "dashboard.read");
-        const base = demo.cashFlow[scope.unitId as keyof typeof demo.cashFlow];
-        if (!base) throw new Error("Unidade sem fluxo de caixa simulado.");
-        if (mode === "empty")
-          return { ...base, incoming: 0, outgoing: 0, balance: 0, goesNegative: false, days: base.days.map((day) => ({ ...day, incoming: 0, outgoing: 0, balance: 0 })) };
-        if (weekOffset === 0) return base;
+        const unitIds = allUnits ? demo.units.map((unit) => unit.id) : [scope.unitId];
+        const sources = unitIds.map((id) => demo.cashFlow[id as keyof typeof demo.cashFlow]).filter(Boolean);
+        if (!sources.length) throw new Error("Unidade sem fluxo de caixa simulado.");
+        const factors = [0.22, 0.25, 0.2, 0.18, 0.2, 0.4, 0.35];
+        const dates = ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"];
+        const rawDays = dates.map((date, index) => ({
+          date,
+          actualIncoming: index < 3 ? sources.reduce((total, source) => total + source.incoming * factors[index]!, 0) : 0,
+          projectedIncoming: index >= 3 ? sources.reduce((total, source) => total + source.incoming * factors[index]!, 0) : 0,
+          projected: index >= 3,
+          outgoing: sources.reduce((total, source) => total + (source.days[index]?.outgoing ?? 0), 0),
+        }));
+        let running = 0;
+        const currentDays = rawDays.map((day) => { const incoming = day.actualIncoming + day.projectedIncoming; running += incoming - day.outgoing; return { ...day, incoming, balance: running }; });
+        const current: CashFlowWeek = {
+          updatedAt: "2026-10-22T15:00:00Z", weekStart: dates[0]!, weekEnd: dates[6]!, scope: allUnits ? "all" : "unit", historyWeeks: 5,
+          actualIncoming: currentDays.reduce((total, day) => total + day.actualIncoming, 0), projectedIncoming: currentDays.reduce((total, day) => total + day.projectedIncoming, 0),
+          incoming: currentDays.reduce((total, day) => total + day.incoming, 0), outgoing: currentDays.reduce((total, day) => total + day.outgoing, 0), balance: running, goesNegative: currentDays.some((day) => day.balance < 0), days: currentDays,
+        };
+        if (mode === "empty") return { ...current, actualIncoming: 0, projectedIncoming: 0, incoming: 0, outgoing: 0, balance: 0, goesNegative: false, days: current.days.map((day) => ({ ...day, actualIncoming: 0, projectedIncoming: 0, incoming: 0, outgoing: 0, balance: 0 })) };
+        if (weekOffset === 0) return current;
         const shift = weekOffset * 7 * 86400000;
         const move = (date: string) => new Date(new Date(`${date}T12:00:00Z`).getTime() + shift).toISOString().slice(0, 10);
+        running = 0;
+        const futureDays = current.days.map((day) => { const incoming = day.incoming; running += incoming - day.outgoing; return { ...day, date: move(day.date), actualIncoming: 0, projectedIncoming: incoming, projected: true, balance: running }; });
         return {
-          ...base,
-          weekStart: move(base.weekStart),
-          weekEnd: move(base.weekEnd),
-          incoming: 0,
-          balance: -base.outgoing,
-          goesNegative: base.outgoing > 0,
-          days: base.days.map((day, index) => ({ ...day, date: move(day.date), incoming: 0, balance: -base.days.slice(0, index + 1).reduce((total, item) => total + item.outgoing, 0) })),
+          ...current, weekStart: move(current.weekStart), weekEnd: move(current.weekEnd), actualIncoming: 0,
+          projectedIncoming: current.incoming, balance: running, goesNegative: futureDays.some((day) => day.balance < 0), days: futureDays,
         };
       },
     },

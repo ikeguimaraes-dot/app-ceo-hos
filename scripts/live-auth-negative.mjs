@@ -112,6 +112,22 @@ const protectedRpcs = [
     },
   ],
   [
+    "ghost_payables_v2",
+    {
+      p_unit_id: null,
+      p_status: "open",
+      p_as_of: "2026-10-22",
+      p_limit: 20,
+    },
+  ],
+  [
+    "ghost_cash_flow_week_v2",
+    {
+      p_unit_id: null,
+      p_week_offset: 0,
+    },
+  ],
+  [
     "ghost_product_invoices_v1",
     {
       p_unit_id: "00000000-0000-0000-0000-000000000000",

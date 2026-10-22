@@ -203,16 +203,22 @@ const payablesSchema = z.object({
   overdueAmount: z.number().nonnegative(),
   dueTodayAmount: z.number().nonnegative(),
   next7DaysAmount: z.number().nonnegative(),
+  paidAmount: z.number().nonnegative(),
   openCount: z.number().int().nonnegative(),
   overdueCount: z.number().int().nonnegative(),
+  paidCount: z.number().int().nonnegative(),
+  scope: z.enum(["unit", "all"]),
   items: z.array(
     z.object({
       id: z.string(),
+      unitId: z.string(),
+      unitName: z.string(),
       supplier: z.string(),
       document: z.string(),
       dueDate: z.string().nullable(),
+      paidDate: z.string().nullable(),
       amount: z.number().nonnegative(),
-      status: z.enum(["overdue", "due_today", "upcoming"]),
+      status: z.enum(["overdue", "due_today", "upcoming", "paid"]),
       daysOverdue: z.number().int().nonnegative(),
       paymentMethod: z.string().nullable(),
     }),
@@ -223,12 +229,19 @@ const cashFlowWeekSchema = z.object({
   weekStart: z.string(),
   weekEnd: z.string(),
   incoming: z.number().nonnegative(),
+  actualIncoming: z.number().nonnegative(),
+  projectedIncoming: z.number().nonnegative(),
   outgoing: z.number().nonnegative(),
   balance: z.number(),
   goesNegative: z.boolean(),
+  historyWeeks: z.number().int().positive(),
+  scope: z.enum(["unit", "all"]),
   days: z.array(
     z.object({
       date: z.string(),
+      actualIncoming: z.number().nonnegative(),
+      projectedIncoming: z.number().nonnegative(),
+      projected: z.boolean(),
       incoming: z.number().nonnegative(),
       outgoing: z.number().nonnegative(),
       balance: z.number(),
@@ -499,14 +512,15 @@ export function createRemoteGateways(): Gateways {
       },
     },
     payables: {
-      async get(scope) {
+      async get(scope, filter = "open", allUnits = false) {
         return payablesSchema.parse(
           await rpc(
-            "ghost_payables_v1",
+            "ghost_payables_v2",
             {
-              p_unit_id: scope.unitId,
+              p_unit_id: allUnits ? null : scope.unitId,
+              p_status: filter,
               p_as_of: new Date().toISOString().slice(0, 10),
-              p_limit: 50,
+              p_limit: 100,
             },
             scope.signal,
           ),
@@ -514,11 +528,11 @@ export function createRemoteGateways(): Gateways {
       },
     },
     cashFlow: {
-      async getWeek(scope, weekOffset) {
+      async getWeek(scope, weekOffset, allUnits = false) {
         return cashFlowWeekSchema.parse(
           await rpc(
-            "ghost_cash_flow_week_v1",
-            { p_unit_id: scope.unitId, p_week_offset: weekOffset },
+            "ghost_cash_flow_week_v2",
+            { p_unit_id: allUnits ? null : scope.unitId, p_week_offset: weekOffset },
             scope.signal,
           ),
         ) satisfies CashFlowWeek;

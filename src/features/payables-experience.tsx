@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useGhost } from "../state/provider";
 import { Empty, ErrorState, Loading } from "../ui/components";
 import { useTheme } from "../ui/theme";
-import type { CashFlowDay, PayableItem } from "../contracts/gateways";
+import type { CashFlowDay, PayableFilter, PayableItem } from "../contracts/gateways";
 
 const money = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -40,38 +40,40 @@ function Reveal({ children, delay = 0 }: React.PropsWithChildren<{ delay?: numbe
   return <Animated.View style={{ opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }}>{children}</Animated.View>;
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone: string }) {
+function Metric({ label, value, tone, detail }: { label: string; value: number; tone: string; detail?: string }) {
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, minWidth: 145, padding: 17, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 7 }}>
       <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: tone }} />
       <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 0.7 }}>{label}</Text>
       <Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.7 }}>{money.format(value)}</Text>
+      {detail ? <Text style={{ color: colors.muted, fontSize: 10, lineHeight: 14 }}>{detail}</Text> : null}
     </View>
   );
 }
 
-function PayableRow({ item, index }: { item: PayableItem; index: number }) {
+function PayableRow({ item, index, showUnit }: { item: PayableItem; index: number; showUnit: boolean }) {
   const { colors } = useTheme();
   const overdue = item.status === "overdue";
   const today = item.status === "due_today";
+  const paid = item.status === "paid";
   const tone = overdue ? colors.danger : today ? colors.warning : colors.neon;
-  const status = overdue ? `${item.daysOverdue}d em atraso` : today ? "Vence hoje" : "Próximo vencimento";
+  const status = paid ? `Pago${item.paidDate ? ` em ${localDate(item.paidDate).toLocaleDateString("pt-BR")}` : ""}` : overdue ? `${item.daysOverdue}d em atraso` : today ? "Vence hoje" : "A vencer";
   return (
     <Reveal delay={80 + index * 45}>
       <View style={{ flexDirection: "row", gap: 13, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line }}>
         <View style={{ width: 43, height: 43, borderRadius: 15, backgroundColor: `${tone}18`, alignItems: "center", justifyContent: "center" }}>
-          <Ionicons name={overdue ? "alert-circle-outline" : "receipt-outline"} size={21} color={tone} />
+          <Ionicons name={paid ? "checkmark-circle-outline" : overdue ? "alert-circle-outline" : "receipt-outline"} size={21} color={tone} />
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
             <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: 15, fontWeight: "700" }}>{item.supplier}</Text>
             <Text style={{ color: colors.text, fontSize: 15, fontWeight: "800" }}>{money.format(item.amount)}</Text>
           </View>
-          <Text style={{ color: colors.muted, fontSize: 12 }}>{item.document}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12 }}>{item.document}{showUnit ? ` · ${item.unitName}` : ""}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
             <Text style={{ color: tone, fontSize: 11, fontWeight: "700" }}>{status}</Text>
-            {item.dueDate && <Text style={{ color: colors.muted, fontSize: 11 }}>· {localDate(item.dueDate).toLocaleDateString("pt-BR")}</Text>}
+            {!paid && item.dueDate && <Text style={{ color: colors.muted, fontSize: 11 }}>· {localDate(item.dueDate).toLocaleDateString("pt-BR")}</Text>}
           </View>
         </View>
       </View>
@@ -89,8 +91,8 @@ function FlowDay({ day, maximum, index }: { day: CashFlowDay; maximum: number; i
   const outgoingWidth = `${Math.max(day.outgoing ? 5 : 0, (day.outgoing / maximum) * 100)}%` as `${number}%`;
   return (
     <View accessibilityLabel={`${dayLabel(day.date)}: entradas ${exactMoney.format(day.incoming)}, saídas ${exactMoney.format(day.outgoing)}, acumulado ${exactMoney.format(day.balance)}`} style={{ gap: 10, paddingVertical: 15, borderBottomWidth: index < 6 ? 1 : 0, borderBottomColor: colors.line }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-        <Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>{dayLabel(day.date)}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Text style={{ color: colors.text, fontSize: 14, fontWeight: "800" }}>{dayLabel(day.date)}</Text><View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 99, backgroundColor: day.projected ? `${colors.warning}18` : `${colors.neon}18` }}><Text style={{ color: day.projected ? colors.warning : colors.neon, fontSize: 8, fontWeight: "900", letterSpacing: 0.5 }}>{day.projected ? "PROJEÇÃO" : "REALIZADO"}</Text></View></View>
         <Text style={{ color: day.balance < 0 ? colors.danger : colors.text, fontSize: 14, fontWeight: "800" }}>{money.format(day.balance)}</Text>
       </View>
       <View style={{ gap: 7 }}>
@@ -109,6 +111,7 @@ function FlowDay({ day, maximum, index }: { day: CashFlowDay; maximum: number; i
           <Text style={{ width: 88, textAlign: "right", color: colors.muted, fontSize: 11, fontWeight: "700" }}>{money.format(day.outgoing)}</Text>
         </View>
       </View>
+      {day.projected ? <Text style={{ color: colors.muted, fontSize: 10 }}>Média deste dia nas últimas 5 semanas{day.actualIncoming > 0 ? ` · ${money.format(day.actualIncoming)} realizado` : ""}</Text> : null}
     </View>
   );
 }
@@ -118,18 +121,22 @@ export function PayablesExperience() {
   const { colors } = useTheme();
   const [view, setView] = useState<"payables" | "cashFlow">("payables");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [financeScope, setFinanceScope] = useState<string>("all");
+  const [payableFilter, setPayableFilter] = useState<PayableFilter>("open");
   const session = state.session;
   const unitId = state.unitId;
   const units = useMemo(() => (state.bootstrap?.units ?? []).filter((unit) => unit.capabilities.includes("dashboard.read")), [state.bootstrap?.units]);
-  const current = units.find((unit) => unit.id === unitId);
+  const allUnits = financeScope === "all";
+  const current = units.find((unit) => unit.id === financeScope);
+  const scopeLabel = allUnits ? "Todas as casas" : current?.name;
   const payables = useQuery({
-    queryKey: ["payables", session?.userId, unitId, state.generation],
-    queryFn: ({ signal }) => gateways.payables.get({ session: session!, unitId: unitId!, signal }),
+    queryKey: ["payables", session?.userId, financeScope, payableFilter, state.generation],
+    queryFn: ({ signal }) => gateways.payables.get({ session: session!, unitId: allUnits ? unitId! : financeScope, signal }, payableFilter, allUnits),
     enabled: !!session && !!unitId && view === "payables",
   });
   const flow = useQuery({
-    queryKey: ["cash-flow-week", session?.userId, unitId, weekOffset, state.generation],
-    queryFn: ({ signal }) => gateways.cashFlow.getWeek({ session: session!, unitId: unitId!, signal }, weekOffset),
+    queryKey: ["cash-flow-week", session?.userId, financeScope, weekOffset, state.generation],
+    queryFn: ({ signal }) => gateways.cashFlow.getWeek({ session: session!, unitId: allUnits ? unitId! : financeScope, signal }, weekOffset, allUnits),
     enabled: !!session && !!unitId && view === "cashFlow",
   });
   const maximum = Math.max(1, ...(flow.data?.days.flatMap((day) => [day.incoming, day.outgoing]) ?? [1]));
@@ -154,20 +161,25 @@ export function PayablesExperience() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 9 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Ver financeiro de todas as casas" onPress={() => setFinanceScope("all")} style={({ pressed }) => ({ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 99, backgroundColor: allUnits ? colors.text : colors.surface, borderWidth: 1, borderColor: allUnits ? colors.text : colors.line, opacity: pressed ? 0.7 : 1 })}><Text style={{ color: allUnits ? colors.bg : colors.text, fontSize: 12, fontWeight: "700" }}>Todas as casas</Text></Pressable>
           {units.map((unit) => {
-            const active = unit.id === unitId;
-            return <Pressable key={unit.id} accessibilityRole="button" accessibilityLabel={`Ver financeiro de ${unit.brand}`} onPress={() => void controller.selectUnit(unit.id)} style={({ pressed }) => ({ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 99, backgroundColor: active ? colors.text : colors.surface, borderWidth: 1, borderColor: active ? colors.text : colors.line, opacity: pressed ? 0.7 : 1 })}><Text style={{ color: active ? colors.bg : colors.text, fontSize: 12, fontWeight: "700" }}>{unit.brand}</Text></Pressable>;
+            const active = unit.id === financeScope;
+            return <Pressable key={unit.id} accessibilityRole="button" accessibilityLabel={`Ver financeiro de ${unit.brand}`} onPress={() => { setFinanceScope(unit.id); void controller.selectUnit(unit.id); }} style={({ pressed }) => ({ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 99, backgroundColor: active ? colors.text : colors.surface, borderWidth: 1, borderColor: active ? colors.text : colors.line, opacity: pressed ? 0.7 : 1 })}><Text style={{ color: active ? colors.bg : colors.text, fontSize: 12, fontWeight: "700" }}>{unit.brand}</Text></Pressable>;
           })}
         </ScrollView>
 
         {view === "payables" ? (
-          payables.isPending ? <Loading /> : payables.error ? <ErrorState message={payables.error.message} retry={() => void payables.refetch()} /> : payables.data ? <>
+          <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {([['open', 'Em aberto'], ['upcoming', 'A vencer'], ['overdue', 'Vencidas'], ['paid', 'Pagas']] as const).map(([key, label]) => { const active = payableFilter === key; return <Pressable key={key} onPress={() => setPayableFilter(key)} style={({ pressed }) => ({ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 13, backgroundColor: active ? colors.accent : colors.surface, borderWidth: 1, borderColor: active ? colors.accent : colors.line, opacity: pressed ? 0.7 : 1 })}><Text style={{ color: active ? colors.accentText : colors.text, fontSize: 11, fontWeight: "800" }}>{label}</Text></Pressable>; })}
+          </ScrollView>
+          {payables.isPending ? <Loading /> : payables.error ? <ErrorState message={payables.error.message} retry={() => void payables.refetch()} /> : payables.data ? <>
             <Reveal delay={50}>
               <LinearGradient colors={["#111827", "#1E293B", "#183C36"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 24, borderRadius: 30, gap: 10, overflow: "hidden" }}>
                 <View style={{ position: "absolute", width: 190, height: 190, borderRadius: 95, right: -45, top: -100, backgroundColor: "rgba(68,255,190,0.13)" }} />
-                <Text style={{ color: "rgba(255,255,255,0.57)", fontSize: 11, fontWeight: "700", letterSpacing: 1.2 }}>SALDO TOTAL EM ABERTO</Text>
-                <Text style={{ color: "white", fontSize: 38, fontWeight: "800", letterSpacing: -1.4 }}>{money.format(payables.data.openAmount)}</Text>
-                <Text style={{ color: "rgba(255,255,255,0.62)", fontSize: 12 }}>{payables.data.openCount} títulos · {current?.name}</Text>
+                <Text style={{ color: "rgba(255,255,255,0.57)", fontSize: 11, fontWeight: "700", letterSpacing: 1.2 }}>{payableFilter === "paid" ? "TOTAL PAGO" : payableFilter === "overdue" ? "TOTAL VENCIDO" : payableFilter === "upcoming" ? "TOTAL A VENCER" : "SALDO TOTAL EM ABERTO"}</Text>
+                <Text style={{ color: "white", fontSize: 38, fontWeight: "800", letterSpacing: -1.4 }}>{money.format(payableFilter === "paid" ? payables.data.paidAmount : payableFilter === "overdue" ? payables.data.overdueAmount : payableFilter === "upcoming" ? Math.max(0, payables.data.openAmount - payables.data.overdueAmount) : payables.data.openAmount)}</Text>
+                <Text style={{ color: "rgba(255,255,255,0.62)", fontSize: 12 }}>{payableFilter === "paid" ? payables.data.paidCount : payables.data.openCount} títulos · {scopeLabel}</Text>
               </LinearGradient>
             </Reveal>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 11 }}>
@@ -176,11 +188,12 @@ export function PayablesExperience() {
               <Metric label="PRÓXIMOS 7 DIAS" value={payables.data.next7DaysAmount} tone={colors.neon} />
             </View>
             <View style={{ paddingHorizontal: 18, borderRadius: 27, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line }}>
-              <View style={{ paddingTop: 19, paddingBottom: 4, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><Text style={{ color: colors.text, fontSize: 19, fontWeight: "800" }}>Próximos títulos</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{payables.data.overdueCount} vencidos</Text></View>
-              {payables.data.items.length ? payables.data.items.map((item, index) => <PayableRow key={item.id} item={item} index={index} />) : <View style={{ paddingVertical: 20 }}><Empty text="Nenhuma conta em aberto para esta casa." /></View>}
+              <View style={{ paddingTop: 19, paddingBottom: 4, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><Text style={{ color: colors.text, fontSize: 19, fontWeight: "800" }}>{payableFilter === "paid" ? "Contas pagas" : payableFilter === "overdue" ? "Contas vencidas" : payableFilter === "upcoming" ? "Contas a vencer" : "Todas em aberto"}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{payables.data.overdueCount} vencidas</Text></View>
+              {payables.data.items.length ? payables.data.items.map((item, index) => <PayableRow key={item.id} item={item} index={index} showUnit={allUnits} />) : <View style={{ paddingVertical: 20 }}><Empty text="Nenhuma conta nesta situação." /></View>}
             </View>
             <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Consulta financeira · nenhuma movimentação é realizada pelo app · atualizado em {new Date(payables.data.updatedAt).toLocaleString("pt-BR")}</Text>
-          </> : null
+          </> : null}
+          </>
         ) : (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 9 }}>
@@ -195,11 +208,11 @@ export function PayablesExperience() {
                   <View style={{ position: "absolute", width: 220, height: 220, borderRadius: 110, right: -60, top: -110, backgroundColor: "rgba(103,232,249,0.12)" }} />
                   <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "800", letterSpacing: 1.2 }}>ACUMULADO DA SEMANA</Text><Ionicons name="sparkles-outline" color="rgba(255,255,255,0.75)" size={18} /></View>
                   <Text style={{ color: "white", fontSize: 38, fontWeight: "800", letterSpacing: -1.4 }}>{money.format(flow.data.balance)}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>{compactDate(flow.data.weekStart)} a {compactDate(flow.data.weekEnd)} · {current?.name}</Text>
+                  <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>{compactDate(flow.data.weekStart)} a {compactDate(flow.data.weekEnd)} · {scopeLabel}</Text>
                 </LinearGradient>
               </Reveal>
               <View style={{ flexDirection: "row", gap: 11 }}>
-                <Metric label="ENTRADAS · D+1" value={flow.data.incoming} tone={colors.neon} />
+                <Metric label="ENTRADAS DA SEMANA" value={flow.data.incoming} tone={colors.neon} detail={`${money.format(flow.data.actualIncoming)} realizado · ${money.format(flow.data.projectedIncoming)} projetado`} />
                 <Metric label="SAÍDAS" value={flow.data.outgoing} tone={colors.danger} />
               </View>
               {flow.data.goesNegative ? <View style={{ flexDirection: "row", gap: 10, alignItems: "center", padding: 14, borderRadius: 18, backgroundColor: `${colors.danger}12`, borderWidth: 1, borderColor: `${colors.danger}35` }}><Ionicons name="warning-outline" color={colors.danger} size={19} /><Text style={{ flex: 1, color: colors.danger, fontSize: 12, fontWeight: "700" }}>O acumulado fica negativo em algum dia desta semana.</Text></View> : null}
@@ -207,7 +220,7 @@ export function PayablesExperience() {
                 <View style={{ paddingTop: 19, paddingBottom: 4, gap: 4 }}><Text style={{ color: colors.text, fontSize: 19, fontWeight: "800" }}>Ritmo diário</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Entrada em verde · saída em vermelho · valor à direita é o acumulado</Text></View>
                 {flow.data.days.map((day, index) => <FlowDay key={day.date} day={day} maximum={maximum} index={index} />)}
               </View>
-              <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Projeção somente leitura · receitas entram em D+1 · vencimentos do fim de semana aparecem na segunda · atualizado em {new Date(flow.data.updatedAt).toLocaleString("pt-BR")}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Semana de segunda a domingo · realizado até ontem · hoje e dias futuros usam a média do mesmo dia nas últimas {flow.data.historyWeeks} semanas · atualizado em {new Date(flow.data.updatedAt).toLocaleString("pt-BR")}</Text>
             </> : null}
           </>
         )}
