@@ -16,6 +16,8 @@ O cockpit executivo da [Fase 2H](docs/phase-2h.md) reúne o faturamento mensal d
 
 A [Fase 2I](docs/phase-2i.md) substitui a antiga aba Pendências por Contas a pagar, com resumo de vencimentos e títulos reais por casa por meio de uma RPC financeira somente leitura.
 
+A [Fase 2J](docs/phase-2j.md) acrescenta, na mesma área, o fluxo de caixa da semana e das três semanas seguintes, com entrada D+1, saídas, acumulado diário e alerta de caixa negativo.
+
 ## Executar
 
 Requer Node 22.23+ e npm 10+.
@@ -55,6 +57,7 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v2`
 - `ghost_payables_v1`
+- `ghost_cash_flow_week_v1`
 - `ghost_pending_items_v1`
 - `ghost_notifications_v1`
 - `ghost_notification_mark_read_v1`
@@ -86,7 +89,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 ## Navegação e links
 
-As seis áreas são Início, A pagar, IA, Operação, Pessoas e Mais. A área financeira mostra saldo aberto, vencidos, vencimentos do dia e dos próximos sete dias, além dos títulos priorizados por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
+As seis áreas são Início, A pagar, IA, Operação, Pessoas e Mais. A área financeira alterna entre contas a pagar e fluxo semanal, com quatro janelas de sete dias, entrada D+1, saídas e acumulado por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até o login. A primeira unidade autorizada fornece o contexto inicial automaticamente, e a troca de casa acontece na home. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 

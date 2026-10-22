@@ -90,6 +90,22 @@ export type Payables = {
   overdueCount: number;
   items: PayableItem[];
 };
+export type CashFlowDay = {
+  date: string;
+  incoming: number;
+  outgoing: number;
+  balance: number;
+};
+export type CashFlowWeek = {
+  updatedAt: string;
+  weekStart: string;
+  weekEnd: string;
+  incoming: number;
+  outgoing: number;
+  balance: number;
+  goesNegative: boolean;
+  days: CashFlowDay[];
+};
 export type Page<T> = {
   items: T[];
   nextCursor: string | null;
@@ -162,6 +178,9 @@ export interface PendingItemsGateway {
 export interface PayablesGateway {
   get(scope: Scope): Promise<Payables>;
 }
+export interface CashFlowGateway {
+  getWeek(scope: Scope, weekOffset: number): Promise<CashFlowWeek>;
+}
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;
 }
@@ -195,6 +214,7 @@ export interface Gateways {
   dashboard: DashboardGateway;
   pending: PendingItemsGateway;
   payables: PayablesGateway;
+  cashFlow: CashFlowGateway;
   operation: OperationGateway;
   people: PeopleGateway;
   assistant: AssistantGateway;

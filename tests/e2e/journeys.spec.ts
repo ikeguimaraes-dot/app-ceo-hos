@@ -48,6 +48,15 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     path: "docs/screenshots/payables.png",
     fullPage: true,
   });
+  await page.getByRole("tab", { name: "Fluxo da semana" }).click();
+  await expect(page.getByText("Ritmo diário")).toBeVisible();
+  await expect(page.getByText("-R$ 310.463").first()).toBeVisible();
+  await expect(page.getByText(/ENTRADAS · D\+1/)).toBeVisible();
+  await page.waitForTimeout(800);
+  await page.screenshot({
+    path: "docs/screenshots/cash-flow-week.png",
+    fullPage: true,
+  });
   await page.getByRole("tab", { name: /IA$/ }).click();
   await page
     .getByRole("button", { name: "Como estão minhas empresas este mês?" })

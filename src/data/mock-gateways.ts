@@ -187,6 +187,27 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
         return demo.payables[scope.unitId as keyof typeof demo.payables];
       },
     },
+    cashFlow: {
+      async getWeek(scope, weekOffset) {
+        await check(scope, "dashboard.read");
+        const base = demo.cashFlow[scope.unitId as keyof typeof demo.cashFlow];
+        if (!base) throw new Error("Unidade sem fluxo de caixa simulado.");
+        if (mode === "empty")
+          return { ...base, incoming: 0, outgoing: 0, balance: 0, goesNegative: false, days: base.days.map((day) => ({ ...day, incoming: 0, outgoing: 0, balance: 0 })) };
+        if (weekOffset === 0) return base;
+        const shift = weekOffset * 7 * 86400000;
+        const move = (date: string) => new Date(new Date(`${date}T12:00:00Z`).getTime() + shift).toISOString().slice(0, 10);
+        return {
+          ...base,
+          weekStart: move(base.weekStart),
+          weekEnd: move(base.weekEnd),
+          incoming: 0,
+          balance: -base.outgoing,
+          goesNegative: base.outgoing > 0,
+          days: base.days.map((day, index) => ({ ...day, date: move(day.date), incoming: 0, balance: -base.days.slice(0, index + 1).reduce((total, item) => total + item.outgoing, 0) })),
+        };
+      },
+    },
     operation: {
       async get(scope) {
         await check(scope, "operation.read");

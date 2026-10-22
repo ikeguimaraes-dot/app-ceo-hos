@@ -10,6 +10,7 @@ import { z } from "zod";
 import type {
   Bootstrap,
   AssistantAnswer,
+  CashFlowWeek,
   Dashboard,
   Gateways,
   Notification,
@@ -107,6 +108,23 @@ const payablesSchema = z.object({
       paymentMethod: z.string().nullable(),
     }),
   ),
+});
+const cashFlowWeekSchema = z.object({
+  updatedAt: z.string(),
+  weekStart: z.string(),
+  weekEnd: z.string(),
+  incoming: z.number().nonnegative(),
+  outgoing: z.number().nonnegative(),
+  balance: z.number(),
+  goesNegative: z.boolean(),
+  days: z.array(
+    z.object({
+      date: z.string(),
+      incoming: z.number().nonnegative(),
+      outgoing: z.number().nonnegative(),
+      balance: z.number(),
+    }),
+  ).length(7),
 });
 const notificationItemSchema = z.object({
   id: z.string().uuid(),
@@ -384,6 +402,17 @@ export function createRemoteGateways(): Gateways {
             scope.signal,
           ),
         );
+      },
+    },
+    cashFlow: {
+      async getWeek(scope, weekOffset) {
+        return cashFlowWeekSchema.parse(
+          await rpc(
+            "ghost_cash_flow_week_v1",
+            { p_unit_id: scope.unitId, p_week_offset: weekOffset },
+            scope.signal,
+          ),
+        ) satisfies CashFlowWeek;
       },
     },
     operation: {

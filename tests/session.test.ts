@@ -205,9 +205,15 @@ describe("session and access boundaries", () => {
       await gateways.dashboard.get(scope),
     );
     expect((await gateways.payables.get(scope)).openAmount).toBe(184320.45);
+    const cashFlow = await gateways.cashFlow.getWeek(scope, 0);
+    expect(cashFlow.incoming).toBe(46035.54);
+    expect(cashFlow.outgoing).toBe(356498.28);
+    expect(cashFlow.days).toHaveLength(7);
+    expect(cashFlow.days.at(-1)?.balance).toBe(cashFlow.balance);
     await c.setMode("empty");
     expect((await gateways.pending.list(scope)).items).toEqual([]);
     expect((await gateways.payables.get(scope)).items).toEqual([]);
+    expect((await gateways.cashFlow.getWeek(scope, 0)).balance).toBe(0);
     await c.setMode("error");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow(
       "Falha simulada",

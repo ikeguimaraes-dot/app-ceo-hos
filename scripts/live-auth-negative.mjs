@@ -105,6 +105,13 @@ const protectedRpcs = [
     },
   ],
   [
+    "ghost_cash_flow_week_v1",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_week_offset: 0,
+    },
+  ],
+  [
     "ghost_assistant_query_v1",
     {
       p_dataset: "financeiro",
