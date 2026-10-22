@@ -27,10 +27,11 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
   await expect(page.getByText("R$ 864.250")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/home.png", fullPage: true });
-  await page.getByRole("tab", { name: "Operação" }).click();
-  await expect(page.getByText("MANUTENÇÕES PENDENTES")).toBeVisible();
+  await page.getByRole("tab", { name: "NF" }).click();
+  await expect(page.getByText("Notas fiscais")).toBeVisible();
+  await expect(page.getByText("Bonas Comércio e Distribuição")).toBeVisible();
   await page.screenshot({
-    path: "docs/screenshots/operation.png",
+    path: "docs/screenshots/product-invoices.png",
     fullPage: true,
   });
   await page.getByRole("tab", { name: "Pessoas" }).click();
@@ -80,6 +81,9 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await expect(
     page.getByText("R$ 628.430").filter({ visible: true }),
   ).toBeVisible();
+  await expect(page.getByText("Receita do mês")).toBeVisible();
+  await page.getByRole("tab", { name: /setembro de 2026/i }).click();
+  await expect(page.getByText(/setembro de 2026/i).first()).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/dashboard-house.png",
     fullPage: true,

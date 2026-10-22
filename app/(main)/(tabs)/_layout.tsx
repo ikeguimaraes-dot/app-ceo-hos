@@ -73,11 +73,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="operation"
         options={{
-          title: "Operação",
+          title: "NF",
           href: controller.can("operation.read") ? "/operation" : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons
-              name="layers-outline"
+              name="receipt-outline"
               size={size}
               color={typeof color === "string" ? color : colors.muted}
             />

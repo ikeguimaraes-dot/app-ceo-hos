@@ -112,6 +112,14 @@ const protectedRpcs = [
     },
   ],
   [
+    "ghost_product_invoices_v1",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_month: "2026-10-01",
+      p_limit: 20,
+    },
+  ],
+  [
     "ghost_assistant_query_v1",
     {
       p_dataset: "financeiro",

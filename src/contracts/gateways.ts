@@ -37,8 +37,34 @@ export type Dashboard = {
   goalProgress: number | null;
   hasData: boolean;
   provisional: boolean;
+  grossRevenue: number | null;
+  netRevenue: number | null;
+  receivedRevenue: number | null;
+  discount: number | null;
+  tips: number | null;
+  customers: number | null;
+  averageTicket: number | null;
+  projection: number | null;
   series: DashboardPoint[];
   summary: string;
+};
+export type ProductInvoice = {
+  id: string;
+  invoiceNumber: string;
+  issueDate: string;
+  supplier: string;
+  cfop: string | null;
+  status: string | null;
+  totalValue: number;
+};
+export type ProductInvoices = {
+  updatedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  totalPurchased: number;
+  invoiceCount: number;
+  supplierCount: number;
+  items: ProductInvoice[];
 };
 export type DashboardPoint = {
   date: string;
@@ -166,7 +192,10 @@ export interface BootstrapGateway {
   load(session: Session): Promise<Bootstrap>;
 }
 export interface DashboardGateway {
-  get(scope: Scope): Promise<Dashboard>;
+  get(scope: Scope, month?: string): Promise<Dashboard>;
+}
+export interface ProductInvoicesGateway {
+  get(scope: Scope, month: string): Promise<ProductInvoices>;
 }
 export interface PendingItemsGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<PendingItem>>;
@@ -215,6 +244,7 @@ export interface Gateways {
   pending: PendingItemsGateway;
   payables: PayablesGateway;
   cashFlow: CashFlowGateway;
+  productInvoices: ProductInvoicesGateway;
   operation: OperationGateway;
   people: PeopleGateway;
   assistant: AssistantGateway;

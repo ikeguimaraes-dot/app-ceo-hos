@@ -19,6 +19,7 @@ import type {
   Page,
   PeopleSummary,
   PendingItem,
+  ProductInvoices,
   Session,
 } from "../contracts/gateways";
 import { backendConfig, environment } from "../config/environment";
@@ -63,6 +64,14 @@ const dashboardSchema = z.object({
   goalProgress: z.number().nullable(),
   hasData: z.boolean(),
   provisional: z.boolean(),
+  grossRevenue: z.number().nullable(),
+  netRevenue: z.number().nullable(),
+  receivedRevenue: z.number().nullable(),
+  discount: z.number().nullable(),
+  tips: z.number().nullable(),
+  customers: z.number().nullable(),
+  averageTicket: z.number().nullable(),
+  projection: z.number().nullable(),
   series: z.array(
     z.object({
       date: z.string(),
@@ -71,6 +80,23 @@ const dashboardSchema = z.object({
       provisional: z.boolean(),
     }),
   ),
+});
+const productInvoicesSchema = z.object({
+  updatedAt: z.string(),
+  periodStart: z.string(),
+  periodEnd: z.string(),
+  totalPurchased: z.number().nonnegative(),
+  invoiceCount: z.number().int().nonnegative(),
+  supplierCount: z.number().int().nonnegative(),
+  items: z.array(z.object({
+    id: z.string(),
+    invoiceNumber: z.string(),
+    issueDate: z.string(),
+    supplier: z.string(),
+    cfop: z.string().nullable(),
+    status: z.string().nullable(),
+    totalValue: z.number().nonnegative(),
+  })),
 });
 const pendingItemSchema = z.object({
   id: z.string(),
@@ -343,13 +369,13 @@ export function createRemoteGateways(): Gateways {
       },
     },
     dashboard: {
-      async get(scope) {
+      async get(scope, month) {
         const data = dashboardSchema.parse(
           await rpc(
             "ghost_dashboard_v2",
             {
               p_unit_id: scope.unitId,
-              p_month: new Date().toISOString().slice(0, 10),
+              p_month: month ?? new Date().toISOString().slice(0, 10),
             },
             scope.signal,
           ),
@@ -413,6 +439,17 @@ export function createRemoteGateways(): Gateways {
             scope.signal,
           ),
         ) satisfies CashFlowWeek;
+      },
+    },
+    productInvoices: {
+      async get(scope, month) {
+        return productInvoicesSchema.parse(
+          await rpc("ghost_product_invoices_v1", {
+            p_unit_id: scope.unitId,
+            p_month: month,
+            p_limit: 100,
+          }, scope.signal),
+        ) satisfies ProductInvoices;
       },
     },
     operation: {

@@ -97,8 +97,12 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     dashboard: {
-      async get(scope) {
+      async get(scope, month) {
         await check(scope, "dashboard.read");
+        const base = demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
+        const requested = month?.slice(0, 7) ?? base.periodStart.slice(0, 7);
+        const scale = requested === base.periodStart.slice(0, 7) ? 1 : 0.86;
+        const moveDate = (date: string) => `${requested}-${date.slice(8, 10)}`;
         return mode === "empty"
           ? {
               updatedAt: "2026-10-20T12:00:00Z",
@@ -109,10 +113,31 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               goalProgress: null,
               hasData: false,
               provisional: false,
+              grossRevenue: null,
+              netRevenue: null,
+              receivedRevenue: null,
+              discount: null,
+              tips: null,
+              customers: null,
+              averageTicket: null,
+              projection: null,
               series: [],
               summary: "Nenhum fechamento neste período simulado.",
             }
-          : demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
+          : {
+              ...base,
+              periodStart: `${requested}-01`,
+              periodEnd: moveDate(base.periodEnd),
+              revenue: base.revenue == null ? null : Math.round(base.revenue * scale),
+              goal: base.goal == null ? null : Math.round(base.goal * scale),
+              grossRevenue: Math.round(base.grossRevenue * scale),
+              netRevenue: Math.round(base.netRevenue * scale),
+              receivedRevenue: Math.round(base.receivedRevenue * scale),
+              discount: Math.round(base.discount * scale),
+              tips: Math.round(base.tips * scale),
+              projection: Math.round(base.projection * scale),
+              series: base.series.map((point) => ({ ...point, date: moveDate(point.date), revenue: point.revenue == null ? null : Math.round(point.revenue * scale), goal: point.goal == null ? null : Math.round(point.goal * scale) })),
+            };
       },
     },
     pending: {
@@ -205,6 +230,22 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           balance: -base.outgoing,
           goesNegative: base.outgoing > 0,
           days: base.days.map((day, index) => ({ ...day, date: move(day.date), incoming: 0, balance: -base.days.slice(0, index + 1).reduce((total, item) => total + item.outgoing, 0) })),
+        };
+      },
+    },
+    productInvoices: {
+      async get(scope, month) {
+        await check(scope, "operation.read");
+        const source = demo.productInvoices[scope.unitId as keyof typeof demo.productInvoices] ?? [];
+        const items = mode === "empty" ? [] : source.map((item) => ({ ...item, issueDate: `${month.slice(0, 7)}-${item.issueDate.slice(8, 10)}` }));
+        return {
+          updatedAt: "2026-10-22T15:00:00Z",
+          periodStart: `${month.slice(0, 7)}-01`,
+          periodEnd: `${month.slice(0, 7)}-31`,
+          totalPurchased: items.reduce((sum, item) => sum + item.totalValue, 0),
+          invoiceCount: items.length,
+          supplierCount: new Set(items.map((item) => item.supplier)).size,
+          items,
         };
       },
     },

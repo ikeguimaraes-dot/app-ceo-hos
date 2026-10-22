@@ -70,6 +70,14 @@ export const demo = {
       goalProgress: 0.8819,
       hasData: true,
       provisional: false,
+      grossRevenue: 864250,
+      netRevenue: 791430,
+      receivedRevenue: 842910,
+      discount: 68240,
+      tips: 97360,
+      customers: 2874,
+      averageTicket: 300.71,
+      projection: 1339588,
       series: [31, 36, 42, 49, 38, 52, 45, 47, 55, 44, 58, 62, 48, 51].map(
         (value, index) => ({
           date: `2026-10-${String(index + 7).padStart(2, "0")}`,
@@ -89,6 +97,14 @@ export const demo = {
       goalProgress: 0.8728,
       hasData: true,
       provisional: false,
+      grossRevenue: 628430,
+      netRevenue: 579210,
+      receivedRevenue: 615980,
+      discount: 42180,
+      tips: 71120,
+      customers: 2190,
+      averageTicket: 286.95,
+      projection: 974067,
       series: [24, 29, 35, 31, 42, 38, 34, 45, 40, 47, 44, 51, 46, 53].map(
         (value, index) => ({
           date: `2026-10-${String(index + 7).padStart(2, "0")}`,
@@ -108,6 +124,14 @@ export const demo = {
       goalProgress: 0.8406,
       hasData: true,
       provisional: true,
+      grossRevenue: 512780,
+      netRevenue: 471840,
+      receivedRevenue: 496250,
+      discount: 37940,
+      tips: 57860,
+      customers: 1862,
+      averageTicket: 275.39,
+      projection: 794809,
       series: [19, 25, 28, 34, 31, 37, 29, 39, 36, 41, 38, 43, 40, 45].map(
         (value, index) => ({
           date: `2026-10-${String(index + 7).padStart(2, "0")}`,
@@ -127,6 +151,14 @@ export const demo = {
       goalProgress: 0.8832,
       hasData: true,
       provisional: false,
+      grossRevenue: 476920,
+      netRevenue: 438670,
+      receivedRevenue: 466180,
+      discount: 31880,
+      tips: 53840,
+      customers: 1694,
+      averageTicket: 281.53,
+      projection: 739226,
       series: [18, 22, 26, 29, 25, 33, 30, 36, 32, 39, 35, 42, 38, 44].map(
         (value, index) => ({
           date: `2026-10-${String(index + 7).padStart(2, "0")}`,
@@ -257,6 +289,22 @@ export const demo = {
     pendingMaintenance: 3,
     attentionMaintenance: 1,
     oldestPendingDate: "2026-10-18",
+  },
+  productInvoices: {
+    "demo-garden": [
+      { id: "nf-meet-98983", invoiceNumber: "98983", issueDate: "2026-10-20", supplier: "Bonas Comércio e Distribuição", cfop: "5102", status: "Recebida", totalValue: 5148.22 },
+      { id: "nf-meet-12609", invoiceNumber: "12609", issueDate: "2026-10-18", supplier: "Carvoaria Martins", cfop: "5102", status: "Recebida", totalValue: 3920 },
+      { id: "nf-meet-15747", invoiceNumber: "15747", issueDate: "2026-10-16", supplier: "Batard Padaria Artesanal", cfop: "5102", status: "Recebida", totalValue: 1620 },
+    ],
+    "demo-coast": [
+      { id: "nf-mdna-7742", invoiceNumber: "7742", issueDate: "2026-10-19", supplier: "Pescados Atlântico", cfop: "5102", status: "Recebida", totalValue: 8320 },
+    ],
+    "demo-freneze": [
+      { id: "nf-freneze-11082", invoiceNumber: "11082", issueDate: "2026-10-18", supplier: "Hortifruti Paulista", cfop: "5102", status: "Recebida", totalValue: 6400 },
+    ],
+    "demo-match": [
+      { id: "nf-match-99201", invoiceNumber: "99201", issueDate: "2026-10-20", supplier: "Bebidas Arena", cfop: "5102", status: "Recebida", totalValue: 5280 },
+    ],
   },
   people: {
     updatedAt: "2026-10-20T12:00:00Z",

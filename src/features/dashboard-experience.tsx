@@ -18,6 +18,7 @@ import { useGhost } from "../state/provider";
 import { environment } from "../config/environment";
 import { ErrorState, Loading } from "../ui/components";
 import { useTheme } from "../ui/theme";
+import { currentMonth, MonthSelector, monthLabel } from "../ui/month-selector";
 
 const currency = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -301,12 +302,13 @@ export function DashboardExperience() {
   const { colors } = useTheme();
   const [view, setView] = useState<"portfolio" | "detail">("portfolio");
   const [picker, setPicker] = useState(false);
+  const [month, setMonth] = useState(currentMonth);
   const units = useMemo(() => orderPortfolioUnits(state.bootstrap?.units ?? []), [state.bootstrap?.units]);
   const session = state.session;
   const queries = useQueries({
     queries: units.map((unit) => ({
-      queryKey: ["dashboard", session?.userId, unit.id, state.generation],
-      queryFn: ({ signal }: { signal: AbortSignal }) => gateways.dashboard.get({ session: session!, unitId: unit.id, signal }),
+      queryKey: ["dashboard", session?.userId, unit.id, month, state.generation],
+      queryFn: ({ signal }: { signal: AbortSignal }) => gateways.dashboard.get({ session: session!, unitId: unit.id, signal }, month),
       enabled: !!session,
     })),
   });
@@ -321,6 +323,10 @@ export function DashboardExperience() {
     await controller.selectUnit(unit.id);
     setView("detail");
   }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
 
   if (!session) return null;
   return (
@@ -369,13 +375,25 @@ export function DashboardExperience() {
                 <Ionicons name="chevron-forward" size={20} color={colors.muted} />
               </Pressable>
             </Reveal>
+            <Reveal delay={480}>
+              <View style={{ gap: 13 }}>
+                <View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Ontem nas casas</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Faturamento de {yesterday.toLocaleDateString("pt-BR")}</Text></View>
+                <View style={{ gap: 9 }}>
+                  {units.map((unit, index) => {
+                    const brand = brandStyle(unit);
+                    const point = queries[index]?.data?.series.find((item) => item.date === yesterdayKey);
+                    return <View key={unit.id} style={{ flexDirection: "row", alignItems: "center", padding: 15, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 12 }}><LinearGradient colors={brand.colors} style={{ width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={19} /></LinearGradient><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontWeight: "700" }}>{brand.label}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{point?.provisional ? "Conciliação em andamento" : "Fechamento do dia"}</Text></View><Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }}>{point?.revenue == null ? "—" : compactCurrency.format(point.revenue)}</Text></View>;
+                  })}
+                </View>
+              </View>
+            </Reveal>
           </>
         ) : !currentUnit || currentQuery?.isPending ? (
           <Loading />
         ) : currentQuery?.error ? (
           <ErrorState message={currentQuery.error.message} retry={() => void currentQuery.refetch()} />
         ) : currentQuery?.data ? (
-          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} onBack={() => setView("portfolio")} onPick={() => setPicker(true)} />
+          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} month={month} onMonth={setMonth} onBack={() => { setMonth(currentMonth()); setView("portfolio"); }} onPick={() => setPicker(true)} />
         ) : null}
       </ScrollView>
       <HousePicker visible={picker} units={units} onClose={() => setPicker(false)} onSelect={(unit) => void select(unit)} />
@@ -383,7 +401,7 @@ export function DashboardExperience() {
   );
 }
 
-function UnitDetail({ unit, dashboard, onBack, onPick }: { unit: Unit; dashboard: Dashboard; onBack: () => void; onPick: () => void }) {
+function UnitDetail({ unit, dashboard, month, onMonth, onBack, onPick }: { unit: Unit; dashboard: Dashboard; month: string; onMonth: (month: string) => void; onBack: () => void; onPick: () => void }) {
   const { colors } = useTheme();
   const brand = brandStyle(unit);
   const goalProgress = dashboard.goalProgress ?? 0;
@@ -396,10 +414,11 @@ function UnitDetail({ unit, dashboard, onBack, onPick }: { unit: Unit; dashboard
           <Pressable accessibilityRole="button" onPress={onPick} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 13, height: 44, borderRadius: 16, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.line }}><Text style={{ color: colors.text, fontWeight: "700" }}>{brand.label}</Text><Ionicons name="chevron-down" size={16} color={colors.muted} /></Pressable>
         </View>
       </Reveal>
+      <Reveal delay={35}><MonthSelector value={month} onChange={onMonth} /></Reveal>
       <Reveal delay={60}>
         <LinearGradient colors={brand.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 32, padding: 25, gap: 23, overflow: "hidden", shadowColor: brand.glow, shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 9 }}>
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, right: -65, top: -100, backgroundColor: "rgba(255,255,255,0.14)" }} />
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}><View><Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700", letterSpacing: 1.3 }}>FATURAMENTO · MÊS ATUAL</Text><Text style={{ color: "rgba(255,255,255,0.72)", marginTop: 5, fontSize: 13 }}>{unit.name}</Text></View><View style={{ width: 43, height: 43, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.17)", alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={22} /></View></View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}><View><Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700", letterSpacing: 1.3, textTransform: "uppercase" }}>FATURAMENTO · {monthLabel(month, true)}</Text><Text style={{ color: "rgba(255,255,255,0.72)", marginTop: 5, fontSize: 13 }}>{unit.name}</Text></View><View style={{ width: 43, height: 43, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.17)", alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={22} /></View></View>
           <AnimatedAmount value={dashboard.revenue} color="#FFFFFF" size={42} />
           <View style={{ gap: 10 }}><View style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>Meta acumulada</Text><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>{Math.round(goalProgress * 100)}%</Text></View><AnimatedProgress value={goalProgress} color="#FFFFFF" /></View>
           {dashboard.provisional && <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Ionicons name="time-outline" color="rgba(255,255,255,0.82)" size={15} /><Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 11 }}>Há conciliações de pagamento em processamento</Text></View>}
@@ -414,8 +433,32 @@ function UnitDetail({ unit, dashboard, onBack, onPick }: { unit: Unit; dashboard
         <View style={{ flex: 1 }}><Reveal delay={240}><Metric icon="flag-outline" label="Meta acumulada" value={dashboard.goal == null ? "—" : compactCurrency.format(dashboard.goal)} color={brand.glow} /></Reveal></View>
         <View style={{ flex: 1 }}><Reveal delay={310}><Metric icon="trophy-outline" label="Melhor dia" value={bestDay?.revenue == null ? "—" : compactCurrency.format(bestDay.revenue)} color={brand.glow} /></Reveal></View>
       </View>
+      <RevenueOverview dashboard={dashboard} color={brand.glow} />
       <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center" }}>Atualizado em {new Date(dashboard.updatedAt).toLocaleString("pt-BR")}</Text>
     </>
+  );
+}
+
+function RevenueOverview({ dashboard, color }: { dashboard: Dashboard; color: string }) {
+  const { colors } = useTheme();
+  const metrics = [
+    ["Projeção", dashboard.projection, "trending-up-outline"],
+    ["Receita bruta", dashboard.grossRevenue, "cash-outline"],
+    ["Recebido", dashboard.receivedRevenue, "checkmark-circle-outline"],
+    ["Receita líquida", dashboard.netRevenue, "wallet-outline"],
+    ["Descontos", dashboard.discount, "pricetag-outline"],
+    ["Gorjeta", dashboard.tips, "sparkles-outline"],
+  ] as const;
+  return (
+    <Reveal delay={360}>
+      <View style={{ padding: 20, borderRadius: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 17 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Receita do mês</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Mesma leitura financeira do KPH</Text></View><View style={{ width: 39, height: 39, borderRadius: 14, backgroundColor: `${color}20`, alignItems: "center", justifyContent: "center" }}><Ionicons name="analytics-outline" size={20} color={color} /></View></View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {metrics.map(([label, value, icon]) => <View key={label} style={{ width: "48%", minHeight: 94, borderRadius: 19, backgroundColor: colors.soft, padding: 13, justifyContent: "space-between" }}><Ionicons name={icon} color={color} size={17} /><View><Text adjustsFontSizeToFit numberOfLines={1} style={{ color: colors.text, fontWeight: "800", fontSize: 16 }}>{value == null ? "—" : compactCurrency.format(value)}</Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 3 }}>{label}</Text></View></View>)}
+        </View>
+        <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1, borderRadius: 18, padding: 14, backgroundColor: colors.glass }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>{dashboard.customers?.toLocaleString("pt-BR") ?? "—"}</Text><Text style={{ color: colors.muted, fontSize: 10 }}>Clientes</Text></View><View style={{ flex: 1, borderRadius: 18, padding: 14, backgroundColor: colors.glass }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>{dashboard.averageTicket == null ? "—" : currency.format(dashboard.averageTicket)}</Text><Text style={{ color: colors.muted, fontSize: 10 }}>Ticket médio</Text></View></View>
+      </View>
+    </Reveal>
   );
 }
 

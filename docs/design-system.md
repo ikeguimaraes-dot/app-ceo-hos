@@ -22,7 +22,7 @@ Paleta é proposta: medir contraste em combinações reais antes de aceite. Espa
 
 ## Navegação e componentes
 
-Abas: Início, A pagar, IA, Operação, Pessoas e Mais; exibir somente capacidades liberadas. Início destaca o portfólio e o faturamento/meta por casa. A pagar mostra saldo aberto, vencidos e próximos vencimentos vindos do contrato financeiro; não executa movimentações. Não mostrar métricas sem contrato ou com valores inventados.
+Abas: Início, A pagar, IA, NF, Pessoas e Mais; exibir somente capacidades liberadas. Início destaca o portfólio, o faturamento de ontem e a receita mensal por casa. NF mostra as notas fiscais de produto do mês selecionado. A pagar mostra saldo aberto, vencidos e próximos vencimentos vindos do contrato financeiro; não executa movimentações. Não mostrar métricas sem contrato ou com valores inventados.
 
 Componentes: Screen, Text, Button, TextField, Card, Money, StatusBadge, UnitSelector, ListRow, EmptyState, ErrorState com retry, OfflineBanner, LoadingState, LastUpdated e ConfirmationSheet. Labels acessíveis, ordem de foco e anúncios de erro. Status tem texto/ícone além de cor. Listas/cards substituem tabelas largas; gráficos pequenos têm resumo textual e dados acessíveis.
 

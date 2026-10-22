@@ -139,6 +139,20 @@ describe("session and access boundaries", () => {
     expect(dashboard.revenue).toBe(864250);
     expect(dashboard.series).toHaveLength(14);
     expect(dashboard.series.every((point) => point.date.startsWith("2026-10-"))).toBe(true);
+    expect(dashboard.grossRevenue).toBeGreaterThan(0);
+    expect(dashboard.customers).toBeGreaterThan(0);
+    const previous = await gateways.dashboard.get({ session: c.state.session!, unitId: c.state.unitId! }, "2026-09-01");
+    expect(previous.periodStart).toBe("2026-09-01");
+    expect(previous.series.every((point) => point.date.startsWith("2026-09-"))).toBe(true);
+  });
+  it("lists product invoices by unit and selected month", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    const result = await gateways.productInvoices.get({ session: c.state.session!, unitId: c.state.unitId! }, "2026-09-01");
+    expect(result.invoiceCount).toBe(3);
+    expect(result.items.every((item) => item.issueDate.startsWith("2026-09-"))).toBe(true);
+    expect(result.totalPurchased).toBeCloseTo(10688.22);
   });
   it("expires session and removes business cache, identity and local marker", async () => {
     const { controller: c, storage, queries } = setup();

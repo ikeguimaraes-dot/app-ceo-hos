@@ -56,6 +56,7 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v2`
+- `ghost_product_invoices_v1`
 - `ghost_payables_v1`
 - `ghost_cash_flow_week_v1`
 - `ghost_pending_items_v1`
@@ -89,7 +90,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 ## Navegação e links
 
-As seis áreas são Início, A pagar, IA, Operação, Pessoas e Mais. A área financeira alterna entre contas a pagar e fluxo semanal, com quatro janelas de sete dias, entrada D+1, saídas e acumulado por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
+As seis áreas são Início, A pagar, IA, NF, Pessoas e Mais. A home mostra o portfólio do mês, o faturamento do dia anterior das quatro casas e abre o dashboard de cada casa. O dashboard possui seletor dos últimos 13 meses e detalha projeção, receita bruta e líquida, recebido, descontos, gorjeta, clientes e ticket médio. NF lista notas de produto por casa e mês. A área financeira alterna entre contas a pagar e fluxo semanal, com quatro janelas de sete dias, entrada D+1, saídas e acumulado por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até o login. A primeira unidade autorizada fornece o contexto inicial automaticamente, e a troca de casa acontece na home. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 
