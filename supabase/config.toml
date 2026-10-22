@@ -2,3 +2,6 @@ project_id = "iqgrvptrtphvbmvrqntm"
 
 [functions.ghost-push-worker]
 verify_jwt = false
+
+[functions.ghost-assistant]
+verify_jwt = true

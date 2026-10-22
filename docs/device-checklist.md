@@ -17,7 +17,8 @@
 - [ ] Login inválido, refresh, reinício e expiração sem token em logs.
 - [ ] Usuário sem vínculo, inativo e papel removido durante uso.
 - [ ] Troca A → B com request em voo; resposta A nunca aparece em B.
-- [ ] Deep links `/pending` e `/notifications` a frio/quente e após logout.
+- [ ] Deep links `/pending`, `/notifications` e `/assistant` a frio/quente e após logout.
+- [ ] Assistente autenticado: resposta com fontes da unidade atual, capability removida, limite e indisponibilidade do modelo.
 - [ ] Recovery PKCE por e-mail, link expirado/replay e nova senha.
 - [ ] Biometria: sucesso, cancelamento, sem cadastro e mudança de cadastro.
 - [ ] Push: negado/permitido, token rotacionado, dois usuários no aparelho e logout offline.
@@ -29,6 +30,7 @@
 - [x] Preview Android gerado pelo EAS local e cloud, assinado, instalado e aberto.
 - [x] Preview iOS do EAS instalado e aberto no simulador, sem Metro/localhost.
 - [x] Preview remoto em Release assinado pela Personal Team, instalado e aberto no iPhone físico em 2026-10-22, sem Metro/localhost e conectado ao `kph-os-dev` somente pelas RPCs Ghost.
+- [x] Preview físico recompilado, reinstalado e aberto com a tela do assistente e Edge Function autenticada em 2026-10-22.
 - [ ] Preview iOS da organização com APNs; a Personal Team usada na validação física não aceita a capability de Push Notifications.
 - [ ] FCM V1 Android; a inspeção EAS de 2026-10-21 confirmou que nenhuma conta de serviço está associada.
 - [ ] APNs e App Store Connect; o perfil iOS ainda não possui credenciais enquanto a inscrição está pendente.

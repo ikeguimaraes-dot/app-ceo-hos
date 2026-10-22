@@ -7,6 +7,7 @@ const walk = (dir) =>
 const source = [
   ...walk("app"),
   ...walk("src"),
+  ...walk("supabase/functions"),
   ".env.example",
   "app.config.ts",
   "eas.json",

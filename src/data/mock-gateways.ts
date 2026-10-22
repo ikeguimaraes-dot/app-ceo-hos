@@ -187,6 +187,19 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           : { ...demo.people };
       },
     },
+    assistant: {
+      async ask(scope, question) {
+        await check(scope, "assistant.ask");
+        if (!question.trim()) throw new Error("Escreva uma pergunta.");
+        const dashboard =
+          demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
+        return {
+          answer: `Na demonstração, o faturamento da unidade é ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(dashboard.revenue ?? 0)} e existem ${demo.operation.pendingMaintenance} manutenções pendentes.`,
+          sources: ["Dashboard", "Operação"],
+          updatedAt: "2026-10-20T12:00:00Z",
+        };
+      },
+    },
     notifications: {
       async list(scope, cursor) {
         await check(scope, "notifications.read");

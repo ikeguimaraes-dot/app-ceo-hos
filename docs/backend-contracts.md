@@ -6,6 +6,7 @@ Os contratos técnicos de leitura, sessão, decisão, reconciliação de instala
 | ------------------------------------ | --------------------------------------------------------------------------------------------- |
 | Eventos de Operação e Pessoas        | Evento de origem, destinatários, deduplicação, prioridade, validade e destino local permitido |
 | Dashboard financeiro ampliado        | Fonte oficial, competência, unidade monetária, precisão, ausência de dados, atualização e SLA |
+| Assistente analítico ampliado        | Períodos comparáveis, consolidação multiunidade, DRE/CMV/produtos e vocabulário executivo     |
 | Novas ações sensíveis                | Recurso, estados, capability, versão esperada, idempotência, auditoria e regras de reversão   |
 
 ## Decisões de produto e infraestrutura
@@ -32,3 +33,5 @@ Os contratos paginados, os agregados mínimos de Operação/Pessoas e a revogaç
 O contrato transacional de decisão, com versão esperada, idempotência, conflito 409 e auditoria privada, foi entregue na [Fase 2D](phase-2d.md).
 
 A reconciliação atômica de instalações, expiração de vínculos sem contato e observabilidade técnica sem PII foram entregues na [Fase 2E](phase-2e.md).
+
+O contrato inicial do assistente foi entregue na [Fase 2G](phase-2g.md). Ele cobre somente a unidade atual e os agregados já existentes do mês corrente. Perguntas sobre outras competências, comparação entre unidades, caixa, DRE, CMV, produtos, orçamento, conciliação, escalas ou folha dependem de novos RPCs minimizados e respectivas capabilities.

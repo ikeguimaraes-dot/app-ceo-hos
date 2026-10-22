@@ -9,6 +9,7 @@ import {
 import { z } from "zod";
 import type {
   Bootstrap,
+  AssistantAnswer,
   Dashboard,
   Gateways,
   Notification,
@@ -35,6 +36,7 @@ const capability = z.enum([
   "operation.read",
   "people.read",
   "notifications.read",
+  "assistant.ask",
 ]);
 const bootstrapSchema = z.object({
   userId: z.string().uuid(),
@@ -116,6 +118,11 @@ const notificationPreferencesSchema = z.object({
     .nullable(),
   timezone: z.string().min(1).max(80),
   version: z.number().int().nonnegative(),
+});
+const assistantAnswerSchema = z.object({
+  answer: z.string().min(1).max(6000),
+  sources: z.array(z.string().min(1).max(80)).max(8),
+  updatedAt: z.string(),
 });
 
 function mapSession(session: SupabaseSession): Session {
@@ -351,6 +358,23 @@ export function createRemoteGateways(): Gateways {
             scope.signal,
           ),
         ) satisfies PeopleSummary;
+      },
+    },
+    assistant: {
+      async ask(scope, question, history) {
+        const { data, error } = await client.functions.invoke(
+          "ghost-assistant",
+          {
+            body: {
+              unitId: scope.unitId,
+              question,
+              history,
+            },
+            signal: scope.signal,
+          },
+        );
+        if (error) throw friendlyError(error);
+        return assistantAnswerSchema.parse(data) satisfies AssistantAnswer;
       },
     },
     notifications: {

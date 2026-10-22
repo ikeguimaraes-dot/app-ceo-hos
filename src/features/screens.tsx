@@ -24,6 +24,7 @@ import {
 } from "../ui/components";
 import type {
   Capability,
+  AssistantMessage,
   NotificationCategory,
   NotificationPreferences,
   OperationSummary,
@@ -374,6 +375,11 @@ function DashboardContent() {
         </>
       )}
       <CapabilityButton
+        capability="assistant.ask"
+        title="Perguntar ao Ghost"
+        path="/assistant"
+      />
+      <CapabilityButton
         capability="pending.read"
         title="Ver pendências"
         path="/pending"
@@ -393,7 +399,7 @@ function CapabilityButton({
 }: {
   capability: Capability;
   title: string;
-  path: "/pending" | "/notifications";
+  path: "/pending" | "/notifications" | "/assistant";
 }) {
   const { controller } = useGhost();
   return controller.can(capability) ? (
@@ -775,6 +781,11 @@ export function More() {
         onPress={() => router.push("/units")}
       />
       <CapabilityButton
+        capability="assistant.ask"
+        title="Perguntar ao Ghost"
+        path="/assistant"
+      />
+      <CapabilityButton
         capability="notifications.read"
         title="Notificações"
         path="/notifications"
@@ -792,6 +803,138 @@ export function More() {
           void controller.logout().then(() => router.replace("/login"))
         }
       />
+    </Screen>
+  );
+}
+
+export function AssistantScreen() {
+  return (
+    <Access capability="assistant.ask">
+      <AssistantContent />
+    </Access>
+  );
+}
+
+function AssistantContent() {
+  const { state, gateways } = useGhost();
+  const scope = useScope();
+  const { colors } = useTheme();
+  const unit = state.bootstrap?.units.find((item) => item.id === scope.unitId);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [error, setError] = useState("");
+  const [sources, setSources] = useState<string[]>([]);
+  const mutation = useMutation({
+    mutationFn: ({
+      prompt,
+      history,
+    }: {
+      prompt: string;
+      history: AssistantMessage[];
+    }) => gateways.assistant.ask(scope, prompt, history),
+    onSuccess: (result) => {
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", content: result.answer },
+      ]);
+      setSources(result.sources);
+    },
+    onError: (cause) =>
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível responder agora.",
+      ),
+  });
+  function ask(text = question) {
+    const prompt = text.trim();
+    if (!prompt || mutation.isPending) return;
+    const history = messages.slice(-8);
+    setError("");
+    setSources([]);
+    setQuestion("");
+    setMessages((current) => [...current, { role: "user", content: prompt }]);
+    mutation.mutate({ prompt, history });
+  }
+  return (
+    <Screen
+      title="Pergunte sobre sua empresa"
+      subtitle={`${unit?.name ?? "Unidade atual"} · respostas baseadas apenas nos dados autorizados`}
+    >
+      {messages.length === 0 && (
+        <Card>
+          <Label size={20}>O que você quer entender?</Label>
+          <Label muted>
+            O Ghost consulta faturamento, metas, pendências, operação e pessoas
+            conforme suas permissões nesta unidade.
+          </Label>
+          <Button
+            title="Como está o faturamento e a meta?"
+            secondary
+            onPress={() => ask("Como está o faturamento e a meta deste mês?")}
+          />
+          <Button
+            title="O que precisa da minha atenção?"
+            secondary
+            onPress={() => ask("O que precisa da minha atenção agora?")}
+          />
+        </Card>
+      )}
+      {messages.map((message, index) => (
+        <View
+          key={`${message.role}-${index}`}
+          accessibilityLabel={
+            message.role === "user" ? "Sua pergunta" : "Resposta do Ghost"
+          }
+          style={{
+            alignSelf: message.role === "user" ? "flex-end" : "stretch",
+            maxWidth: message.role === "user" ? "88%" : "100%",
+            borderRadius: 18,
+            padding: 16,
+            backgroundColor:
+              message.role === "user" ? colors.accent : colors.surface,
+            borderWidth: message.role === "assistant" ? 1 : 0,
+            borderColor: colors.line,
+          }}
+        >
+          <Text
+            style={{
+              color: message.role === "user" ? colors.accentText : colors.text,
+              fontSize: 16,
+              lineHeight: 24,
+            }}
+          >
+            {message.content}
+          </Text>
+        </View>
+      ))}
+      {mutation.isPending && <Loading />}
+      {!!sources.length && (
+        <Label muted size={12}>
+          Fontes: {sources.join(" · ")}
+        </Label>
+      )}
+      {!!error && <Text accessibilityRole="alert">{error}</Text>}
+      <Card>
+        <Field
+          label="Sua pergunta"
+          value={question}
+          onChangeText={setQuestion}
+          placeholder="Ex.: qual unidade exige mais atenção?"
+          multiline
+          maxLength={1000}
+        />
+        <Button
+          title={mutation.isPending ? "Analisando…" : "Perguntar"}
+          disabled={mutation.isPending || !question.trim()}
+          onPress={() => ask()}
+        />
+        <Label muted size={12}>
+          As respostas podem conter imprecisões. Confira os números nas telas de
+          origem antes de tomar uma decisão.
+        </Label>
+      </Card>
+      <Button title="Voltar" secondary onPress={() => router.back()} />
     </Screen>
   );
 }

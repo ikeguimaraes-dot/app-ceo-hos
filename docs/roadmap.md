@@ -11,6 +11,7 @@
 | 2D — decisões                       | Implementada em dev  | Contrato transacional de aprovação, capabilities por recurso, idempotência, conflito, auditoria e validação remota sem decisões persistidas  |
 | 2E — confiabilidade                 | Implementada em dev  | Reconciliação de instalações push, expiração, logs técnicos sem PII e validação do worker                                                    |
 | 2F — prontidão de release           | Implementada no repo | Gate automatizado de ambientes/IDs/EAS/Vercel e CI em runtime suportado; distribuição física continua nos gates externos                     |
+| 2G — assistente executivo           | Implementada em dev  | Chat somente leitura, capability por unidade, contexto minimizado, limites, auditoria sem conteúdo e OpenRouter via Edge Function            |
 | 3 — expansão financeira/operacional | Pendente             | Receber, fluxo, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados                                              |
 | 4 — pessoas                         | Pendente             | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso                                                                  |
 | 5 — lojas                           | Pendente             | Privacidade, acessibilidade física, performance, observabilidade, assinatura, rollout e rollback                                             |

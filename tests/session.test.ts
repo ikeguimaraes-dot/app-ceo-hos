@@ -56,6 +56,7 @@ describe("session and access boundaries", () => {
     await c.start();
     expect(protectedDestination(c.state)).toBe("/login");
     expect(safeDestination("/notifications")).toBe("/notifications");
+    expect(safeDestination("/assistant")).toBe("/assistant");
     expect(safeDestination("https://evil.invalid")).toBe("/");
     expect(safeDestination("//evil.invalid")).toBe("/");
   });
@@ -94,6 +95,7 @@ describe("session and access boundaries", () => {
     await c.selectUnit("demo-garden");
     expect(c.can("dashboard.read")).toBe(true);
     expect(c.can("pending.read")).toBe(false);
+    expect(c.can("assistant.ask")).toBe(false);
     await expect(
       gateways.pending.list({
         session: c.state.session!,
@@ -195,6 +197,33 @@ describe("session and access boundaries", () => {
     );
     await c.setMode("offline");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow("offline");
+  });
+  it("answers through the assistant gateway only when bootstrap grants access", async () => {
+    const { controller: c, gateways } = setup();
+    await enter(c);
+    await c.selectUnit("demo-garden");
+    const scope = { session: c.state.session!, unitId: "demo-garden" };
+    const answer = await gateways.assistant.ask(
+      scope,
+      "Como está a unidade?",
+      [],
+    );
+    expect(answer.answer).toContain("24.850,00");
+    expect(answer.sources).toEqual(["Dashboard", "Operação"]);
+
+    const restricted = setup();
+    await enter(restricted.controller, "restricted");
+    await restricted.controller.selectUnit("demo-garden");
+    await expect(
+      restricted.gateways.assistant.ask(
+        {
+          session: restricted.controller.state.session!,
+          unitId: "demo-garden",
+        },
+        "Como está a unidade?",
+        [],
+      ),
+    ).rejects.toThrow("Acesso não permitido");
   });
   it("decides a pending item once and replays the same idempotent result", async () => {
     const { controller: c, gateways } = setup();

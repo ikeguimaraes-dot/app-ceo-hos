@@ -9,6 +9,7 @@ export const demo = {
       group: "Grupo Demonstração",
       brand: "Ghost Labs",
       capabilities: [
+        "assistant.ask",
         "dashboard.read",
         "pending.read",
         "maintenance.decide",
@@ -23,7 +24,12 @@ export const demo = {
       name: "Costa · Demo",
       group: "Grupo Demonstração",
       brand: "Ghost Labs",
-      capabilities: ["dashboard.read", "pending.read", "notifications.read"],
+      capabilities: [
+        "assistant.ask",
+        "dashboard.read",
+        "pending.read",
+        "notifications.read",
+      ],
     },
   ] satisfies Unit[],
   dashboards: {

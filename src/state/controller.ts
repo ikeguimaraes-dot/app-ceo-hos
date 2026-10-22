@@ -275,8 +275,12 @@ export class Controller {
 }
 export function safeDestination(
   path: string | undefined,
-): "/" | "/pending" | "/notifications" {
-  return path === "/pending" || path === "/notifications" ? path : "/";
+): "/" | "/pending" | "/notifications" | "/assistant" {
+  return path === "/pending" ||
+    path === "/notifications" ||
+    path === "/assistant"
+    ? path
+    : "/";
 }
 export function protectedDestination(
   state: State,

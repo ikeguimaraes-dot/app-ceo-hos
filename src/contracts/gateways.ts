@@ -5,7 +5,8 @@ export type Capability =
   | "punch.decide"
   | "operation.read"
   | "people.read"
-  | "notifications.read";
+  | "notifications.read"
+  | "assistant.ask";
 export type Scenario = "active" | "unlinked" | "inactive" | "restricted";
 export type Session = {
   userId: string;
@@ -82,6 +83,15 @@ export type PeopleSummary = {
   headcount: number;
   pendingPunchAdjustments: number;
 };
+export type AssistantMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+export type AssistantAnswer = {
+  answer: string;
+  sources: string[];
+  updatedAt: string;
+};
 export type NotificationCategory =
   "pending" | "operation" | "people" | "system";
 export type NotificationPreferences = {
@@ -124,6 +134,13 @@ export interface OperationGateway {
 export interface PeopleGateway {
   get(scope: Scope): Promise<PeopleSummary>;
 }
+export interface AssistantGateway {
+  ask(
+    scope: Scope,
+    question: string,
+    history: AssistantMessage[],
+  ): Promise<AssistantAnswer>;
+}
 export interface NotificationGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<Notification>>;
   markRead(scope: Scope, id: string): Promise<void>;
@@ -144,6 +161,7 @@ export interface Gateways {
   pending: PendingItemsGateway;
   operation: OperationGateway;
   people: PeopleGateway;
+  assistant: AssistantGateway;
   notifications: NotificationGateway;
   simulation: { setMode(mode: DataMode): void; reset(): void };
 }

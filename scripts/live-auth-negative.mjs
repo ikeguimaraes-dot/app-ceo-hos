@@ -69,6 +69,24 @@ const protectedRpcs = [
       p_idempotency_key: "ghost-negative-anonymous",
     },
   ],
+  [
+    "ghost_assistant_begin_v1",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_request_id: "00000000-0000-0000-0000-000000000000",
+    },
+  ],
+  [
+    "ghost_assistant_finish_v1",
+    {
+      p_request_id: "00000000-0000-0000-0000-000000000000",
+      p_outcome: "error",
+      p_code: "negative_test",
+      p_model: "negative-test",
+      p_prompt_tokens: 0,
+      p_completion_tokens: 0,
+    },
+  ],
 ];
 for (const [rpc, args] of protectedRpcs) {
   const anonymousRpc = await client.rpc(rpc, args);
