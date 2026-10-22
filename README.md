@@ -85,7 +85,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 As seis áreas são Início, Pendências, IA, Operação, Pessoas e Mais. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
-Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até login e seleção de unidade. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
+Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até o login. A primeira unidade autorizada fornece o contexto inicial automaticamente, e a troca de casa acontece na home. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 
 Push pede permissão depois da explicação e do login. O token fica em tabela privada, associado ao usuário autenticado e à instalação. Preferências são versionadas, o payload é genérico e os toques em notificações aceitam apenas rotas locais permitidas. Envio e receipts passam pela Edge Function protegida por segredo; entrega em aparelhos ainda depende das credenciais APNs/FCM descritas em [contratos restantes](docs/backend-contracts.md).
 

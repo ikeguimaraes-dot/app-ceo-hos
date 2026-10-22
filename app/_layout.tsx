@@ -14,7 +14,7 @@ function Routes() {
   }, [state.status]);
   if (state.status === "starting")
     return (
-      <Screen title="Sua próxima perspectiva.">
+      <Screen title="Preparando sua visão.">
         <Loading />
       </Screen>
     );

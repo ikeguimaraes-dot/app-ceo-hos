@@ -37,7 +37,7 @@ describe("session and access boundaries", () => {
     await c.start();
     expect(c.state.status).toBe("ready");
     expect(c.state.session?.userId).toBe("restored-user");
-    expect(c.state.unitId).toBeNull();
+    expect(c.state.unitId).toBe("demo-garden");
   });
 
   it("reconciles an already-authorized push installation without blocking login", async () => {
@@ -69,12 +69,13 @@ describe("session and access boundaries", () => {
       pushDestination({ version: 1, target: "https://evil.invalid" }),
     ).toBe("/");
   });
-  it("requires authorized unit selection after login", async () => {
+  it("selects the first authorized unit after login and rejects unknown units", async () => {
     const { controller: c } = setup();
     await enter(c);
-    expect(protectedDestination(c.state)).toBe("/units");
+    expect(c.state.unitId).toBe("demo-garden");
+    expect(protectedDestination(c.state)).toBeNull();
     await expect(c.selectUnit("outside-unit")).rejects.toThrow();
-    expect(c.state.unitId).toBeNull();
+    expect(c.state.unitId).toBe("demo-garden");
     await c.selectUnit("demo-garden");
     expect(protectedDestination(c.state)).toBeNull();
   });
@@ -326,6 +327,6 @@ describe("session and access boundaries", () => {
     });
     await c.revalidateAccess();
     expect(c.state.unitId).toBeNull();
-    expect(protectedDestination(c.state)).toBe("/units");
+    expect(protectedDestination(c.state)).toBe("/status");
   });
 });

@@ -81,10 +81,8 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       if (handled.has(request.identifier)) return;
       handled.add(request.identifier);
       const target = pushDestination(request.content.data);
-      const { status, unitId } = controller.state;
-      if (status === "ready" && unitId) router.push(target);
-      else if (status === "ready")
-        router.push({ pathname: "/units", params: { next: target } });
+      const { status } = controller.state;
+      if (status === "ready") router.push(target);
       else router.push({ pathname: "/login", params: { next: target } });
     };
     void import("expo-notifications").then(async (Notifications) => {

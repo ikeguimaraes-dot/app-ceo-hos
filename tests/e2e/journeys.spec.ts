@@ -5,9 +5,6 @@ async function login(page: Page, scenario?: string) {
     await page.getByRole("button", { name: scenario, exact: true }).click();
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
 }
-async function unit(page: Page, name = "Meet & Eat") {
-  await page.getByRole("button", { name: `Abrir ${name} · Demo` }).click();
-}
 test("login, dashboard, unit isolation, notifications and logout stay inside the app boundary", async ({
   page,
 }) => {
@@ -28,9 +25,6 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   ).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/login.png", fullPage: true });
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
-  await expect(page.getByText("Sua próxima perspectiva")).toBeVisible();
-  await page.screenshot({ path: "docs/screenshots/units.png", fullPage: true });
-  await unit(page);
   await expect(page.getByText("R$ 864.250")).toBeVisible();
   await page.screenshot({ path: "docs/screenshots/home.png", fullPage: true });
   await page.getByRole("tab", { name: "Operação" }).click();
@@ -80,11 +74,9 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     fullPage: true,
   });
   await page.goBack();
-  await page
-    .getByRole("button", { name: "Trocar unidade", exact: true })
-    .click();
-  await unit(page, "Mdna");
-  await page.getByRole("button", { name: "Abrir dashboard Mdna" }).click();
+  await page.getByRole("tab", { name: "Início" }).click();
+  await page.getByRole("button", { name: "Escolher casa" }).click();
+  await page.getByRole("button", { name: "Selecionar Mdna" }).click();
   await expect(
     page.getByText("R$ 628.430").filter({ visible: true }),
   ).toBeVisible();
@@ -109,13 +101,12 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   ).toBeVisible();
   expect(external).toEqual([]);
 });
-test("protected deep link survives login and unit selection", async ({
+test("protected deep link survives login", async ({
   page,
 }) => {
   await page.goto("/notifications");
   await expect(page).toHaveURL(/login/);
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
-  await unit(page);
   await expect(page.getByText("No seu radar")).toBeVisible();
 });
 test("inactive and unlinked scenarios cannot enter tabs", async ({ page }) => {
@@ -132,7 +123,6 @@ test("missing capability hides tab and logout protects history", async ({
   page,
 }) => {
   await login(page, "Acesso restrito");
-  await unit(page);
   await expect(page.getByText("R$ 864.250")).toBeVisible();
   await expect(page.getByRole("tab", { name: "Pendências" })).toHaveCount(0);
   await page.getByRole("tab", { name: "Mais" }).click();
@@ -152,7 +142,6 @@ test("recovery, empty, offline, retry and dark appearance", async ({
     ),
   ).toBeVisible();
   await login(page);
-  await unit(page);
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
   await page.getByRole("button", { name: "Vazio", exact: true }).click();
@@ -190,7 +179,6 @@ test("authenticated deep link still denies missing capability", async ({
     .getByRole("button", { name: "Acesso restrito", exact: true })
     .click();
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
-  await unit(page);
   await expect(
     page.getByText("Acesso restrito", { exact: true }),
   ).toBeVisible();

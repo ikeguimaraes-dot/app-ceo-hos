@@ -88,7 +88,8 @@ export class Controller {
         },
         bootstrap,
         status: bootstrap.status === "active" ? "ready" : bootstrap.status,
-        unitId: null,
+        unitId:
+          bootstrap.status === "active" ? (bootstrap.units[0]?.id ?? null) : null,
       });
       if (bootstrap.status === "active") this.reconcileNotifications(session);
     } catch (error) {
@@ -130,7 +131,8 @@ export class Controller {
         },
         bootstrap,
         status: bootstrap.status === "active" ? "ready" : bootstrap.status,
-        unitId: null,
+        unitId:
+          bootstrap.status === "active" ? (bootstrap.units[0]?.id ?? null) : null,
       });
       if (bootstrap.status === "active") this.reconcileNotifications(session);
     } catch (e) {
@@ -221,8 +223,10 @@ export class Controller {
         },
         status: bootstrap.status === "active" ? "ready" : bootstrap.status,
         unitId:
-          bootstrap.status === "active" && currentUnitAllowed
-            ? this.state.unitId
+          bootstrap.status === "active"
+            ? currentUnitAllowed
+              ? this.state.unitId
+              : (bootstrap.units[0]?.id ?? null)
             : null,
         generation: this.state.generation + 1,
         locked: false,
@@ -296,10 +300,10 @@ export function safeDestination(
 }
 export function protectedDestination(
   state: State,
-): "/login" | "/status" | "/units" | "/lock" | null {
+): "/login" | "/status" | "/lock" | null {
   if (state.status === "unlinked" || state.status === "inactive")
     return "/status";
   if (state.status !== "ready") return "/login";
   if (state.locked) return "/lock";
-  return state.unitId ? null : "/units";
+  return state.unitId ? null : "/status";
 }

@@ -82,10 +82,7 @@ export function Login() {
       environment.isRemote ? undefined : scenario,
     );
     if (controller.state.status === "ready")
-      router.replace({
-        pathname: "/units",
-        params: { next: safeDestination(params.next) },
-      });
+      router.replace(safeDestination(params.next));
     else if (["unlinked", "inactive"].includes(controller.state.status))
       router.replace("/status");
   }
@@ -245,47 +242,6 @@ export function Status() {
           }
         />
       </Card>
-    </Screen>
-  );
-}
-export function Units() {
-  const { state, controller } = useGhost();
-  const { next } = useLocalSearchParams<{ next?: string }>();
-  const [error, setError] = useState("");
-  return (
-    <Screen
-      title="Sua próxima perspectiva"
-      subtitle={
-        environment.isRemote
-          ? "Selecione uma unidade autorizada."
-          : "Selecione uma unidade de demonstração."
-      }
-    >
-      {state.bootstrap?.units.map((unit) => (
-        <Card key={unit.id}>
-          <Label muted size={12}>
-            {unit.group} / {unit.brand}
-          </Label>
-          <Heading>{unit.name}</Heading>
-          <Button
-            title={`Abrir ${unit.name}`}
-            onPress={() =>
-              void controller
-                .selectUnit(unit.id)
-                .then(() => router.replace(safeDestination(next)))
-                .catch((e: Error) => setError(e.message))
-            }
-          />
-        </Card>
-      ))}
-      {!!error && <Label>{error}</Label>}
-      <Button
-        title={environment.isRemote ? "Sair" : "Sair da demonstração"}
-        secondary
-        onPress={() =>
-          void controller.logout().then(() => router.replace("/login"))
-        }
-      />
     </Screen>
   );
 }
@@ -681,11 +637,6 @@ export function More() {
         }
         secondary
         onPress={() => router.push("/preferences")}
-      />
-      <Button
-        title="Trocar unidade"
-        secondary
-        onPress={() => router.push("/units")}
       />
       <CapabilityButton
         capability="notifications.read"
