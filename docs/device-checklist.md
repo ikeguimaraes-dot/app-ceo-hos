@@ -28,7 +28,8 @@
 - [x] Projeto EAS vinculado, ambiente preview isolado e keystore Android gerada.
 - [x] Preview Android gerado pelo EAS local e cloud, assinado, instalado e aberto.
 - [x] Preview iOS do EAS instalado e aberto no simulador, sem Metro/localhost.
-- [ ] Preview iOS assinado; a inscrição da organização Apple Developer continuava em processamento em 2026-10-21.
+- [x] Preview remoto em Release assinado pela Personal Team, instalado e aberto no iPhone físico em 2026-10-22, sem Metro/localhost e conectado ao `kph-os-dev` somente pelas RPCs Ghost.
+- [ ] Preview iOS da organização com APNs; a Personal Team usada na validação física não aceita a capability de Push Notifications.
 - [ ] FCM V1 Android; a inspeção EAS de 2026-10-21 confirmou que nenhuma conta de serviço está associada.
 - [ ] APNs e App Store Connect; o perfil iOS ainda não possui credenciais enquanto a inscrição está pendente.
 - [x] Inspeção dos bundles por JWT, secret key e `service_role`; `check:release` valida também ambientes, IDs e OTA.
