@@ -340,12 +340,22 @@ async function friendlyFunctionError(error: unknown) {
   const candidate = error as {
     message?: string;
     code?: string;
-    context?: Response;
+    context?: unknown;
   };
   let serverCode = "";
-  if (candidate.context instanceof Response) {
+  const context = candidate.context as
+    | {
+        clone?: () => unknown;
+        json?: () => Promise<unknown>;
+      }
+    | undefined;
+  const readable =
+    context && typeof context.clone === "function"
+      ? (context.clone() as { json?: () => Promise<unknown> })
+      : context;
+  if (readable && typeof readable.json === "function") {
     try {
-      const body = (await candidate.context.clone().json()) as {
+      const body = (await readable.json()) as {
         error?: unknown;
       };
       if (typeof body.error === "string") serverCode = body.error;

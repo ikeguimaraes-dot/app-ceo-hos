@@ -358,7 +358,19 @@ Deno.serve(async (request) => {
       promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
       completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
     }
-    const answer = modelMessage?.content;
+    let answer = modelMessage?.content;
+    if (typeof answer !== "string" || !answer.trim()) {
+      messages.push({
+        role: "user",
+        content:
+          "Responda agora à pergunta original usando os resultados já consultados. Não chame ferramentas. Entregue somente a resposta final em português do Brasil.",
+      });
+      payload = await callModel(messages, false);
+      modelMessage = payload?.choices?.[0]?.message;
+      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
+      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
+      answer = modelMessage?.content;
+    }
     if (typeof answer !== "string" || !answer.trim())
       throw new Error("openrouter_empty_response");
     await finish("success", "ok", promptTokens, completionTokens);
