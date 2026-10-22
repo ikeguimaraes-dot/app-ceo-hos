@@ -97,6 +97,14 @@ const protectedRpcs = [
     },
   ],
   [
+    "ghost_payables_v1",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_as_of: "2026-10-22",
+      p_limit: 20,
+    },
+  ],
+  [
     "ghost_assistant_query_v1",
     {
       p_dataset: "financeiro",

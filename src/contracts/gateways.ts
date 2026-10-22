@@ -69,6 +69,27 @@ export type PendingDecisionResult = {
   version: string;
   decidedAt: string;
 };
+export type PayableItem = {
+  id: string;
+  supplier: string;
+  document: string;
+  dueDate: string | null;
+  amount: number;
+  status: "overdue" | "due_today" | "upcoming";
+  daysOverdue: number;
+  paymentMethod: string | null;
+};
+export type Payables = {
+  updatedAt: string;
+  asOf: string;
+  openAmount: number;
+  overdueAmount: number;
+  dueTodayAmount: number;
+  next7DaysAmount: number;
+  openCount: number;
+  overdueCount: number;
+  items: PayableItem[];
+};
 export type Page<T> = {
   items: T[];
   nextCursor: string | null;
@@ -138,6 +159,9 @@ export interface PendingItemsGateway {
     input: DecidePendingInput,
   ): Promise<PendingDecisionResult>;
 }
+export interface PayablesGateway {
+  get(scope: Scope): Promise<Payables>;
+}
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;
 }
@@ -170,6 +194,7 @@ export interface Gateways {
   bootstrap: BootstrapGateway;
   dashboard: DashboardGateway;
   pending: PendingItemsGateway;
+  payables: PayablesGateway;
   operation: OperationGateway;
   people: PeopleGateway;
   assistant: AssistantGateway;

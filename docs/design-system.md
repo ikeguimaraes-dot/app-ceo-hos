@@ -22,7 +22,7 @@ Paleta é proposta: medir contraste em combinações reais antes de aceite. Espa
 
 ## Navegação e componentes
 
-Abas: Início, Pendências, Operação, Pessoas, Mais; exibir somente capacidades liberadas. Início destaca unidade, faturamento/meta, caixa, urgências e aprovações disponíveis. Não mostrar métricas sem contrato ou com valores inventados. Pendência abre detalhe, confirmação e resultado servidor.
+Abas: Início, A pagar, IA, Operação, Pessoas e Mais; exibir somente capacidades liberadas. Início destaca o portfólio e o faturamento/meta por casa. A pagar mostra saldo aberto, vencidos e próximos vencimentos vindos do contrato financeiro; não executa movimentações. Não mostrar métricas sem contrato ou com valores inventados.
 
 Componentes: Screen, Text, Button, TextField, Card, Money, StatusBadge, UnitSelector, ListRow, EmptyState, ErrorState com retry, OfflineBanner, LoadingState, LastUpdated e ConfirmationSheet. Labels acessíveis, ordem de foco e anúncios de erro. Status tem texto/ícone além de cor. Listas/cards substituem tabelas largas; gráficos pequenos têm resumo textual e dados acessíveis.
 

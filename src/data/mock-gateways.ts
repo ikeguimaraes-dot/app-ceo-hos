@@ -170,6 +170,23 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
         return { ...result };
       },
     },
+    payables: {
+      async get(scope) {
+        await check(scope, "dashboard.read");
+        if (mode === "empty")
+          return {
+            ...demo.payables[scope.unitId as keyof typeof demo.payables],
+            openAmount: 0,
+            overdueAmount: 0,
+            dueTodayAmount: 0,
+            next7DaysAmount: 0,
+            openCount: 0,
+            overdueCount: 0,
+            items: [],
+          };
+        return demo.payables[scope.unitId as keyof typeof demo.payables];
+      },
+    },
     operation: {
       async get(scope) {
         await check(scope, "operation.read");

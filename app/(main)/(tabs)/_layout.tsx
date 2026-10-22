@@ -45,11 +45,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="pending"
         options={{
-          title: "Pendências",
-          href: controller.can("pending.read") ? "/pending" : null,
+          title: "A pagar",
+          href: controller.can("dashboard.read") ? "/pending" : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons
-              name="checkbox-outline"
+              name="wallet-outline"
               size={size}
               color={typeof color === "string" ? color : colors.muted}
             />

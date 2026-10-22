@@ -5,7 +5,6 @@ import {
   useInfiniteQuery,
   useMutation,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useGhost } from "../state/provider";
@@ -29,13 +28,12 @@ import type {
   NotificationPreferences,
   OperationSummary,
   PeopleSummary,
-  PendingDecision,
-  PendingItem,
   Scenario,
   Scope,
 } from "../contracts/gateways";
 import { environment } from "../config/environment";
 import { DashboardExperience } from "./dashboard-experience";
+import { PayablesExperience } from "./payables-experience";
 
 function useScope() {
   const { state } = useGhost();
@@ -271,163 +269,9 @@ function CapabilityButton({
 }
 export function PendingScreen() {
   return (
-    <Access capability="pending.read">
-      <PendingContent />
+    <Access capability="dashboard.read">
+      <PayablesExperience />
     </Access>
-  );
-}
-function PendingContent() {
-  const { state, gateways } = useGhost();
-  const scope = useScope();
-  const queryClient = useQueryClient();
-  const [draft, setDraft] = useState<{
-    item: PendingItem;
-    decision: PendingDecision;
-    idempotencyKey: string;
-  } | null>(null);
-  const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
-  const q = useInfiniteQuery({
-    queryKey: ["pending", scope.session.userId, scope.unitId, state.generation],
-    queryFn: ({ signal, pageParam }) =>
-      gateways.pending.list({ ...scope, signal }, pageParam),
-    initialPageParam: null as string | null,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
-  });
-  const items = q.data?.pages.flatMap((page) => page.items) ?? [];
-  const decision = useMutation({
-    mutationFn: () => {
-      if (!draft) throw new Error("Selecione uma decisão.");
-      if (draft.decision === "reject" && !reason.trim())
-        throw new Error("Informe o motivo da rejeição.");
-      return gateways.pending.decide(scope, {
-        itemId: draft.item.id,
-        decision: draft.decision,
-        reason: reason.trim() || null,
-        expectedVersion: draft.item.version,
-        idempotencyKey: draft.idempotencyKey,
-      });
-    },
-    onSuccess: async (result) => {
-      setMessage(
-        result.state === "approved"
-          ? "Pendência aprovada com registro de auditoria."
-          : "Pendência rejeitada com registro de auditoria.",
-      );
-      setDraft(null);
-      setReason("");
-      await queryClient.invalidateQueries({ queryKey: ["pending"] });
-      await queryClient.invalidateQueries({ queryKey: ["operation"] });
-      await queryClient.invalidateQueries({ queryKey: ["people"] });
-    },
-    onError: (cause) =>
-      setMessage(
-        cause instanceof Error ? cause.message : "Não foi possível decidir.",
-      ),
-  });
-  function prepare(item: PendingItem, next: PendingDecision) {
-    setMessage("");
-    setReason("");
-    setDraft({
-      item,
-      decision: next,
-      idempotencyKey: [
-        "ghost",
-        scope.session.userId,
-        scope.unitId,
-        item.id,
-        item.version,
-        next,
-      ].join(":"),
-    });
-  }
-  return (
-    <Screen
-      title="O que pede sua atenção"
-      subtitle={
-        environment.isRemote
-          ? "Itens autorizados para consulta nesta unidade"
-          : "Pendências simuladas • sem ações financeiras"
-      }
-    >
-      {q.isPending ? (
-        <Loading />
-      ) : q.error ? (
-        <ErrorState message={q.error.message} retry={() => void q.refetch()} />
-      ) : items.length === 0 ? (
-        <Empty />
-      ) : (
-        items.map((p) => (
-          <Card key={p.id}>
-            <Label muted size={12}>
-              {p.priority === "attention" ? "ATENÇÃO" : "PARA REVISAR"}
-            </Label>
-            <Label size={22}>{p.title}</Label>
-            <Label muted>{p.detail}</Label>
-            {p.canDecide && (
-              <View style={{ gap: 8 }}>
-                <Button
-                  title="Preparar aprovação"
-                  onPress={() => prepare(p, "approve")}
-                />
-                <Button
-                  title="Preparar rejeição"
-                  secondary
-                  onPress={() => prepare(p, "reject")}
-                />
-              </View>
-            )}
-          </Card>
-        ))
-      )}
-      {draft && (
-        <Card>
-          <Label size={20}>
-            Confirmar {draft.decision === "approve" ? "aprovação" : "rejeição"}
-          </Label>
-          <Label muted>{draft.item.title}</Label>
-          <Label muted>
-            Esta ação é final e será registrada com seu usuário, unidade e
-            horário.
-          </Label>
-          <Field
-            label={
-              draft.decision === "reject"
-                ? "Motivo da rejeição"
-                : "Observação (opcional)"
-            }
-            value={reason}
-            onChangeText={setReason}
-            multiline
-            maxLength={500}
-          />
-          <Button
-            title={
-              decision.isPending
-                ? "Registrando…"
-                : `Confirmar ${draft.decision === "approve" ? "aprovação" : "rejeição"}`
-            }
-            disabled={decision.isPending}
-            onPress={() => decision.mutate()}
-          />
-          <Button
-            title="Cancelar"
-            secondary
-            disabled={decision.isPending}
-            onPress={() => setDraft(null)}
-          />
-        </Card>
-      )}
-      {!!message && <Label muted>{message}</Label>}
-      {q.hasNextPage && (
-        <Button
-          title={q.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
-          secondary
-          disabled={q.isFetchingNextPage}
-          onPress={() => void q.fetchNextPage()}
-        />
-      )}
-    </Screen>
   );
 }
 export function NotificationsScreen() {

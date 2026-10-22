@@ -158,6 +158,44 @@ export const demo = {
       canDecide: true,
     },
   ],
+  payables: {
+    "demo-garden": {
+      updatedAt: "2026-10-22T15:00:00Z",
+      asOf: "2026-10-22",
+      openAmount: 184320.45,
+      overdueAmount: 28490.2,
+      dueTodayAmount: 12680.5,
+      next7DaysAmount: 74620.75,
+      openCount: 37,
+      overdueCount: 5,
+      items: [
+        { id: "pay-meet-1", supplier: "Distribuidora Horizonte", document: "NF 48321 · 1/2", dueDate: "2026-10-19", amount: 9840.2, status: "overdue" as const, daysOverdue: 3, paymentMethod: "Boleto" },
+        { id: "pay-meet-2", supplier: "Energia Centro", document: "Fatura outubro", dueDate: "2026-10-22", amount: 12680.5, status: "due_today" as const, daysOverdue: 0, paymentMethod: "Débito" },
+        { id: "pay-meet-3", supplier: "Carnes Premium", document: "NF 77108", dueDate: "2026-10-24", amount: 18750, status: "upcoming" as const, daysOverdue: 0, paymentMethod: "Boleto" },
+      ],
+    },
+    "demo-coast": {
+      updatedAt: "2026-10-22T15:00:00Z", asOf: "2026-10-22", openAmount: 126780.9, overdueAmount: 18320, dueTodayAmount: 7420.9, next7DaysAmount: 48900, openCount: 24, overdueCount: 3,
+      items: [
+        { id: "pay-mdna-1", supplier: "Pescados Atlântico", document: "NF 20914", dueDate: "2026-10-20", amount: 8320, status: "overdue" as const, daysOverdue: 2, paymentMethod: "Boleto" },
+        { id: "pay-mdna-2", supplier: "Serviços Urbanos", document: "Contrato mensal", dueDate: "2026-10-22", amount: 7420.9, status: "due_today" as const, daysOverdue: 0, paymentMethod: null },
+      ],
+    },
+    "demo-freneze": {
+      updatedAt: "2026-10-22T15:00:00Z", asOf: "2026-10-22", openAmount: 98340.1, overdueAmount: 6400, dueTodayAmount: 0, next7DaysAmount: 32780.4, openCount: 19, overdueCount: 2,
+      items: [
+        { id: "pay-freneze-1", supplier: "Hortifruti Paulista", document: "NF 11082", dueDate: "2026-10-18", amount: 6400, status: "overdue" as const, daysOverdue: 4, paymentMethod: "Pix" },
+        { id: "pay-freneze-2", supplier: "Importadora Maison", document: "NF 8840 · 2/3", dueDate: "2026-10-27", amount: 15980.4, status: "upcoming" as const, daysOverdue: 0, paymentMethod: "Boleto" },
+      ],
+    },
+    "demo-match": {
+      updatedAt: "2026-10-22T15:00:00Z", asOf: "2026-10-22", openAmount: 87450, overdueAmount: 0, dueTodayAmount: 5280, next7DaysAmount: 24170, openCount: 16, overdueCount: 0,
+      items: [
+        { id: "pay-match-1", supplier: "Bebidas Arena", document: "NF 99201", dueDate: "2026-10-22", amount: 5280, status: "due_today" as const, daysOverdue: 0, paymentMethod: "Boleto" },
+        { id: "pay-match-2", supplier: "Locação Match", document: "Contrato outubro", dueDate: "2026-10-28", amount: 12000, status: "upcoming" as const, daysOverdue: 0, paymentMethod: null },
+      ],
+    },
+  },
   operation: {
     updatedAt: "2026-10-20T12:00:00Z",
     pendingMaintenance: 3,
@@ -172,8 +210,8 @@ export const demo = {
   notifications: [
     {
       id: "demo-alert",
-      title: "Um fechamento espera por você",
-      body: "Aviso de demonstração. Toque para consultar as pendências.",
+      title: "Uma conta vence hoje",
+      body: "Aviso de demonstração. Toque para consultar as contas a pagar.",
       read: false,
       target: "/pending" as const,
       createdAt: "2026-10-20T12:00:00Z",

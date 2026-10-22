@@ -14,6 +14,8 @@ O assistente executivo da [Fase 2G](docs/phase-2g.md) consulta somente as RPCs p
 
 O cockpit executivo da [Fase 2H](docs/phase-2h.md) reúne o faturamento mensal de Meet, Mdna, Freneze e Match na home e abre dashboards por casa com gráficos diários animados, metas e situação de conciliação.
 
+A [Fase 2I](docs/phase-2i.md) substitui a antiga aba Pendências por Contas a pagar, com resumo de vencimentos e títulos reais por casa por meio de uma RPC financeira somente leitura.
+
 ## Executar
 
 Requer Node 22.23+ e npm 10+.
@@ -52,6 +54,7 @@ O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recupera�
 
 - `ghost_bootstrap_v1`
 - `ghost_dashboard_v2`
+- `ghost_payables_v1`
 - `ghost_pending_items_v1`
 - `ghost_notifications_v1`
 - `ghost_notification_mark_read_v1`
@@ -83,7 +86,7 @@ Login inválido e acesso anônimo foram verificados contra o ambiente remoto. O 
 
 ## Navegação e links
 
-As seis áreas são Início, Pendências, IA, Operação, Pessoas e Mais. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
+As seis áreas são Início, A pagar, IA, Operação, Pessoas e Mais. A área financeira mostra saldo aberto, vencidos, vencimentos do dia e dos próximos sete dias, além dos títulos priorizados por casa. Bootstrap decide as capabilities por unidade; a UI não codifica papéis. Sem vínculo, inativo, sessão expirada, offline, vazio, erro e retry possuem estados próprios.
 
 Schemes: `ghost-local`, `ghost-preview` e `ghost-production`. Links autenticados aceitos incluem `/notifications`, `/pending` e `/assistant`; sem sessão, o destino fica pendente até o login. A primeira unidade autorizada fornece o contexto inicial automaticamente, e a troca de casa acontece na home. Recuperação usa `/auth/reset-password` e troca a senha somente depois de uma sessão de recovery válida.
 
@@ -118,4 +121,4 @@ python3 scripts/check_docs.py
 - `supabase/migrations/`: fronteira móvel privada e RPCs versionadas.
 - `supabase/functions/` e `supabase/schedules/`: worker de push e agendamento sem segredos versionados.
 
-Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [prontidão de release da Fase 2F](docs/phase-2f.md), [assistente executivo da Fase 2G](docs/phase-2g.md), [cockpit executivo da Fase 2H](docs/phase-2h.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.
+Veja [entrega da Fase 1B](docs/phase-1b.md), [distribuição da Fase 2A](docs/phase-2a.md), [notificações da Fase 2B](docs/phase-2b.md), [piloto operacional da Fase 2C](docs/phase-2c.md), [decisões transacionais da Fase 2D](docs/phase-2d.md), [confiabilidade da Fase 2E](docs/phase-2e.md), [prontidão de release da Fase 2F](docs/phase-2f.md), [assistente executivo da Fase 2G](docs/phase-2g.md), [cockpit executivo da Fase 2H](docs/phase-2h.md), [contas a pagar da Fase 2I](docs/phase-2i.md), [arquitetura](docs/architecture.md), [contratos restantes](docs/backend-contracts.md), [validação](docs/validation.md) e [checklist Android/iOS](docs/device-checklist.md). A [Fase 1A](docs/phase-1a.md) permanece documentada como baseline mock.

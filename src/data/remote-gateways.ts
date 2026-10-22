@@ -86,6 +86,28 @@ const pendingDecisionSchema = z.object({
   version: z.string().min(1),
   decidedAt: z.string(),
 });
+const payablesSchema = z.object({
+  updatedAt: z.string(),
+  asOf: z.string(),
+  openAmount: z.number().nonnegative(),
+  overdueAmount: z.number().nonnegative(),
+  dueTodayAmount: z.number().nonnegative(),
+  next7DaysAmount: z.number().nonnegative(),
+  openCount: z.number().int().nonnegative(),
+  overdueCount: z.number().int().nonnegative(),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      supplier: z.string(),
+      document: z.string(),
+      dueDate: z.string().nullable(),
+      amount: z.number().nonnegative(),
+      status: z.enum(["overdue", "due_today", "upcoming"]),
+      daysOverdue: z.number().int().nonnegative(),
+      paymentMethod: z.string().nullable(),
+    }),
+  ),
+});
 const notificationItemSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
@@ -343,6 +365,21 @@ export function createRemoteGateways(): Gateways {
               p_reason: input.reason,
               p_expected_version: input.expectedVersion,
               p_idempotency_key: input.idempotencyKey,
+            },
+            scope.signal,
+          ),
+        );
+      },
+    },
+    payables: {
+      async get(scope) {
+        return payablesSchema.parse(
+          await rpc(
+            "ghost_payables_v1",
+            {
+              p_unit_id: scope.unitId,
+              p_as_of: new Date().toISOString().slice(0, 10),
+              p_limit: 50,
             },
             scope.signal,
           ),

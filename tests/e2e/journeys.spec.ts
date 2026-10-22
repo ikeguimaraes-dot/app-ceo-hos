@@ -39,22 +39,13 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     path: "docs/screenshots/people.png",
     fullPage: true,
   });
-  await page.getByRole("tab", { name: "Pendências" }).click();
-  await expect(page.getByText("Revisar fechamento")).toBeVisible();
-  await page
-    .getByRole("button", { name: "Preparar aprovação", exact: true })
-    .first()
-    .click();
-  await expect(page.getByText("Confirmar aprovação").first()).toBeVisible();
-  await page
-    .getByRole("button", { name: "Confirmar aprovação", exact: true })
-    .click();
-  await expect(
-    page.getByText("Pendência aprovada com registro de auditoria."),
-  ).toBeVisible();
-  await expect(page.getByText("Revisar fechamento")).toHaveCount(0);
+  await page.getByRole("tab", { name: "A pagar" }).click();
+  await expect(page.getByText("Contas a pagar")).toBeVisible();
+  await expect(page.getByText("Distribuidora Horizonte")).toBeVisible();
+  await expect(page.getByText("R$ 184.320")).toBeVisible();
+  await page.waitForTimeout(700);
   await page.screenshot({
-    path: "docs/screenshots/pending.png",
+    path: "docs/screenshots/payables.png",
     fullPage: true,
   });
   await page.getByRole("tab", { name: /IA$/ }).click();
@@ -68,7 +59,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   });
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Notificações", exact: true }).click();
-  await expect(page.getByText("Um fechamento espera por você")).toBeVisible();
+  await expect(page.getByText("Uma conta vence hoje")).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/notifications.png",
     fullPage: true,
@@ -119,12 +110,13 @@ test("inactive and unlinked scenarios cannot enter tabs", async ({ page }) => {
   await expect(page.getByText("Acesso pausado")).toBeVisible();
   await expect(page.getByRole("tab", { name: "Início" })).toHaveCount(0);
 });
-test("missing capability hides tab and logout protects history", async ({
+test("restricted access hides unauthorized tabs and logout protects history", async ({
   page,
 }) => {
   await login(page, "Acesso restrito");
   await expect(page.getByText("R$ 864.250")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Pendências" })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: /IA$/ })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "A pagar" })).toBeVisible();
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Sair da demonstração" }).click();
   await expect(page).toHaveURL(/login/);
@@ -146,13 +138,13 @@ test("recovery, empty, offline, retry and dark appearance", async ({
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
   await page.getByRole("button", { name: "Vazio", exact: true }).click();
   await page.goBack();
-  await page.getByRole("tab", { name: "Pendências" }).click();
-  await expect(page.getByText("Tudo em dia por aqui.")).toBeVisible();
+  await page.getByRole("tab", { name: "A pagar" }).click();
+  await expect(page.getByText("Nenhuma conta em aberto para esta casa.")).toBeVisible();
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
   await page.getByRole("button", { name: "Offline", exact: true }).click();
   await page.goBack();
-  await page.getByRole("tab", { name: "Pendências" }).click();
+  await page.getByRole("tab", { name: "A pagar" }).click();
   await expect(
     page.getByText(
       "Você está offline na simulação. Reconecte nas preferências.",
@@ -168,8 +160,8 @@ test("recovery, empty, offline, retry and dark appearance", async ({
   await page.getByRole("button", { name: "Preferências e simulação" }).click();
   await page.getByRole("button", { name: "Normal", exact: true }).click();
   await page.goBack();
-  await page.getByRole("tab", { name: "Pendências" }).click();
-  await expect(page.getByText("Revisar fechamento")).toBeVisible();
+  await page.getByRole("tab", { name: "A pagar" }).click();
+  await expect(page.getByText("Distribuidora Horizonte")).toBeVisible();
 });
 test("authenticated deep link still denies missing capability", async ({
   page,
@@ -182,5 +174,5 @@ test("authenticated deep link still denies missing capability", async ({
   await expect(
     page.getByText("Acesso restrito", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Um fechamento espera por você")).toHaveCount(0);
+  await expect(page.getByText("Uma conta vence hoje")).toHaveCount(0);
 });

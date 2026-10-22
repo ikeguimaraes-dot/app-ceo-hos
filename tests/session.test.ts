@@ -204,8 +204,10 @@ describe("session and access boundaries", () => {
     expect(await gateways.dashboard.get(scope)).toEqual(
       await gateways.dashboard.get(scope),
     );
+    expect((await gateways.payables.get(scope)).openAmount).toBe(184320.45);
     await c.setMode("empty");
     expect((await gateways.pending.list(scope)).items).toEqual([]);
+    expect((await gateways.payables.get(scope)).items).toEqual([]);
     await c.setMode("error");
     await expect(gateways.dashboard.get(scope)).rejects.toThrow(
       "Falha simulada",

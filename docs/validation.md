@@ -10,7 +10,7 @@ Sessão concluída em 2026-10-21 no projeto de desenvolvimento `kph-os-dev`.
 | `npm run typecheck`                           | PASS                                                                                          |
 | `npm test`                                    | PASS — 30 testes                                                                              |
 | `npm run check:boundaries` após export remoto | PASS                                                                                          |
-| `npm run test:remote:negative`                | PASS — 15 RPCs anônimas e credencial inválida negadas                                         |
+| `npm run test:remote:negative`                | PASS — 17 RPCs anônimas e credencial inválida negadas                                         |
 | `npm run test:e2e`                            | PASS — 6 jornadas                                                                             |
 | `npm run export:mock`                         | PASS — web                                                                                    |
 | `npm run export:remote`                       | PASS — Android, iOS e web                                                                     |
@@ -36,7 +36,7 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Unidade fora do vínculo          | negada com 42501                                                                                                             |
 | Inativo / sem vínculo            | zero unidades                                                                                                                |
 | RPC anônima                      | negada                                                                                                                       |
-| Grants                           | 0 funções Ghost para `anon`; 16 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role`             |
+| Grants                           | 0 funções Ghost para `anon`; 17 RPCs móveis para `authenticated`; seis RPCs internas somente para `service_role`             |
 | Pipeline push v1                 | três tabelas privadas e trigger presentes; Edge Function implantada; cron ativo com primeira resposta HTTP 200               |
 | Worker sem/com segredo           | PASS — 401 sem Bearer e 200 com segredo de servidor; fila vazia                                                              |
 | Confiabilidade push 2E           | reconciliação autenticada; instalação ativa única; `last_seen_at`; expiração em 45 dias                                      |
@@ -48,6 +48,7 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Linguagem de conciliação         | resposta confirma todos os turnos incluídos e distingue vendas importadas de pagamentos ainda sem conciliação                |
 | Cockpit executivo                | quatro cards mensais, seletor de casa, progresso de meta e gráfico diário animado                                             |
 | Dashboard remoto v2              | RPC executada em escopo autorizado e bloqueada para chamada anônima                                                           |
+| Contas a pagar                   | fonte Everest consolidada; resumo e títulos por unidade validados; RPC bloqueada para chamada anônima                         |
 | Edge Function `ghost-assistant`  | versão 9 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                                    |
 
 O Performance Advisor pós-migration permaneceu sem erros. Os 25 erros do Security Advisor pertencem ao passivo geral já registrado: 16 views security-definer e 9 tabelas expostas sem RLS. A superfície Ghost adicionada na Fase 2E usa `search_path` vazio, RLS, grants explícitos e schema privado. O passivo geral também inclui funções definer legadas executáveis por clientes e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
