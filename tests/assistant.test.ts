@@ -96,6 +96,8 @@ describe("assistant boundary", () => {
     expect(prompt).toContain("somente leitura");
     expect(prompt).toContain("use reportedRevenue");
     expect(prompt).toContain("closedShiftCount for menor que shiftCount");
+    expect(prompt).toContain("vendas de todos os turnos");
+    expect(prompt).toContain("conciliação dos pagamentos");
     expect(prompt).toContain('"revenue":100');
   });
 

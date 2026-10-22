@@ -45,7 +45,8 @@ Os testes cobrem navegação protegida, sem vínculo, inativo, troca de unidade,
 | Consulta KPH                     | 11 datasets; financeiro diário validado em quatro casas para 21/10/2026; nomes/valores vieram das fontes KPH reais           |
 | Grants do agente                 | `ghost_assistant_catalog_v1` e `ghost_assistant_query_v1`: `anon=false`, `authenticated=true`                                |
 | Consolidação por turno           | Meet & Eat em 21/10/2026: dois turnos; almoço fechado e jantar parcial; total disponível marcado como provisório             |
-| Edge Function `ghost-assistant`  | versão 8 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                                    |
+| Linguagem de conciliação         | resposta confirma todos os turnos incluídos e distingue vendas importadas de pagamentos ainda sem conciliação                |
+| Edge Function `ghost-assistant`  | versão 9 ativa com JWT obrigatório; chamada anônima recusada com HTTP 401                                                    |
 
 O Performance Advisor pós-migration permaneceu sem erros. Os 25 erros do Security Advisor pertencem ao passivo geral já registrado: 16 views security-definer e 9 tabelas expostas sem RLS. A superfície Ghost adicionada na Fase 2E usa `search_path` vazio, RLS, grants explícitos e schema privado. O passivo geral também inclui funções definer legadas executáveis por clientes e proteção contra senhas vazadas desativada. Veja [prontidão](backend-readiness.md).
 
