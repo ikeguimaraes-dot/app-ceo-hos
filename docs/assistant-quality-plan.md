@@ -44,12 +44,12 @@ O banco e o código serão responsáveis por datas, escopo, filtros, somas, perc
 
 O seletor ficará no topo da aba IA e poderá ser alterado antes de cada pergunta. DeepSeek continuará como padrão. A primeira lista proposta é:
 
-| Nome no app | OpenRouter ID | Uso |
-| --- | --- | --- |
-| DeepSeek | `deepseek/deepseek-v4.1-flash` | padrão, rápido e econômico |
-| GPT Luna | `openai/gpt-6-luna` | conversa e instruções mais consistentes |
-| Gemini Flash | `google/gemini-3.8-flash-20260902` | análise longa e multimodal futura |
-| Claude Opus | `anthropic/claude-opus-5.5` | análise mais cuidadosa, custo alto |
+| Nome no app  | OpenRouter ID                      | Uso                                     |
+| ------------ | ---------------------------------- | --------------------------------------- |
+| DeepSeek     | `deepseek/deepseek-v4.1-flash`     | padrão, rápido e econômico              |
+| GPT Luna     | `openai/gpt-6-luna`                | conversa e instruções mais consistentes |
+| Gemini Flash | `google/gemini-3.8-flash-20260902` | análise longa e multimodal futura       |
+| Claude Opus  | `anthropic/claude-opus-5.5`        | análise mais cuidadosa, custo alto      |
 
 Todos aceitam ferramentas e saída estruturada segundo as páginas atuais do OpenRouter. A lista será uma allowlist do servidor; o aplicativo não poderá enviar um identificador arbitrário. Isso controla compatibilidade, custo e disponibilidade. A preferência será persistida por usuário, o backend validará o modelo em toda requisição e a auditoria registrará o modelo efetivamente usado. Se um modelo estiver indisponível, o app mostrará a falha e poderá oferecer o DeepSeek como alternativa, sem trocar silenciosamente.
 
@@ -139,3 +139,7 @@ Correção factual adicional em 23/10/2026:
 - o servidor responde diretamente com total, período, número de notas e divisão por casa calculados pelo PostgreSQL;
 - “quanto compramos de carne” e a variação “quando compramos de carne” possuem regressões específicas;
 - resultados vazios só são declarados quando `lineCount` do banco é zero.
+
+# Implementação atual
+
+O plano agora inclui respostas determinísticas para faturamento, compras por item, notas fiscais, contas a pagar, vendas por produto, pagamentos, descontos, cancelamentos, inventários, contratos, eventos, reservas e folha. A conversa mantém contexto estruturado de área, período, casa e busca. O app também possui um painel de qualidade por modelo em **Mais → Qualidade do Ghost IA**.

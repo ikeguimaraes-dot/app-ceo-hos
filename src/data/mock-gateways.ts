@@ -572,7 +572,14 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     assistant: {
-      async ask(session, question, _history, modelId, signal) {
+      async ask(
+        session,
+        question,
+        _history,
+        modelId,
+        conversationState,
+        signal,
+      ) {
         await wait();
         if (signal?.aborted) throw new Error("Consulta cancelada.");
         if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
@@ -594,11 +601,51 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           updatedAt: "2026-10-20T12:00:00Z",
           modelId,
           requestId: "00000000-0000-4000-8000-000000000001",
+          conversationState: conversationState ?? {
+            dataset: "financeiro",
+            from: "2026-10-01",
+            to: "2026-10-20",
+            grain: "day" as const,
+          },
         };
       },
       async feedback(session) {
         if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
         await wait();
+      },
+      async quality(session, days = 7) {
+        if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
+        await wait();
+        return {
+          days,
+          totalRequests: 24,
+          successfulRequests: 22,
+          failedRequests: 2,
+          deterministicRequests: 9,
+          helpful: 10,
+          unhelpful: 2,
+          feedbackCount: 12,
+          averageLatencyMs: 1840,
+          successRate: 91.7,
+          helpfulRate: 83.3,
+          byModel: [
+            {
+              modelId: "deepseek/deepseek-v4.1-flash",
+              requests: 24,
+              successfulRequests: 22,
+              failedRequests: 2,
+              helpful: 10,
+              feedbackCount: 12,
+              helpfulRate: 83.3,
+              averageLatencyMs: 1840,
+            },
+          ],
+          byDataset: [
+            { dataset: "financeiro", requests: 12 },
+            { dataset: "compras_itens", requests: 8 },
+          ],
+          failures: [{ code: "model_unavailable", occurrences: 2 }],
+        };
       },
     },
     notifications: {

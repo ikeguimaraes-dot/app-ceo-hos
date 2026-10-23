@@ -24,6 +24,8 @@ import type {
   ProductInvoices,
   Session,
   AssistantModelId,
+  AssistantConversationState,
+  AssistantQuality,
 } from "../contracts/gateways";
 import { backendConfig, environment } from "../config/environment";
 import {
@@ -326,6 +328,47 @@ const assistantAnswerSchema = z.object({
     "anthropic/claude-opus-5.5",
   ]),
   requestId: z.string().uuid(),
+  conversationState: z
+    .object({
+      dataset: z.string().min(1).max(64),
+      from: z.string().optional(),
+      to: z.string().optional(),
+      unit: z.string().optional(),
+      search: z.string().optional(),
+      grain: z.enum(["day", "month"]),
+    })
+    .optional(),
+});
+const assistantQualitySchema = z.object({
+  days: z.number().int(),
+  totalRequests: z.number().int(),
+  successfulRequests: z.number().int(),
+  failedRequests: z.number().int(),
+  deterministicRequests: z.number().int(),
+  helpful: z.number().int(),
+  unhelpful: z.number().int(),
+  feedbackCount: z.number().int(),
+  averageLatencyMs: z.number().int(),
+  successRate: z.number().nullable(),
+  helpfulRate: z.number().nullable(),
+  byModel: z.array(
+    z.object({
+      modelId: z.string(),
+      requests: z.number().int(),
+      successfulRequests: z.number().int(),
+      failedRequests: z.number().int(),
+      helpful: z.number().int(),
+      feedbackCount: z.number().int(),
+      helpfulRate: z.number().nullable(),
+      averageLatencyMs: z.number().int(),
+    }),
+  ),
+  byDataset: z.array(
+    z.object({ dataset: z.string(), requests: z.number().int() }),
+  ),
+  failures: z.array(
+    z.object({ code: z.string(), occurrences: z.number().int() }),
+  ),
 });
 
 function mapSession(session: SupabaseSession): Session {
@@ -660,7 +703,8 @@ export function createRemoteGateways(): Gateways {
         question,
         history,
         modelId: AssistantModelId,
-        signal,
+        conversationState?: AssistantConversationState,
+        signal?: AbortSignal,
       ) {
         const { data, error } = await client.functions.invoke(
           "ghost-assistant",
@@ -669,6 +713,7 @@ export function createRemoteGateways(): Gateways {
               question,
               history,
               modelId,
+              conversationState,
             },
             signal,
           },
@@ -686,6 +731,11 @@ export function createRemoteGateways(): Gateways {
           p_request_id: requestId,
           p_helpful: helpful,
         });
+      },
+      async quality(_session, days = 7) {
+        return assistantQualitySchema.parse(
+          await rpc("ghost_assistant_quality_v1", { p_days: days }),
+        ) satisfies AssistantQuality;
       },
     },
     notifications: {

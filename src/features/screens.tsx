@@ -21,6 +21,7 @@ import type {
   Capability,
   AssistantMessage,
   AssistantModelId,
+  AssistantConversationState,
   NotificationCategory,
   NotificationPreferences,
   OperationSummary,
@@ -259,7 +260,7 @@ function CapabilityButton({
 }: {
   capability: Capability;
   title: string;
-  path: "/pending" | "/notifications" | "/assistant";
+  path: "/pending" | "/notifications" | "/assistant" | "/assistant-quality";
 }) {
   const { controller } = useGhost();
   return controller.can(capability) ? (
@@ -486,6 +487,11 @@ export function More() {
         title="Notificações"
         path="/notifications"
       />
+      <CapabilityButton
+        capability="assistant.ask"
+        title="Qualidade do Ghost IA"
+        path="/assistant-quality"
+      />
       {__DEV__ && (
         <Button
           title="Catálogo de componentes"
@@ -499,6 +505,124 @@ export function More() {
           void controller.logout().then(() => router.replace("/login"))
         }
       />
+    </Screen>
+  );
+}
+
+export function AssistantQualityScreen() {
+  return (
+    <PortfolioAccess>
+      <AssistantQualityContent />
+    </PortfolioAccess>
+  );
+}
+
+function AssistantQualityContent() {
+  const { state, gateways } = useGhost();
+  const { colors } = useTheme();
+  const [days, setDays] = useState(7);
+  const session = state.session!;
+  const query = useQuery({
+    queryKey: ["assistant-quality", session.userId, days],
+    queryFn: () => gateways.assistant.quality(session, days),
+  });
+  const modelName = (id: string) =>
+    assistantModels.find((model) => model.id === id)?.name ?? id;
+  return (
+    <Screen
+      title="Qualidade do Ghost IA"
+      subtitle="Resultados reais, sem armazenar perguntas ou respostas"
+    >
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {[7, 30].map((period) => (
+          <Pressable
+            key={period}
+            onPress={() => setDays(period)}
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 999,
+              backgroundColor: days === period ? colors.accent : colors.soft,
+            }}
+          >
+            <Text
+              style={{
+                color: days === period ? colors.accentText : colors.text,
+                fontWeight: "700",
+              }}
+            >
+              {period} dias
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {query.isPending ? (
+        <Loading />
+      ) : query.error ? (
+        <ErrorState
+          message={query.error.message}
+          retry={() => void query.refetch()}
+        />
+      ) : query.data ? (
+        <>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            {[
+              [
+                "SUCESSO",
+                query.data.successRate === null
+                  ? "—"
+                  : `${query.data.successRate}%`,
+              ],
+              [
+                "RESPOSTAS ÚTEIS",
+                query.data.helpfulRate === null
+                  ? "Sem votos"
+                  : `${query.data.helpfulRate}%`,
+              ],
+              ["CONSULTAS", String(query.data.totalRequests)],
+              ["DETERMINÍSTICAS", String(query.data.deterministicRequests)],
+            ].map(([label, value]) => (
+              <Card key={label} style={{ minWidth: "46%", flex: 1 }}>
+                <Label muted size={11}>
+                  {label}
+                </Label>
+                <Label size={25}>{value}</Label>
+              </Card>
+            ))}
+          </View>
+          <Heading>Por modelo</Heading>
+          {query.data.byModel.length ? (
+            query.data.byModel.map((model) => (
+              <Card key={model.modelId}>
+                <Label>{modelName(model.modelId)}</Label>
+                <Label size={22}>
+                  {model.helpfulRate === null
+                    ? "Sem votos"
+                    : `${model.helpfulRate}% úteis`}
+                </Label>
+                <Label muted size={13}>
+                  {model.requests} consultas · {model.successfulRequests}{" "}
+                  concluídas · {(model.averageLatencyMs / 1000).toFixed(1)}s em
+                  média
+                </Label>
+              </Card>
+            ))
+          ) : (
+            <Empty text="Ainda não há consultas neste período." />
+          )}
+          {!!query.data.failures.length && (
+            <>
+              <Heading>Falhas observadas</Heading>
+              {query.data.failures.map((failure) => (
+                <Card key={failure.code}>
+                  <Label>{failure.code}</Label>
+                  <Label muted>{failure.occurrences} ocorrências</Label>
+                </Card>
+              ))}
+            </>
+          )}
+        </>
+      ) : null}
     </Screen>
   );
 }
@@ -522,10 +646,13 @@ function AssistantContent() {
     prompt: string;
     history: AssistantMessage[];
     modelId: AssistantModelId;
+    conversationState?: AssistantConversationState;
   } | null>(null);
   const [sources, setSources] = useState<string[]>([]);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<boolean | null>(null);
+  const [conversationState, setConversationState] =
+    useState<AssistantConversationState>();
   const [modelId, setModelId] = useState<AssistantModelId>(
     "deepseek/deepseek-v4.1-flash",
   );
@@ -539,11 +666,14 @@ function AssistantContent() {
     mutationFn: ({
       prompt,
       history,
+      conversationState: requestState,
     }: {
       prompt: string;
       history: AssistantMessage[];
       modelId: AssistantModelId;
-    }) => gateways.assistant.ask(session, prompt, history, modelId),
+      conversationState?: AssistantConversationState;
+    }) =>
+      gateways.assistant.ask(session, prompt, history, modelId, requestState),
     onSuccess: (result) => {
       setFailedRequest(null);
       setMessages((current) => [
@@ -553,6 +683,7 @@ function AssistantContent() {
       setSources(result.sources);
       setModelId(result.modelId);
       setRequestId(result.requestId);
+      setConversationState(result.conversationState);
       setFeedback(null);
     },
     onError: (cause, variables) => {
@@ -579,7 +710,7 @@ function AssistantContent() {
     setFeedback(null);
     setQuestion("");
     setMessages((current) => [...current, { role: "user", content: prompt }]);
-    mutation.mutate({ prompt, history, modelId });
+    mutation.mutate({ prompt, history, modelId, conversationState });
   }
   return (
     <Screen

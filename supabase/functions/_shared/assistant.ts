@@ -3,6 +3,15 @@ export type AssistantHistoryMessage = {
   content: string;
 };
 
+export type AssistantConversationState = {
+  dataset: (typeof assistantDatasets)[number];
+  from?: string;
+  to?: string;
+  unit?: string;
+  search?: string;
+  grain: "day" | "month";
+};
+
 export const assistantModel = "deepseek/deepseek-v4.1-flash";
 
 export const assistantModels = [
@@ -252,6 +261,7 @@ export type AssistantInput = {
   question: string;
   history: AssistantHistoryMessage[];
   modelId: AssistantModelId;
+  conversationState?: AssistantConversationState;
 };
 
 export function parseAssistantInput(value: unknown): AssistantInput {
@@ -280,6 +290,21 @@ export function parseAssistantInput(value: unknown): AssistantInput {
       content: message.content.trim(),
     } satisfies AssistantHistoryMessage;
   });
+  let conversationState: AssistantConversationState | undefined;
+  if (candidate.conversationState !== undefined) {
+    const state = parseKphQueryToolInput({
+      ...(candidate.conversationState as object),
+      limit: 200,
+    });
+    conversationState = {
+      dataset: state.dataset,
+      from: state.from,
+      to: state.to,
+      unit: state.unit,
+      search: state.search,
+      grain: state.grain,
+    };
+  }
   return {
     question: candidate.question.trim(),
     history,
@@ -291,6 +316,7 @@ export function parseAssistantInput(value: unknown): AssistantInput {
           : (() => {
               throw new Error("invalid_model");
             })(),
+    conversationState,
   };
 }
 
@@ -381,6 +407,7 @@ export function planAssistantQueries(
   today: string,
   units: string[] = [],
   history: AssistantHistoryMessage[] = [],
+  conversationState?: AssistantConversationState,
 ): KphQueryToolInput[] | null {
   const clauses = question
     .split(/[?;]+|\s+e\s+(?=(?:quanto|qual|quais|como)\b)/i)
@@ -399,6 +426,29 @@ export function planAssistantQueries(
   const lower = normalized(effective);
   const period = dateRange(effective, today);
   const unit = detectedUnit(effective, units);
+  const continuation =
+    /^\s*(e\b|qual delas|nessa|nesse|dessa|desse|compare|por que|por quê)/i.test(
+      question,
+    );
+  if (continuation && conversationState) {
+    const explicitPeriod = /\b(hoje|ontem|m[eê]s|semana)\b/i.test(question);
+    const explicitUnit = detectedUnit(question, units);
+    const explicitSearch = extractedSearch(
+      question,
+      /(?:de|com)\s+(.+?)(?:\s+(?:esse|este|nesse|neste|no|na)\s+m[eê]s|\s+ontem|\s+hoje|$)/i,
+    );
+    return [
+      {
+        dataset: conversationState.dataset,
+        from: explicitPeriod ? period.from : conversationState.from,
+        to: explicitPeriod ? period.to : conversationState.to,
+        unit: explicitUnit ?? conversationState.unit,
+        search: explicitSearch ?? conversationState.search,
+        grain: conversationState.grain,
+        limit: 200,
+      },
+    ];
+  }
   const query = (
     dataset: KphQueryToolInput["dataset"],
     search?: string,
@@ -619,13 +669,8 @@ export function deterministicAssistantAnswer(
   const item = record(evidence[0]);
   const query = record(item.query);
   const result = record(item.result);
-  if (query.dataset !== "compras_itens") return null;
   const summary = record(result.summary);
-  const totalValue = Number(summary.totalValue);
-  const invoiceCount = Number(summary.invoiceCount);
-  const lineCount = Number(summary.lineCount);
-  if (![totalValue, invoiceCount, lineCount].every(Number.isFinite))
-    return null;
+  const dataset = String(query.dataset ?? "");
   const from = brDate(result.from ?? query.from);
   const to = brDate(result.to ?? query.to);
   const period =
@@ -634,6 +679,109 @@ export function deterministicAssistantAnswer(
         ? `em ${from}`
         : `de ${from} a ${to}`
       : "no período consultado";
+  const factual =
+    /\b(quanto|quantos?|qual (?:foi|e|é)|total|fatur|receita|meta|ticket|clientes?|receb|desconto|cancel|custo|valor|notas?|reservas?|eventos?|contratos?|invent[aá]rio|folha)\w*/i.test(
+      question,
+    ) &&
+    !/\b(compare|comparar|por que|por quê|mais |melhor|pior|cada |liste|mostre|quais)\b/i.test(
+      question,
+    );
+
+  if (dataset === "financeiro" && factual) {
+    const revenue = Number(summary.reportedRevenue);
+    const goal = Number(summary.goal);
+    const customers = Number(summary.customers);
+    const ticket = Number(summary.averageTicket);
+    if (![revenue, goal, customers].every(Number.isFinite)) return null;
+    const progress = Number(summary.goalProgress);
+    const progressText = Number.isFinite(progress)
+      ? `, equivalente a ${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(progress)}% da meta`
+      : "";
+    const ticketText = Number.isFinite(ticket)
+      ? ` O ticket médio foi ${brl(ticket)}, com ${customers} clientes.`
+      : "";
+    const provisional =
+      summary.provisional === true
+        ? " O total inclui todos os turnos disponíveis e pode sofrer pequeno ajuste após a conciliação dos pagamentos."
+        : "";
+    return `O faturamento ${period} foi ${brl(revenue)}, para uma meta de ${brl(goal)}${progressText}.${ticketText}${formatByUnit(summary.byUnit, "reportedRevenue")}${provisional}`;
+  }
+
+  if (dataset === "compras_notas" && factual) {
+    const total = Number(summary.totalValue);
+    const count = Number(summary.invoiceCount);
+    if (![total, count].every(Number.isFinite)) return null;
+    if (count === 0)
+      return `Não encontrei notas fiscais ${period} nas casas autorizadas.`;
+    return `Foram encontradas ${count} notas fiscais ${period}, no valor total de ${brl(total)}.${formatByUnit(summary.byUnit, "totalValue", "invoiceCount", "notas")}`;
+  }
+
+  if (dataset === "contas_pagar" && factual) {
+    const open = Number(summary.openBalance);
+    const paid = Number(summary.paidValue);
+    const upcoming = Number(summary.upcomingCount);
+    const overdue = Number(summary.overdueCount);
+    const paidCount = Number(summary.paidCount);
+    if (![open, paid, upcoming, overdue, paidCount].every(Number.isFinite))
+      return null;
+    return `Nas contas com vencimento ${period}, há ${overdue} vencidas e ${upcoming} a vencer, com saldo aberto de ${brl(open)}. Foram pagas ${paidCount} contas, somando ${brl(paid)}.`;
+  }
+
+  if (dataset === "vendas_produtos" && factual) {
+    const quantity = Number(summary.quantity);
+    const total = Number(summary.totalValue);
+    const discount = Number(summary.discountValue);
+    if (![quantity, total, discount].every(Number.isFinite)) return null;
+    return `Foram vendidos ${quantity} itens ${period}, totalizando ${brl(total)}, com ${brl(discount)} em descontos.`;
+  }
+
+  if (dataset === "pagamentos" && factual) {
+    const received = Number(summary.receivedValue);
+    const closed = Number(summary.closedValue);
+    const difference = Number(summary.difference);
+    if (![received, closed, difference].every(Number.isFinite)) return null;
+    return `Os pagamentos ${period} somaram ${brl(received)} recebidos, ante ${brl(closed)} fechados. A diferença registrada é ${brl(difference)}.`;
+  }
+
+  if ((dataset === "descontos" || dataset === "cancelamentos") && factual) {
+    const quantity = Number(summary.quantity);
+    const value = Number(summary.value);
+    if (![quantity, value].every(Number.isFinite)) return null;
+    const label = dataset === "descontos" ? "descontos" : "cancelamentos";
+    return `Foram registrados ${quantity} ${label} ${period}, no valor total de ${brl(value)}.`;
+  }
+
+  const countAnswers: Record<string, [string, string, string?]> = {
+    inventarios: ["inventoryCount", "inventários", "adjustedValue"],
+    contratos: ["contractCount", "contratos", "totalValue"],
+    eventos: ["eventCount", "eventos", "totalValue"],
+    reservas: ["reservationCount", "reservas"],
+  };
+  const countAnswer = countAnswers[dataset];
+  if (countAnswer && factual) {
+    const count = Number(summary[countAnswer[0]]);
+    if (!Number.isFinite(count)) return null;
+    const valueKey = countAnswer[2];
+    const total = valueKey ? Number(summary[valueKey]) : NaN;
+    return `Foram encontrados ${count} ${countAnswer[1]} ${period}${Number.isFinite(total) ? `, no valor total de ${brl(total)}` : ""}.`;
+  }
+
+  if (dataset === "folha_resumo" && factual) {
+    const headcount = Number(summary.headcount);
+    const vacancies = Number(summary.vacancies);
+    const salary = Number(summary.salaryTotal);
+    const cost = Number(summary.totalCost);
+    if (![headcount, vacancies, salary, cost].every(Number.isFinite))
+      return null;
+    return `A folha ${period} reúne ${headcount} colaboradores e ${vacancies} vagas. Os salários somam ${brl(salary)} e o custo total é ${brl(cost)}.`;
+  }
+
+  if (dataset !== "compras_itens") return null;
+  const totalValue = Number(summary.totalValue);
+  const invoiceCount = Number(summary.invoiceCount);
+  const lineCount = Number(summary.lineCount);
+  if (![totalValue, invoiceCount, lineCount].every(Number.isFinite))
+    return null;
   const search = typeof query.search === "string" ? query.search : "itens";
   const classification =
     typeof summary.classification === "string" && summary.classification
@@ -668,6 +816,22 @@ export function deterministicAssistantAnswer(
     return `As compras de ${search}${classification} ocorreram ${purchasePeriod}. O total foi ${brl(totalValue)}, em ${invoiceCount} notas.${units}`;
   }
   return `Foram comprados ${brl(totalValue)} de ${search}${classification} ${period}, em ${invoiceCount} notas.${units}`;
+}
+
+function formatByUnit(
+  value: unknown,
+  valueKey: string,
+  countKey?: string,
+  countLabel?: string,
+) {
+  if (!Array.isArray(value) || !value.length) return "";
+  const entries = value.map(record).flatMap((unit) => {
+    const amount = Number(unit[valueKey]);
+    if (!Number.isFinite(amount)) return [];
+    const count = countKey ? Number(unit[countKey]) : NaN;
+    return `${String(unit.unitName)}: ${brl(amount)}${Number.isFinite(count) ? ` em ${count} ${countLabel ?? "registros"}` : ""}`;
+  });
+  return entries.length ? ` Por casa: ${entries.join("; ")}.` : "";
 }
 
 function record(value: unknown): Record<string, unknown> {

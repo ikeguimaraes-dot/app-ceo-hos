@@ -229,6 +229,7 @@ Deno.serve(async (request) => {
     };
     const sources: string[] = [];
     const evidence: unknown[] = [];
+    let conversationState = input.conversationState;
 
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
@@ -338,6 +339,14 @@ Deno.serve(async (request) => {
       const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
       sources.push(`${query.dataset} · ${period}`);
       evidence.push({ query, result: data });
+      conversationState = {
+        dataset: query.dataset,
+        from: data?.from ?? query.from,
+        to: data?.to ?? query.to,
+        unit: query.unit,
+        search: query.search,
+        grain: query.grain,
+      };
       return data;
     };
     const plannedQueries = planAssistantQueries(
@@ -345,6 +354,7 @@ Deno.serve(async (request) => {
       today,
       units.flatMap((unit) => [unit.name, unit.brand]).filter(Boolean),
       input.history,
+      input.conversationState,
     );
     let payload: Record<string, any>;
     let modelMessage: Record<string, any> | undefined;
@@ -519,6 +529,7 @@ Deno.serve(async (request) => {
       updatedAt: new Date().toISOString(),
       modelId: model,
       requestId,
+      conversationState,
     });
   } catch (error) {
     const code = errorCode(error);

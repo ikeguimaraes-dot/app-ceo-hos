@@ -111,6 +111,7 @@ const protectedRpcs = [
   ],
   ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
   ["ghost_assistant_catalog_v1"],
+  ["ghost_assistant_quality_v1", { p_days: 7 }],
   [
     "ghost_dashboard_v2",
     {

@@ -203,6 +203,14 @@ export type AssistantMessage = {
   role: "user" | "assistant";
   content: string;
 };
+export type AssistantConversationState = {
+  dataset: string;
+  from?: string;
+  to?: string;
+  unit?: string;
+  search?: string;
+  grain: "day" | "month";
+};
 export const assistantModels = [
   {
     id: "deepseek/deepseek-v4.1-flash",
@@ -228,6 +236,32 @@ export type AssistantAnswer = {
   updatedAt: string;
   modelId: AssistantModelId;
   requestId: string;
+  conversationState?: AssistantConversationState;
+};
+export type AssistantQuality = {
+  days: number;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  deterministicRequests: number;
+  helpful: number;
+  unhelpful: number;
+  feedbackCount: number;
+  averageLatencyMs: number;
+  successRate: number | null;
+  helpfulRate: number | null;
+  byModel: {
+    modelId: string;
+    requests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    helpful: number;
+    feedbackCount: number;
+    helpfulRate: number | null;
+    averageLatencyMs: number;
+  }[];
+  byDataset: { dataset: string; requests: number }[];
+  failures: { code: string; occurrences: number }[];
 };
 export type NotificationCategory =
   "pending" | "operation" | "people" | "system";
@@ -301,6 +335,7 @@ export interface AssistantGateway {
     question: string,
     history: AssistantMessage[],
     modelId: AssistantModelId,
+    conversationState?: AssistantConversationState,
     signal?: AbortSignal,
   ): Promise<AssistantAnswer>;
   feedback(
@@ -308,6 +343,7 @@ export interface AssistantGateway {
     requestId: string,
     helpful: boolean,
   ): Promise<void>;
+  quality(session: Session, days?: number): Promise<AssistantQuality>;
 }
 export interface NotificationGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<Notification>>;

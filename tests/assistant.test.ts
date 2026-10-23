@@ -248,6 +248,52 @@ describe("assistant boundary", () => {
     });
   });
 
+  it("keeps structured subject and search without relying on answer text", () => {
+    const followUp = planAssistantQueries(
+      "E no mês passado?",
+      "2026-10-23",
+      ["Meet & Eat"],
+      [],
+      {
+        dataset: "compras_itens",
+        from: "2026-10-01",
+        to: "2026-10-23",
+        unit: "Meet & Eat",
+        search: "carne",
+        grain: "day",
+      },
+    );
+    expect(followUp?.[0]).toMatchObject({
+      dataset: "compras_itens",
+      from: "2026-09-01",
+      to: "2026-09-30",
+      unit: "Meet & Eat",
+      search: "carne",
+    });
+  });
+
+  it("validates bounded structured conversation state", () => {
+    expect(
+      parseAssistantInput({
+        question: "E no mês passado?",
+        history: [],
+        conversationState: {
+          dataset: "financeiro",
+          from: "2026-10-01",
+          to: "2026-10-23",
+          grain: "day",
+        },
+      }).conversationState,
+    ).toMatchObject({ dataset: "financeiro", from: "2026-10-01" });
+    expect(() =>
+      parseAssistantInput({
+        question: "continue",
+        history: [],
+        conversationState: { dataset: "segredo", grain: "day" },
+      }),
+    ).toThrow("invalid_assistant_query");
+  });
+
   it("separates independent and compound questions", () => {
     expect(
       planAssistantQueries(
