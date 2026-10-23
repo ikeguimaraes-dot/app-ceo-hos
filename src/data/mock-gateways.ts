@@ -572,7 +572,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     assistant: {
-      async ask(session, question, _history, signal) {
+      async ask(session, question, _history, modelId, signal) {
         await wait();
         if (signal?.aborted) throw new Error("Consulta cancelada.");
         if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
@@ -592,6 +592,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           answer: `Na demonstração, consultei ${units.length} casas. O faturamento consolidado é ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(revenue)} e existem ${demo.operation.pendingMaintenance} manutenções pendentes.`,
           sources: ["Dashboard de todas as casas", "Operação"],
           updatedAt: "2026-10-20T12:00:00Z",
+          modelId,
         };
       },
     },

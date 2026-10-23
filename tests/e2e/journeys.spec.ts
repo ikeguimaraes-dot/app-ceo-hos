@@ -66,6 +66,9 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     fullPage: true,
   });
   await page.getByRole("tab", { name: /IA$/ }).click();
+  await expect(page.getByText("Rápido", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Usar GPT-6 Luna" }).click();
+  await expect(page.getByText("Equilibrado", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Como estão minhas empresas este mês?" })
     .click();

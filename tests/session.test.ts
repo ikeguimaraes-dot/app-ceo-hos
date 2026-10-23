@@ -292,6 +292,7 @@ describe("session and access boundaries", () => {
       c.state.session!,
       "Como estão as empresas?",
       [],
+      "deepseek/deepseek-v4.1-flash",
     );
     expect(answer.answer).toContain("4 casas");
     expect(answer.answer).toContain("2.482.380,00");
@@ -305,6 +306,7 @@ describe("session and access boundaries", () => {
         restricted.controller.state.session!,
         "Como estão as empresas?",
         [],
+        "deepseek/deepseek-v4.1-flash",
       ),
     ).rejects.toThrow("Acesso não permitido");
   });

@@ -5,6 +5,7 @@ export interface LocalStorage {
 }
 const authKey = "ghost.auth.session";
 const installationKey = "ghost.installation.id";
+const assistantModelKey = "ghost.assistant.model";
 const chunkSize = 1800;
 const webMemory = new Map<string, string>();
 
@@ -86,6 +87,14 @@ export async function getInstallationId() {
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     });
   return id;
+}
+
+export async function readAssistantModel(userId: string) {
+  return secureSessionStorage.getItem(`${assistantModelKey}.${userId}`);
+}
+
+export async function writeAssistantModel(userId: string, modelId: string) {
+  await secureSessionStorage.setItem(`${assistantModelKey}.${userId}`, modelId);
 }
 
 export const secureStorage: LocalStorage = {

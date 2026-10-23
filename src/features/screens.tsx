@@ -1,11 +1,7 @@
-import React, { useState } from "react";
-import { Platform, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Platform, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useGhost } from "../state/provider";
 import { safeDestination } from "../state/controller";
@@ -24,6 +20,7 @@ import {
 import type {
   Capability,
   AssistantMessage,
+  AssistantModelId,
   NotificationCategory,
   NotificationPreferences,
   OperationSummary,
@@ -31,6 +28,8 @@ import type {
   Scenario,
   Scope,
 } from "../contracts/gateways";
+import { assistantModels } from "../contracts/gateways";
+import { readAssistantModel, writeAssistantModel } from "../security/storage";
 import { environment } from "../config/environment";
 import { DashboardExperience } from "./dashboard-experience";
 import { PayablesExperience } from "./payables-experience";
@@ -522,8 +521,18 @@ function AssistantContent() {
   const [failedRequest, setFailedRequest] = useState<{
     prompt: string;
     history: AssistantMessage[];
+    modelId: AssistantModelId;
   } | null>(null);
   const [sources, setSources] = useState<string[]>([]);
+  const [modelId, setModelId] = useState<AssistantModelId>(
+    "deepseek/deepseek-v4.1-flash",
+  );
+  useEffect(() => {
+    void readAssistantModel(session.userId).then((stored) => {
+      if (assistantModels.some((model) => model.id === stored))
+        setModelId(stored as AssistantModelId);
+    });
+  }, [session.userId]);
   const mutation = useMutation({
     mutationFn: ({
       prompt,
@@ -531,7 +540,8 @@ function AssistantContent() {
     }: {
       prompt: string;
       history: AssistantMessage[];
-    }) => gateways.assistant.ask(session, prompt, history),
+      modelId: AssistantModelId;
+    }) => gateways.assistant.ask(session, prompt, history, modelId),
     onSuccess: (result) => {
       setFailedRequest(null);
       setMessages((current) => [
@@ -539,6 +549,7 @@ function AssistantContent() {
         { role: "assistant", content: result.answer },
       ]);
       setSources(result.sources);
+      setModelId(result.modelId);
     },
     onError: (cause, variables) => {
       setFailedRequest(variables);
@@ -557,13 +568,58 @@ function AssistantContent() {
     setSources([]);
     setQuestion("");
     setMessages((current) => [...current, { role: "user", content: prompt }]);
-    mutation.mutate({ prompt, history });
+    mutation.mutate({ prompt, history, modelId });
   }
   return (
     <Screen
       title="Ghost IA"
       subtitle="Conversa com a visão de todas as suas empresas autorizadas"
     >
+      <View style={{ gap: 8 }}>
+        <Label muted size={12}>
+          MODELO
+        </Label>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {assistantModels.map((model) => {
+            const selected = model.id === modelId;
+            return (
+              <Pressable
+                key={model.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected, disabled: mutation.isPending }}
+                accessibilityLabel={`Usar ${model.name}`}
+                disabled={mutation.isPending}
+                onPress={() => {
+                  setModelId(model.id);
+                  void writeAssistantModel(session.userId, model.id);
+                }}
+                style={({ pressed }) => ({
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: selected ? colors.accent : colors.line,
+                  backgroundColor: selected ? colors.accent : colors.surface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 9,
+                  opacity: pressed ? 0.72 : mutation.isPending ? 0.55 : 1,
+                })}
+              >
+                <Text
+                  style={{
+                    color: selected ? colors.accentText : colors.text,
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
+                  {model.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Label muted size={12}>
+          {assistantModels.find((model) => model.id === modelId)?.description}
+        </Label>
+      </View>
       {messages.length === 0 && (
         <>
           <View
@@ -743,14 +799,24 @@ function DeviceNotificationsCard() {
   const reminder = query.data;
   const displayedTime = timeEdited ? time : (reminder?.time ?? time);
   const mutation = useMutation({
-    mutationFn: (enabled: boolean) => gateways.notifications.setDailyReminder({ enabled, time: displayedTime }),
+    mutationFn: (enabled: boolean) =>
+      gateways.notifications.setDailyReminder({ enabled, time: displayedTime }),
     onSuccess: (next) => {
       setTime(next.time);
       setTimeEdited(true);
       void query.refetch();
-      setMessage(next.enabled ? `Lembrete diário ativado para ${next.time}.` : "Lembrete diário desativado.");
+      setMessage(
+        next.enabled
+          ? `Lembrete diário ativado para ${next.time}.`
+          : "Lembrete diário desativado.",
+      );
     },
-    onError: (cause) => setMessage(cause instanceof Error ? cause.message : "Não foi possível alterar o lembrete."),
+    onError: (cause) =>
+      setMessage(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível alterar o lembrete.",
+      ),
   });
   async function activatePush() {
     setMessage("");
@@ -758,13 +824,20 @@ function DeviceNotificationsCard() {
       await controller.register();
       setMessage("Push remoto ativado neste aparelho.");
     } catch (cause) {
-      setMessage(cause instanceof Error ? cause.message : "Não foi possível ativar o push remoto.");
+      setMessage(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível ativar o push remoto.",
+      );
     }
   }
   return (
     <Card>
       <Label size={20}>Notificações no aparelho</Label>
-      <Label muted>Ative os avisos do Ghost e escolha um horário para receber seu resumo todos os dias.</Label>
+      <Label muted>
+        Ative os avisos do Ghost e escolha um horário para receber seu resumo
+        todos os dias.
+      </Label>
       <Button
         title={state.registered ? "Push remoto ativo" : "Ativar push remoto"}
         secondary
@@ -781,7 +854,13 @@ function DeviceNotificationsCard() {
         }}
       />
       <Button
-        title={mutation.isPending ? "Salvando…" : reminder?.enabled ? "Atualizar horário" : "Ativar resumo diário"}
+        title={
+          mutation.isPending
+            ? "Salvando…"
+            : reminder?.enabled
+              ? "Atualizar horário"
+              : "Ativar resumo diário"
+        }
         disabled={!mobile || mutation.isPending}
         onPress={() => mutation.mutate(true)}
       />
@@ -793,7 +872,11 @@ function DeviceNotificationsCard() {
           onPress={() => mutation.mutate(false)}
         />
       ) : null}
-      {!mobile ? <Label muted>Configure esta opção pelo aplicativo no iPhone ou Android.</Label> : null}
+      {!mobile ? (
+        <Label muted>
+          Configure esta opção pelo aplicativo no iPhone ou Android.
+        </Label>
+      ) : null}
       {!!message && <Label>{message}</Label>}
     </Card>
   );

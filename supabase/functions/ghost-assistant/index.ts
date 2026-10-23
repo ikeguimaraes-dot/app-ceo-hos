@@ -8,6 +8,7 @@ import {
   normalizeAssistantSources,
   parseAssistantInput,
   parseKphQueryToolInput,
+  planAssistantQueries,
   preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
@@ -123,7 +124,7 @@ Deno.serve(async (request) => {
   const startedAt = performance.now();
   const requestId = crypto.randomUUID();
   const authorization = request.headers.get("authorization") ?? "";
-  const model = Deno.env.get("OPENROUTER_MODEL") ?? assistantModel;
+  let model = assistantModel;
   let supabase: ReturnType<typeof createClient> | null = null;
   let began = false;
   const finish = async (
@@ -147,6 +148,7 @@ Deno.serve(async (request) => {
     if (!/^Bearer\s+\S+$/i.test(authorization))
       return reply({ error: "authentication_required" }, 401);
     const input = parseAssistantInput(await request.json());
+    model = input.modelId;
     const apiKey = Deno.env.get("OPENROUTER_API_KEY");
     if (!apiKey) throw new Error("openrouter_key_missing");
     supabase = createClient(
@@ -189,15 +191,29 @@ Deno.serve(async (request) => {
       "ghost_assistant_catalog_v1",
     );
     if (catalogError) throw catalogError;
+    const catalogRecord =
+      catalog && typeof catalog === "object"
+        ? (catalog as Record<string, unknown>)
+        : {};
+    const catalogDatasets = Array.isArray(catalogRecord.datasets)
+      ? catalogRecord.datasets
+          .map((candidate) => {
+            const item =
+              candidate && typeof candidate === "object"
+                ? (candidate as Record<string, unknown>)
+                : {};
+            return { name: item.name, description: item.description };
+          })
+          .slice(0, 30)
+      : [];
     const context = {
       unitCount: units.length,
       units: units.map((unit) => ({
         name: unit.name,
         brand: unit.brand,
         group: unit.group,
-        capabilities: unit.capabilities,
       })),
-      queryCatalog: catalog,
+      queryCatalog: { datasets: catalogDatasets, rules: catalogRecord.rules },
     };
     const sources: string[] = [];
 
@@ -217,14 +233,32 @@ Deno.serve(async (request) => {
       conversation: Record<string, unknown>[],
       withTools: boolean,
       forceTool = false,
+      structured = false,
     ) => {
       const body = JSON.stringify({
         model,
         messages: conversation,
         temperature: 0.2,
-        max_tokens: 700,
+        max_tokens: structured ? 1200 : 700,
         user,
         provider: { data_collection: "deny", zdr: true },
+        ...(structured
+          ? {
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "ghost_answer",
+                  strict: true,
+                  schema: {
+                    type: "object",
+                    properties: { answer: { type: "string" } },
+                    required: ["answer"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            }
+          : {}),
         ...(withTools
           ? {
               tools: [kphTool],
@@ -262,7 +296,8 @@ Deno.serve(async (request) => {
           lastError = error;
           const status = Number(providerStatus(error));
           const transient =
-            !status || (Number.isFinite(status) && shouldRetryModelRequest(status));
+            !status ||
+            (Number.isFinite(status) && shouldRetryModelRequest(status));
           if (attempt === 0 && transient) {
             await wait(450);
             continue;
@@ -273,12 +308,61 @@ Deno.serve(async (request) => {
       throw lastError;
     };
 
-    let payload = await callModel(messages, true, needsKphTool(input.question));
-    let modelMessage = payload?.choices?.[0]?.message;
-    let promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
-    let completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+    const executeQuery = async (
+      query: ReturnType<typeof parseKphQueryToolInput>,
+    ) => {
+      const { data, error } = await supabase!.rpc("ghost_assistant_query_v1", {
+        p_dataset: query.dataset,
+        p_from: query.from ?? null,
+        p_to: query.to ?? null,
+        p_unit: query.unit ?? null,
+        p_search: query.search ?? null,
+        p_grain: query.grain,
+        p_limit: query.limit,
+      });
+      if (error) throw error;
+      const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
+      sources.push(`${query.dataset} · ${period}`);
+      return data;
+    };
+    const plannedQueries = planAssistantQueries(
+      input.question,
+      today,
+      units.flatMap((unit) => [unit.name, unit.brand]).filter(Boolean),
+      input.history,
+    );
+    let payload: Record<string, any>;
+    let modelMessage: Record<string, any> | undefined;
+    let promptTokens = 0;
+    let completionTokens = 0;
     let toolCallCount = 0;
-    for (let round = 0; round < 4; round += 1) {
+
+    if (plannedQueries?.length) {
+      const evidence = [];
+      for (const query of plannedQueries) {
+        toolCallCount += 1;
+        evidence.push({ query, result: await executeQuery(query) });
+      }
+      messages.push({
+        role: "system",
+        content: [
+          "EVIDÊNCIA CONSULTADA DIRETAMENTE NO BANCO KPH:",
+          JSON.stringify(evidence),
+          evidenceReviewPrompt(input.question, toolCallCount),
+          "Responda em JSON no formato solicitado.",
+        ].join("\n"),
+      });
+      payload = await callModel(messages, false, false, true);
+      modelMessage = payload?.choices?.[0]?.message;
+      promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
+      completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+    } else {
+      payload = await callModel(messages, true, needsKphTool(input.question));
+      modelMessage = payload?.choices?.[0]?.message;
+      promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
+      completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+    }
+    for (let round = 0; !plannedQueries && round < 4; round += 1) {
       const toolCalls = Array.isArray(modelMessage?.tool_calls)
         ? modelMessage.tool_calls
             .filter(
@@ -304,18 +388,7 @@ Deno.serve(async (request) => {
             query.search,
           ),
         };
-        const { data, error } = await supabase.rpc("ghost_assistant_query_v1", {
-          p_dataset: query.dataset,
-          p_from: query.from ?? null,
-          p_to: query.to ?? null,
-          p_unit: query.unit ?? null,
-          p_search: query.search ?? null,
-          p_grain: query.grain,
-          p_limit: query.limit,
-        });
-        if (error) throw error;
-        const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
-        sources.push(`${query.dataset} · ${period}`);
+        const data = await executeQuery(query);
         messages.push({
           role: "tool",
           tool_call_id: toolCall.id,
@@ -329,20 +402,36 @@ Deno.serve(async (request) => {
       completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
     }
     let answer = modelMessage?.content;
+    if (plannedQueries && typeof answer === "string") {
+      try {
+        const structured = JSON.parse(answer);
+        answer = structured?.answer;
+      } catch {
+        // Some OpenRouter providers return valid text even when they do not
+        // honor response_format. Keep that text as a safe compatibility path.
+      }
+    }
     if (needsKphTool(input.question) && toolCallCount === 0)
       throw new Error("assistant_no_evidence");
-    if (toolCallCount > 0) {
+    if (!plannedQueries && toolCallCount > 0) {
       if (typeof answer === "string" && answer.trim())
         messages.push({ role: "assistant", content: answer.trim() });
       messages.push({
         role: "user",
         content: evidenceReviewPrompt(input.question, toolCallCount),
       });
-      payload = await callModel(messages, false);
+      payload = await callModel(messages, false, false, true);
       modelMessage = payload?.choices?.[0]?.message;
       promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
       completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
       answer = modelMessage?.content;
+      if (typeof answer === "string") {
+        try {
+          answer = JSON.parse(answer)?.answer;
+        } catch {
+          // Compatibility fallback for providers without structured output.
+        }
+      }
     }
     if (typeof answer !== "string" || !answer.trim())
       throw new Error("openrouter_empty_response");
@@ -359,6 +448,7 @@ Deno.serve(async (request) => {
       answer: answer.trim().slice(0, 6000),
       sources: normalizeAssistantSources(sources),
       updatedAt: new Date().toISOString(),
+      modelId: model,
     });
   } catch (error) {
     const code = errorCode(error);

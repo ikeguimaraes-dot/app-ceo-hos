@@ -23,6 +23,7 @@ import type {
   PendingItem,
   ProductInvoices,
   Session,
+  AssistantModelId,
 } from "../contracts/gateways";
 import { backendConfig, environment } from "../config/environment";
 import {
@@ -318,6 +319,12 @@ const assistantAnswerSchema = z.object({
   answer: z.string().min(1).max(6000),
   sources: z.array(z.string().min(1).max(80)).max(8),
   updatedAt: z.string(),
+  modelId: z.enum([
+    "deepseek/deepseek-v4.1-flash",
+    "openai/gpt-6-luna",
+    "google/gemini-3.8-flash-20260902",
+    "anthropic/claude-opus-5.5",
+  ]),
 });
 
 function mapSession(session: SupabaseSession): Session {
@@ -387,7 +394,7 @@ async function friendlyFunctionError(error: unknown) {
   }
   if (serverCode === "model_unavailable")
     return new Error(
-      "O DeepSeek está temporariamente indisponível. Tente novamente em instantes.",
+      "O modelo escolhido está temporariamente indisponível. Tente novamente em instantes ou escolha outro modelo.",
     );
   if (serverCode === "rate_limited")
     return new Error(
@@ -647,13 +654,20 @@ export function createRemoteGateways(): Gateways {
       },
     },
     assistant: {
-      async ask(_session, question, history, signal) {
+      async ask(
+        _session,
+        question,
+        history,
+        modelId: AssistantModelId,
+        signal,
+      ) {
         const { data, error } = await client.functions.invoke(
           "ghost-assistant",
           {
             body: {
               question,
               history,
+              modelId,
             },
             signal,
           },

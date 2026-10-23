@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assistantDatasets,
   assistantModel,
+  assistantModels,
   evidenceReviewPrompt,
   minimizeAssistantContext,
   needsFinanceTool,
@@ -10,6 +11,7 @@ import {
   parseAssistantInput,
   parseFinanceToolInput,
   parseKphQueryToolInput,
+  planAssistantQueries,
   preferPurchaseItems,
   preferredDatasetForQuestion,
   shouldRetryModelRequest,
@@ -19,6 +21,7 @@ import {
 describe("assistant boundary", () => {
   it("uses the approved OpenRouter model", () => {
     expect(assistantModel).toBe("deepseek/deepseek-v4.1-flash");
+    expect(assistantModels).toHaveLength(4);
   });
 
   it("retries only transient model-provider failures", () => {
@@ -152,6 +155,21 @@ describe("assistant boundary", () => {
     });
     expect(parsed.question).toBe("Como está a meta?");
     expect(parsed.history[0]?.content).toBe("Contexto anterior");
+    expect(parsed.modelId).toBe(assistantModel);
+    expect(
+      parseAssistantInput({
+        question: "Como está a meta?",
+        history: [],
+        modelId: "openai/gpt-6-luna",
+      }).modelId,
+    ).toBe("openai/gpt-6-luna");
+    expect(() =>
+      parseAssistantInput({
+        question: "Como está a meta?",
+        history: [],
+        modelId: "modelo/arbitrario",
+      }),
+    ).toThrow("invalid_model");
     expect(() =>
       parseAssistantInput({
         question: "x".repeat(1001),
@@ -167,6 +185,82 @@ describe("assistant boundary", () => {
         })),
       }),
     ).toThrow("invalid_history");
+  });
+
+  it("plans common executive questions deterministically", () => {
+    expect(
+      planAssistantQueries("Quanto o Meet faturou ontem?", "2026-10-23", [
+        "Meet & Eat",
+        "Frêneze",
+      ]),
+    ).toEqual([
+      {
+        dataset: "financeiro",
+        from: "2026-10-22",
+        to: "2026-10-22",
+        unit: "Meet & Eat",
+        search: undefined,
+        grain: "day",
+        limit: 200,
+      },
+    ]);
+    expect(
+      planAssistantQueries(
+        "Quanto comprei de carne esse mês?",
+        "2026-10-23",
+      )?.[0],
+    ).toMatchObject({
+      dataset: "compras_itens",
+      from: "2026-10-01",
+      to: "2026-10-23",
+      search: "carne",
+    });
+    expect(
+      planAssistantQueries(
+        "Qual foi a conta de luz este mês?",
+        "2026-10-23",
+      )?.[0],
+    ).toMatchObject({ dataset: "despesas", search: "luz" });
+    expect(
+      planAssistantQueries("Quais contas estão vencidas?", "2026-10-23")?.[0]
+        ?.dataset,
+    ).toBe("contas_pagar");
+  });
+
+  it("keeps the prior subject in a period follow-up", () => {
+    const followUp = planAssistantQueries(
+      "E no mês passado?",
+      "2026-10-23",
+      ["Meet & Eat"],
+      [
+        { role: "user", content: "Quanto o Meet faturou este mês?" },
+        { role: "assistant", content: "Resposta anterior" },
+      ],
+    );
+    expect(followUp).not.toBeNull();
+    expect(followUp![0]).toMatchObject({
+      dataset: "financeiro",
+      from: "2026-09-01",
+      to: "2026-09-30",
+      unit: "Meet & Eat",
+    });
+  });
+
+  it("separates independent and compound questions", () => {
+    expect(
+      planAssistantQueries(
+        "Qual foi a conta de luz este mês?",
+        "2026-10-23",
+        [],
+        [{ role: "user", content: "Quanto comprei de carne?" }],
+      ),
+    ).toHaveLength(1);
+    expect(
+      planAssistantQueries(
+        "Quanto comprei de carne? E qual foi a conta de luz?",
+        "2026-10-23",
+      )?.map((query) => query.dataset),
+    ).toEqual(["compras_itens", "despesas"]);
   });
 
   it("requires a final evidence review with database summaries", () => {

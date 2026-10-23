@@ -106,3 +106,18 @@ Referências atuais: [DeepSeek V4.1 Flash](https://openrouter.ai/deepseek/deepse
 ## Ordem recomendada
 
 O primeiro ciclo deve entregar junto: suíte de avaliação, receitas das perguntas mais usadas, resposta estruturada/verificada e seletor de modelos. Trocar somente o modelo melhora alguns casos, mas mantém os mesmos bugs de planejamento e dados. Dar mais tabelas ao fluxo atual aumenta o catálogo e tende a piorar a escolha. A melhora duradoura vem de reduzir o que o modelo precisa adivinhar.
+
+## Progresso do primeiro ciclo
+
+Implementado em 23/10/2026:
+
+- seletor no aplicativo com quatro modelos permitidos, DeepSeek como padrão e preferência local por usuário;
+- validação da allowlist na Edge Function e registro do modelo realmente usado na auditoria;
+- receitas determinísticas para faturamento, compras por item, notas, despesas recorrentes, contas a pagar, vendas por produto, pagamentos, descontos, cancelamentos, estoque, contratos, eventos, reservas, folha, manutenção, pessoas e ausências;
+- resolução de datas relativas, nomes abreviados de casas e continuações explícitas como “e no mês passado?”;
+- separação de perguntas independentes no histórico e execução de duas perguntas enviadas na mesma mensagem;
+- resposta final em JSON estruturado a partir de evidências consultadas diretamente no banco;
+- catálogo resumido no contexto para reduzir tokens repetidos;
+- regressões automatizadas para os erros já observados no uso real.
+
+Ainda faltam a suíte ampla de 100 perguntas, validação numérica campo a campo, feedback do usuário e contratos das áreas classificadas como ausentes na auditoria de cobertura.

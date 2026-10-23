@@ -203,10 +203,30 @@ export type AssistantMessage = {
   role: "user" | "assistant";
   content: string;
 };
+export const assistantModels = [
+  {
+    id: "deepseek/deepseek-v4.1-flash",
+    name: "DeepSeek",
+    description: "Rápido",
+  },
+  { id: "openai/gpt-6-luna", name: "GPT-6 Luna", description: "Equilibrado" },
+  {
+    id: "google/gemini-3.8-flash-20260902",
+    name: "Gemini",
+    description: "Ágil",
+  },
+  {
+    id: "anthropic/claude-opus-5.5",
+    name: "Claude Opus",
+    description: "Detalhado",
+  },
+] as const;
+export type AssistantModelId = (typeof assistantModels)[number]["id"];
 export type AssistantAnswer = {
   answer: string;
   sources: string[];
   updatedAt: string;
+  modelId: AssistantModelId;
 };
 export type NotificationCategory =
   "pending" | "operation" | "people" | "system";
@@ -279,6 +299,7 @@ export interface AssistantGateway {
     session: Session,
     question: string,
     history: AssistantMessage[],
+    modelId: AssistantModelId,
     signal?: AbortSignal,
   ): Promise<AssistantAnswer>;
 }
