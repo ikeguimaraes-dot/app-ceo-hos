@@ -85,6 +85,9 @@ export const assistantDatasets = [
   "ausencias",
   "planos_acao",
   "pedidos_venda",
+  "fichas_tecnicas",
+  "recebimentos",
+  "caixas",
 ] as const;
 
 export type KphQueryToolInput = {
@@ -251,6 +254,18 @@ export function preferredDatasetForQuestion(
     [
       /\b(produtos? mais vendidos?|vendas? por produto|quantos? .+ vendid[oa]s?)\b/i,
       "vendas_produtos",
+    ],
+    [
+      /\b(fichas? t[eé]cnicas?|custo (?:do|da) prato|custo te[oó]rico)\b/i,
+      "fichas_tecnicas",
+    ],
+    [
+      /\b(recebimentos? de mercadoria|mercadorias? recebidas?|pedidos? recebidos?|entregas? de fornecedores?)\b/i,
+      "recebimentos",
+    ],
+    [
+      /\b(fechamentos? de caixa|diferen[cç]a de caixa|quebra de caixa|caixas? abertos?)\b/i,
+      "caixas",
     ],
   ];
   const matches = intents.filter(([pattern]) => pattern.test(question));
@@ -464,6 +479,29 @@ export function planAssistantQueries(
   )
     return query("contas_pagar");
   if (
+    /\b(ficha tecnica|fichas tecnicas|custo do prato|custo da ficha|custo teorico)\b/.test(
+      lower,
+    )
+  ) {
+    const search = extractedSearch(
+      effective,
+      /(?:ficha(?: t[eé]cnica)?|prato|custo(?: do| da)?)\s+(?:do|da|de)?\s*(.+?)(?:\s+(?:no|na|do|da)\s+(?:meet|freneze|frêneze|madonna|match)|$)/i,
+    );
+    return query("fichas_tecnicas", search);
+  }
+  if (
+    /\b(recebimento de mercadoria|recebimentos de mercadoria|mercadoria recebida|mercadorias recebidas|pedido recebido|pedidos recebidos|entrega de fornecedor|entregas de fornecedores)\b/.test(
+      lower,
+    )
+  )
+    return query("recebimentos");
+  if (
+    /\b(fechamento de caixa|fechamentos de caixa|diferenca de caixa|quebra de caixa|caixa aberto|caixas abertos)\b/.test(
+      lower,
+    )
+  )
+    return query("caixas");
+  if (
     /\b(conta|despesa|gast\w*)\b/.test(lower) &&
     /\b(luz|energia|agua|gas|telefone|internet)\b/.test(lower)
   ) {
@@ -545,6 +583,9 @@ export function systemPrompt(
     "Se uma consulta atingir o limite, refine período, casa ou busca antes de concluir.",
     "Para perguntas de quanto foi comprado ou gasto com produto ou categoria, use compras_itens e responda com summary.totalValue e summary.byUnit, que já são calculados pelo banco.",
     "Nunca conclua que não há notas atuais usando purchase_invoices; compras_notas e compras_itens usam a fonte Everest atual da tela NF/CMV.",
+    "Para custos de fichas técnicas, use apenas trustedCost. Se costReliable for falso ou trustedCost estiver ausente, diga que o custo ainda não é confiável.",
+    "Em recebimentos, preserve a unidade de medida de cada item; nunca some quantidades de unidades diferentes.",
+    "Em caixas, difference é a diferença registrada entre total fechado e total recebido. Não atribua a diferença a um operador nem invente sua causa.",
     "Informe o período ou horário de atualização quando isso for relevante.",
     "Não sugira que executou ações; este assistente é somente leitura.",
     `DATA ATUAL EM AMERICA/SAO_PAULO: ${currentDate ?? "não informada"}.`,
@@ -776,6 +817,52 @@ export function deterministicAssistantAnswer(
     return `A folha ${period} reúne ${headcount} colaboradores e ${vacancies} vagas. Os salários somam ${brl(salary)} e o custo total é ${brl(cost)}.`;
   }
 
+  if (dataset === "fichas_tecnicas" && factual) {
+    const recipes = Number(summary.recipeCount);
+    const reliable = Number(summary.reliableCostCount);
+    const missing = Number(summary.recipesWithMissingCosts);
+    if (![recipes, reliable, missing].every(Number.isFinite)) return null;
+    const rows = Array.isArray(result.rows) ? result.rows.map(record) : [];
+    const trusted = rows.filter(
+      (row) =>
+        row.costReliable === true &&
+        row.trustedCost !== null &&
+        row.trustedCost !== undefined &&
+        Number.isFinite(Number(row.trustedCost)),
+    );
+    if (query.search && trusted.length) {
+      const costs = trusted
+        .slice(0, 12)
+        .map(
+          (row) =>
+            `${String(row.dishName)} — ${String(row.unitName)}: ${brl(Number(row.trustedCost))}`,
+        );
+      return `Custos confiáveis encontrados para ${String(query.search)} ${period}: ${costs.join("; ")}.${coverageNote(summary)}`;
+    }
+    return `Há ${recipes} fichas técnicas calculadas ${period}. ${reliable} têm custo marcado como confiável e ${missing} têm ingredientes sem custo. Custos não confiáveis não são apresentados como definitivos.${coverageNote(summary)}`;
+  }
+
+  if (dataset === "recebimentos" && factual) {
+    const receipts = Number(summary.receiptCount);
+    const lines = Number(summary.itemLineCount);
+    const divergent = Number(summary.divergentItemCount);
+    if (![receipts, lines, divergent].every(Number.isFinite)) return null;
+    if (receipts === 0)
+      return `A fonte de recebimentos não retornou registros ${period}. Isso não comprova que não houve recebimentos fora da cobertura registrada.${coverageNote(summary)}`;
+    return `Foram encontrados ${receipts} recebimentos de mercadorias ${period}, com ${lines} linhas de itens e ${divergent} divergências entre quantidade pedida e recebida.${formatCountsByUnit(summary.byUnit, "receiptCount", "recebimentos")}${coverageNote(summary)}`;
+  }
+
+  if (dataset === "caixas" && factual) {
+    const registers = Number(summary.registerCount);
+    const closed = Number(summary.closedValue);
+    const received = Number(summary.receivedValue);
+    const difference = Number(summary.difference);
+    const open = Number(summary.openRegisterCount);
+    if (![registers, closed, received, difference, open].every(Number.isFinite))
+      return null;
+    return `Os ${registers} caixas ${period} registram ${brl(closed)} no total fechado, ${brl(received)} no total recebido e diferença de ${brl(difference)}. Há ${open} caixas sem horário de fechamento.${formatByUnit(summary.byUnit, "difference")}${coverageNote(summary)}`;
+  }
+
   if (dataset !== "compras_itens") return null;
   const totalValue = Number(summary.totalValue);
   const invoiceCount = Number(summary.invoiceCount);
@@ -832,6 +919,34 @@ function formatByUnit(
     return `${String(unit.unitName)}: ${brl(amount)}${Number.isFinite(count) ? ` em ${count} ${countLabel ?? "registros"}` : ""}`;
   });
   return entries.length ? ` Por casa: ${entries.join("; ")}.` : "";
+}
+
+function formatCountsByUnit(value: unknown, countKey: string, label: string) {
+  if (!Array.isArray(value) || !value.length) return "";
+  const entries = value.map(record).flatMap((unit) => {
+    const count = Number(unit[countKey]);
+    return Number.isFinite(count)
+      ? [`${String(unit.unitName)}: ${count} ${label}`]
+      : [];
+  });
+  return entries.length ? ` Por casa: ${entries.join("; ")}.` : "";
+}
+
+function coverageNote(summary: Record<string, unknown>) {
+  const authorized = Number(summary.authorizedUnitCount);
+  const withData = Number(summary.unitsWithDataCount);
+  if (
+    !Number.isFinite(authorized) ||
+    !Number.isFinite(withData) ||
+    withData >= authorized
+  )
+    return "";
+  const missing = Array.isArray(summary.missingUnits)
+    ? summary.missingUnits.filter(
+        (name): name is string => typeof name === "string",
+      )
+    : [];
+  return ` Cobertura no período: ${withData} de ${authorized} casas${missing.length ? `; sem registros na fonte para ${missing.join(", ")}` : ""}.`;
 }
 
 function record(value: unknown): Record<string, unknown> {

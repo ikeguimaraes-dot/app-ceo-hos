@@ -196,6 +196,39 @@ const groups: {
       "Compare ausências das casas",
     ],
   },
+  {
+    dataset: "fichas_tecnicas",
+    questions: [
+      "Qual o custo da ficha técnica do risoto?",
+      "Mostre as fichas técnicas",
+      "Qual é o custo do prato executivo?",
+      "Como está o custo teórico?",
+      "Ficha técnica do hambúrguer",
+      "Quais fichas técnicas têm custo?",
+    ],
+  },
+  {
+    dataset: "recebimentos",
+    questions: [
+      "Quantos recebimentos de mercadoria tivemos?",
+      "Quais mercadorias recebidas chegaram hoje?",
+      "Mostre os pedidos recebidos",
+      "Houve entrega de fornecedor ontem?",
+      "Liste as entregas de fornecedores",
+      "Qual pedido recebido teve divergência?",
+    ],
+  },
+  {
+    dataset: "caixas",
+    questions: [
+      "Qual foi a diferença de caixa ontem?",
+      "Mostre os fechamentos de caixa",
+      "Tivemos quebra de caixa?",
+      "Existem caixas abertos?",
+      "Como foi o fechamento de caixa do Meet?",
+      "Compare os fechamentos de caixa",
+    ],
+  },
 ];
 
 describe("assistant routing evaluation", () => {

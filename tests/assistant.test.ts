@@ -378,6 +378,105 @@ describe("assistant boundary", () => {
     expect(dates).toContain("entre 02/10/2026 e 21/10/2026");
   });
 
+  it("answers recipe costs only when the database marks them reliable", () => {
+    const evidence = [
+      {
+        query: {
+          dataset: "fichas_tecnicas",
+          from: "2026-10-01",
+          to: "2026-10-23",
+          search: "risoto",
+        },
+        result: {
+          from: "2026-10-01",
+          to: "2026-10-23",
+          summary: {
+            recipeCount: 2,
+            reliableCostCount: 1,
+            recipesWithMissingCosts: 1,
+          },
+          rows: [
+            {
+              dishName: "Risoto",
+              unitName: "Meet & Eat",
+              trustedCost: 42.5,
+              costReliable: true,
+            },
+            {
+              dishName: "Risoto",
+              unitName: "Frêneze",
+              trustedCost: null,
+              costReliable: false,
+            },
+          ],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Qual o custo da ficha técnica do risoto?",
+      evidence,
+    );
+    expect(answer).toContain("42,50");
+    expect(answer).not.toContain("Frêneze");
+  });
+
+  it("answers goods receipts without adding incompatible quantities", () => {
+    const evidence = [
+      {
+        query: {
+          dataset: "recebimentos",
+          from: "2026-06-01",
+          to: "2026-06-30",
+        },
+        result: {
+          from: "2026-06-01",
+          to: "2026-06-30",
+          summary: {
+            receiptCount: 8,
+            itemLineCount: 8,
+            divergentItemCount: 4,
+            byUnit: [{ unitName: "Meet & Eat", receiptCount: 8 }],
+          },
+          rows: [],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Quantos recebimentos de mercadoria tivemos?",
+      evidence,
+    );
+    expect(answer).toContain("8 recebimentos");
+    expect(answer).toContain("4 divergências");
+    expect(answer).not.toContain("quantidade total");
+  });
+
+  it("answers cash register differences from database summaries", () => {
+    const evidence = [
+      {
+        query: { dataset: "caixas", from: "2026-10-22", to: "2026-10-22" },
+        result: {
+          from: "2026-10-22",
+          to: "2026-10-22",
+          summary: {
+            registerCount: 4,
+            closedValue: 1000,
+            receivedValue: 990,
+            difference: 10,
+            openRegisterCount: 0,
+            byUnit: [],
+          },
+          rows: [],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Qual foi a diferença de caixa ontem?",
+      evidence,
+    );
+    expect(answer).toContain("10,00");
+    expect(answer).toContain("0 caixas sem horário de fechamento");
+  });
+
   it("requires a final evidence review with database summaries", () => {
     const prompt = evidenceReviewPrompt("Quanto comprei?", 2);
     expect(prompt).toContain("summary calculados pelo banco");
@@ -399,6 +498,9 @@ describe("assistant boundary", () => {
     expect(prompt).toContain("conciliação dos pagamentos");
     expect(prompt).toContain("summary.totalValue");
     expect(prompt).toContain("fonte Everest atual");
+    expect(prompt).toContain("trustedCost");
+    expect(prompt).toContain("unidades diferentes");
+    expect(prompt).toContain("difference");
     expect(prompt).toContain('"revenue":100');
   });
 

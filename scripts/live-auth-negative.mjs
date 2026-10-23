@@ -111,6 +111,7 @@ const protectedRpcs = [
   ],
   ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
   ["ghost_assistant_catalog_v1"],
+  ["ghost_assistant_catalog_v2"],
   ["ghost_assistant_quality_v1", { p_days: 7 }],
   [
     "ghost_dashboard_v2",
@@ -174,6 +175,18 @@ const protectedRpcs = [
     "ghost_assistant_query_v2",
     {
       p_dataset: "financeiro",
+      p_from: "2026-10-21",
+      p_to: "2026-10-21",
+      p_unit: null,
+      p_search: null,
+      p_grain: "day",
+      p_limit: 20,
+    },
+  ],
+  [
+    "ghost_assistant_query_v3",
+    {
+      p_dataset: "caixas",
       p_from: "2026-10-21",
       p_to: "2026-10-21",
       p_unit: null,
