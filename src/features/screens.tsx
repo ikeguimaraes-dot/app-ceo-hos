@@ -524,6 +524,8 @@ function AssistantContent() {
     modelId: AssistantModelId;
   } | null>(null);
   const [sources, setSources] = useState<string[]>([]);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<boolean | null>(null);
   const [modelId, setModelId] = useState<AssistantModelId>(
     "deepseek/deepseek-v4.1-flash",
   );
@@ -550,6 +552,8 @@ function AssistantContent() {
       ]);
       setSources(result.sources);
       setModelId(result.modelId);
+      setRequestId(result.requestId);
+      setFeedback(null);
     },
     onError: (cause, variables) => {
       setFailedRequest(variables);
@@ -560,12 +564,19 @@ function AssistantContent() {
       );
     },
   });
+  const feedbackMutation = useMutation({
+    mutationFn: (helpful: boolean) =>
+      gateways.assistant.feedback(session, requestId!, helpful),
+    onSuccess: (_result, helpful) => setFeedback(helpful),
+  });
   function ask(text = question) {
     const prompt = text.trim();
     if (!prompt || mutation.isPending) return;
     const history = messages.slice(-16);
     setError("");
     setSources([]);
+    setRequestId(null);
+    setFeedback(null);
     setQuestion("");
     setMessages((current) => [...current, { role: "user", content: prompt }]);
     mutation.mutate({ prompt, history, modelId });
@@ -688,6 +699,47 @@ function AssistantContent() {
         <Label muted size={12}>
           Fontes: {sources.join(" · ")}
         </Label>
+      )}
+      {!!requestId && !mutation.isPending && (
+        <View style={{ gap: 10 }}>
+          <Label muted size={12}>
+            Esta resposta ajudou?
+          </Label>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {[
+              { value: true, label: "Ajudou" },
+              { value: false, label: "Não ajudou" },
+            ].map((option) => (
+              <Pressable
+                key={option.label}
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
+                disabled={feedbackMutation.isPending}
+                onPress={() => feedbackMutation.mutate(option.value)}
+                style={({ pressed }) => ({
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor:
+                    feedback === option.value ? colors.accent : colors.line,
+                  backgroundColor:
+                    feedback === option.value ? colors.soft : colors.surface,
+                  paddingHorizontal: 14,
+                  paddingVertical: 9,
+                  opacity: pressed ? 0.72 : 1,
+                })}
+              >
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {feedback !== null && (
+            <Label muted size={12}>
+              Obrigado. Esse retorno será usado para melhorar o Ghost.
+            </Label>
+          )}
+        </View>
       )}
       {!!error && failedRequest && (
         <ErrorState

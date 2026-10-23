@@ -325,6 +325,7 @@ const assistantAnswerSchema = z.object({
     "google/gemini-3.8-flash-20260902",
     "anthropic/claude-opus-5.5",
   ]),
+  requestId: z.string().uuid(),
 });
 
 function mapSession(session: SupabaseSession): Session {
@@ -679,6 +680,12 @@ export function createRemoteGateways(): Gateways {
             "A resposta do Ghost chegou incompleta. Tente novamente.",
           );
         return parsed.data satisfies AssistantAnswer;
+      },
+      async feedback(_session, requestId, helpful) {
+        await rpc("ghost_assistant_feedback_v1", {
+          p_request_id: requestId,
+          p_helpful: helpful,
+        });
       },
     },
     notifications: {

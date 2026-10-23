@@ -12,6 +12,7 @@ import {
   preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
+  verifyAssistantAnswer,
 } from "../_shared/assistant.ts";
 
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
@@ -127,6 +128,9 @@ Deno.serve(async (request) => {
   let model = assistantModel;
   let supabase: ReturnType<typeof createClient> | null = null;
   let began = false;
+  let toolCallCount = 0;
+  let validationAttempts = 0;
+  const queriedDatasets = new Set<string>();
   const finish = async (
     outcome: "success" | "error",
     code: string,
@@ -134,13 +138,20 @@ Deno.serve(async (request) => {
     completionTokens = 0,
   ) => {
     if (!began || !supabase) return;
-    await supabase.rpc("ghost_assistant_finish_v1", {
+    await supabase.rpc("ghost_assistant_finish_v2", {
       p_request_id: requestId,
       p_outcome: outcome,
       p_code: code,
       p_model: model,
       p_prompt_tokens: promptTokens,
       p_completion_tokens: completionTokens,
+      p_datasets: [...queriedDatasets],
+      p_tool_call_count: toolCallCount,
+      p_validation_attempts: validationAttempts,
+      p_latency_ms: Math.min(
+        120_000,
+        Math.max(0, Math.round(performance.now() - startedAt)),
+      ),
     });
   };
 
@@ -216,6 +227,7 @@ Deno.serve(async (request) => {
       queryCatalog: { datasets: catalogDatasets, rules: catalogRecord.rules },
     };
     const sources: string[] = [];
+    const evidence: unknown[] = [];
 
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
@@ -311,7 +323,7 @@ Deno.serve(async (request) => {
     const executeQuery = async (
       query: ReturnType<typeof parseKphQueryToolInput>,
     ) => {
-      const { data, error } = await supabase!.rpc("ghost_assistant_query_v1", {
+      const { data, error } = await supabase!.rpc("ghost_assistant_query_v2", {
         p_dataset: query.dataset,
         p_from: query.from ?? null,
         p_to: query.to ?? null,
@@ -321,8 +333,10 @@ Deno.serve(async (request) => {
         p_limit: query.limit,
       });
       if (error) throw error;
+      queriedDatasets.add(query.dataset);
       const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
       sources.push(`${query.dataset} · ${period}`);
+      evidence.push({ query, result: data });
       return data;
     };
     const plannedQueries = planAssistantQueries(
@@ -335,13 +349,11 @@ Deno.serve(async (request) => {
     let modelMessage: Record<string, any> | undefined;
     let promptTokens = 0;
     let completionTokens = 0;
-    let toolCallCount = 0;
 
     if (plannedQueries?.length) {
-      const evidence = [];
       for (const query of plannedQueries) {
         toolCallCount += 1;
-        evidence.push({ query, result: await executeQuery(query) });
+        await executeQuery(query);
       }
       messages.push({
         role: "system",
@@ -435,6 +447,45 @@ Deno.serve(async (request) => {
     }
     if (typeof answer !== "string" || !answer.trim())
       throw new Error("openrouter_empty_response");
+    let verification = verifyAssistantAnswer(answer, evidence, {
+      question: input.question,
+      today,
+      unitCount: units.length,
+      sources,
+    });
+    validationAttempts = 1;
+    if (!verification.valid) {
+      messages.push({ role: "assistant", content: answer.trim() });
+      messages.push({
+        role: "user",
+        content: [
+          "A resposta contém números que não aparecem nas evidências autorizadas:",
+          verification.unsupported.join(", "),
+          "Reescreva sem calcular, estimar ou acrescentar números. Use somente valores exatos presentes nas evidências. Responda em JSON no formato solicitado.",
+        ].join("\n"),
+      });
+      payload = await callModel(messages, false, false, true);
+      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
+      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
+      const corrected = payload?.choices?.[0]?.message?.content;
+      if (typeof corrected !== "string" || !corrected.trim())
+        throw new Error("openrouter_empty_response");
+      try {
+        answer = JSON.parse(corrected)?.answer;
+      } catch {
+        answer = corrected;
+      }
+      validationAttempts += 1;
+      if (typeof answer !== "string" || !answer.trim())
+        throw new Error("openrouter_empty_response");
+      verification = verifyAssistantAnswer(answer, evidence, {
+        question: input.question,
+        today,
+        unitCount: units.length,
+        sources,
+      });
+      if (!verification.valid) throw new Error("assistant_unverified_numbers");
+    }
     await finish("success", "ok", promptTokens, completionTokens);
     console.log(
       JSON.stringify({
@@ -442,6 +493,7 @@ Deno.serve(async (request) => {
         outcome: "success",
         requestId,
         durationMs: Math.round(performance.now() - startedAt),
+        validationAttempts,
       }),
     );
     return reply({
@@ -449,6 +501,7 @@ Deno.serve(async (request) => {
       sources: normalizeAssistantSources(sources),
       updatedAt: new Date().toISOString(),
       modelId: model,
+      requestId,
     });
   } catch (error) {
     const code = errorCode(error);

@@ -227,6 +227,7 @@ export type AssistantAnswer = {
   sources: string[];
   updatedAt: string;
   modelId: AssistantModelId;
+  requestId: string;
 };
 export type NotificationCategory =
   "pending" | "operation" | "people" | "system";
@@ -302,6 +303,11 @@ export interface AssistantGateway {
     modelId: AssistantModelId,
     signal?: AbortSignal,
   ): Promise<AssistantAnswer>;
+  feedback(
+    session: Session,
+    requestId: string,
+    helpful: boolean,
+  ): Promise<void>;
 }
 export interface NotificationGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<Notification>>;

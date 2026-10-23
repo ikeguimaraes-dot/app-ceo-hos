@@ -87,6 +87,28 @@ const protectedRpcs = [
       p_completion_tokens: 0,
     },
   ],
+  [
+    "ghost_assistant_finish_v2",
+    {
+      p_request_id: "00000000-0000-0000-0000-000000000000",
+      p_outcome: "error",
+      p_code: "negative_test",
+      p_model: "negative-test",
+      p_prompt_tokens: 0,
+      p_completion_tokens: 0,
+      p_datasets: [],
+      p_tool_call_count: 0,
+      p_validation_attempts: 0,
+      p_latency_ms: 1,
+    },
+  ],
+  [
+    "ghost_assistant_feedback_v1",
+    {
+      p_request_id: "00000000-0000-0000-0000-000000000000",
+      p_helpful: true,
+    },
+  ],
   ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
   ["ghost_assistant_catalog_v1"],
   [
@@ -137,6 +159,18 @@ const protectedRpcs = [
   ],
   [
     "ghost_assistant_query_v1",
+    {
+      p_dataset: "financeiro",
+      p_from: "2026-10-21",
+      p_to: "2026-10-21",
+      p_unit: null,
+      p_search: null,
+      p_grain: "day",
+      p_limit: 20,
+    },
+  ],
+  [
+    "ghost_assistant_query_v2",
     {
       p_dataset: "financeiro",
       p_from: "2026-10-21",

@@ -593,7 +593,12 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
           sources: ["Dashboard de todas as casas", "Operação"],
           updatedAt: "2026-10-20T12:00:00Z",
           modelId,
+          requestId: "00000000-0000-4000-8000-000000000001",
         };
+      },
+      async feedback(session) {
+        if (session.expiresAt <= now()) throw new Error("Sessão expirada.");
+        await wait();
       },
     },
     notifications: {

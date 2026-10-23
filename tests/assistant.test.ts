@@ -16,6 +16,7 @@ import {
   preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
+  verifyAssistantAnswer,
 } from "../supabase/functions/_shared/assistant";
 
 describe("assistant boundary", () => {
@@ -261,6 +262,27 @@ describe("assistant boundary", () => {
         "2026-10-23",
       )?.map((query) => query.dataset),
     ).toEqual(["compras_itens", "despesas"]);
+  });
+
+  it("rejects numbers that are absent from database evidence", () => {
+    const evidence = {
+      summary: { totalValue: 46055.53, customers: 168, goalProgress: 92.11 },
+      from: "2026-10-22",
+      to: "2026-10-22",
+    };
+    expect(
+      verifyAssistantAnswer(
+        "O faturamento foi R$ 46.055,53, com 168 clientes e 92,1% da meta.",
+        evidence,
+        { question: "Quanto faturou ontem?", today: "2026-10-23" },
+      ),
+    ).toEqual({ valid: true, unsupported: [] });
+    expect(
+      verifyAssistantAnswer("O faturamento foi R$ 99.999,00.", evidence, {
+        question: "Quanto faturou ontem?",
+        today: "2026-10-23",
+      }),
+    ).toEqual({ valid: false, unsupported: ["99.999,00"] });
   });
 
   it("requires a final evidence review with database summaries", () => {

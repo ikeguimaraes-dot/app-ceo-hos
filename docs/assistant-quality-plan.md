@@ -120,4 +120,15 @@ Implementado em 23/10/2026:
 - catálogo resumido no contexto para reduzir tokens repetidos;
 - regressões automatizadas para os erros já observados no uso real.
 
-Ainda faltam a suíte ampla de 100 perguntas, validação numérica campo a campo, feedback do usuário e contratos das áreas classificadas como ausentes na auditoria de cobertura.
+Ao final do primeiro ciclo ainda faltavam a suíte ampla de 100 perguntas, validação numérica, feedback do usuário e contratos das áreas classificadas como ausentes na auditoria de cobertura.
+
+Segundo ciclo implementado em 23/10/2026:
+
+- suíte de avaliação com 102 perguntas executivas representativas e 145 testes totais;
+- correção de 13 ambiguidades descobertas pela suíte antes da publicação;
+- resumo financeiro calculado no PostgreSQL, incluindo totais, meta, atingimento, clientes, ticket médio, provisório e divisão por casa;
+- verificador que bloqueia números ausentes nas evidências e pede uma única correção ao modelo antes de falhar com segurança;
+- feedback “Ajudou / Não ajudou” vinculado à requisição e ao usuário autenticado, sem armazenar pergunta, resposta ou linhas empresariais;
+- telemetria de datasets consultados, chamadas, tentativas de validação, latência, modelo e tokens.
+
+Permanecem pendentes a validação por caminho de evidência para afirmações não numéricas e a auditoria de cobertura das áreas ainda ausentes.

@@ -407,10 +407,14 @@ export function planAssistantQueries(
     { dataset, ...period, unit, search, grain, limit: 200 },
   ];
 
-  if (/\b(conta(s)? a pagar|boletos?|vencid\w*|a vencer)\b/.test(lower))
+  if (
+    /\b(conta(s)? a pagar|boletos?|vencid\w*|a vencer|titul\w+ a pagar)\b/.test(
+      lower,
+    )
+  )
     return query("contas_pagar");
   if (
-    /\b(conta|despesa|gasto)\b/.test(lower) &&
+    /\b(conta|despesa|gast\w*)\b/.test(lower) &&
     /\b(luz|energia|agua|gas|telefone|internet)\b/.test(lower)
   ) {
     const search = /\b(luz|energia|agua|gas|telefone|internet)\b/.exec(
@@ -418,6 +422,12 @@ export function planAssistantQueries(
     )?.[1];
     return query("despesas", search);
   }
+  if (
+    /\b(formas? de pagamento|pagamentos? por forma|pix|dinheiro|cartao)\b/.test(
+      lower,
+    )
+  )
+    return query("pagamentos");
   if (/\b(compr|gasto|pago|pagamos)\w*\b/.test(lower)) {
     const search =
       extractedSearch(
@@ -429,15 +439,19 @@ export function planAssistantQueries(
         /compr(?:ei|amos|ou)?\s+(?:de\s+)?(.+?)(?:\s+(?:esse|este|nesse|neste)\s+m[eê]s|$)/i,
       );
     return query(
-      /\bfornecedor\b/.test(lower) || !search
+      /\bfornecedor\w*\b/.test(lower) || !search
         ? "compras_notas"
         : "compras_itens",
       search,
     );
   }
-  if (/\b(nf|nota fiscal|notas fiscais|fornecedor)\b/.test(lower))
+  if (/\b(nf|nota fiscal|notas fiscais|fornecedor\w*)\b/.test(lower))
     return query("compras_notas");
-  if (/\b(produto).*(vendid|venda)|\bmais vendido\b/.test(lower))
+  if (
+    /\b(produto).*(vendid|venda)|\bvendas? por produto|\bmais vendido\b/.test(
+      lower,
+    )
+  )
     return query("vendas_produtos");
   if (/\b(fatur|receita|meta|ticket|clientes?|vendas?)\w*\b/.test(lower))
     return query(
@@ -446,18 +460,16 @@ export function planAssistantQueries(
       period.from === period.to ? "day" : "day",
     );
   if (/\b(desconto)\w*\b/.test(lower)) return query("descontos");
+  if (/\b(reserva)\w*\b/.test(lower)) return query("reservas");
   if (/\b(cancelamento|cancelad)\w*\b/.test(lower))
     return query("cancelamentos");
-  if (/\b(forma de pagamento|pix|dinheiro|cartao|cartão)\b/.test(lower))
-    return query("pagamentos");
   if (/\b(inventario|inventário|estoque)\w*\b/.test(lower))
     return query("inventarios");
-  if (/\b(contrato)\w*\b/.test(lower)) return query("contratos");
+  if (/\b(contrat)\w*\b/.test(lower)) return query("contratos");
   if (/\b(evento)\w*\b/.test(lower)) return query("eventos");
-  if (/\b(reserva)\w*\b/.test(lower)) return query("reservas");
   if (/\b(folha|salario|salário)\w*\b/.test(lower))
     return query("folha_resumo");
-  if (/\b(manutencao|manutenção)\w*\b/.test(lower)) return query("manutencao");
+  if (/\b(manuten|manutenc)\w*\b/.test(lower)) return query("manutencao");
   if (/\b(pessoas?|funcionarios?|funcionários?|headcount)\b/.test(lower))
     return query("pessoas");
   if (/\b(ausencia|ausência|falta)\w*\b/.test(lower)) return query("ausencias");
@@ -509,6 +521,74 @@ export function evidenceReviewPrompt(question: string, toolCallCount: number) {
     "Responda de forma natural e útil, como continuação da conversa, sem mencionar este processo de revisão.",
     "Entregue somente a resposta final em português do Brasil, sem Markdown.",
   ].join("\n");
+}
+
+function parseNumericToken(token: string) {
+  const cleaned = token.replace(/[^\d,.-]/g, "");
+  if (!cleaned) return null;
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  let normalizedNumber = cleaned;
+  if (lastComma > lastDot) {
+    normalizedNumber = cleaned.replace(/\./g, "").replace(",", ".");
+  } else if ((cleaned.match(/\./g) ?? []).length > 1) {
+    normalizedNumber = cleaned.replace(/\./g, "");
+  } else {
+    normalizedNumber = cleaned.replace(/,/g, "");
+  }
+  const value = Number(normalizedNumber);
+  return Number.isFinite(value) ? value : null;
+}
+
+function numericTokens(value: string) {
+  return (
+    value.match(/-?\d[\d.]*(?:,\d+)?%?/g)?.map((token) => ({
+      token,
+      value: parseNumericToken(token),
+    })) ?? []
+  ).filter(
+    (candidate): candidate is { token: string; value: number } =>
+      candidate.value !== null,
+  );
+}
+
+function collectEvidenceNumbers(value: unknown, output: number[]) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    output.push(value);
+    return;
+  }
+  if (typeof value === "string") {
+    output.push(...numericTokens(value).map((candidate) => candidate.value));
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectEvidenceNumbers(item, output));
+    return;
+  }
+  if (value && typeof value === "object")
+    Object.values(value as Record<string, unknown>).forEach((item) =>
+      collectEvidenceNumbers(item, output),
+    );
+}
+
+export function verifyAssistantAnswer(
+  answer: string,
+  evidence: unknown,
+  allowedContext: unknown,
+) {
+  const supported: number[] = [];
+  collectEvidenceNumbers(evidence, supported);
+  collectEvidenceNumbers(allowedContext, supported);
+  const unsupported = numericTokens(answer)
+    .filter(({ value }) =>
+      supported.every(
+        (candidate) =>
+          Math.abs(candidate - value) >
+          Math.max(0.051, Math.abs(candidate) * 0.00001),
+      ),
+    )
+    .map(({ token }) => token);
+  return { valid: unsupported.length === 0, unsupported };
 }
 
 function record(value: unknown): Record<string, unknown> {

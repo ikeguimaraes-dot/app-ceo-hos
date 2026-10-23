@@ -73,6 +73,8 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     .getByRole("button", { name: "Como estão minhas empresas este mês?" })
     .click();
   await expect(page.getByText(/consultei 4 casas/)).toBeVisible();
+  await page.getByRole("button", { name: "Ajudou", exact: true }).click();
+  await expect(page.getByText(/Obrigado.*melhorar o Ghost/)).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/assistant.png",
     fullPage: true,
