@@ -3,6 +3,7 @@ import {
   assistantDatasets,
   assistantModel,
   assistantModels,
+  deterministicAssistantAnswer,
   evidenceReviewPrompt,
   minimizeAssistantContext,
   needsFinanceTool,
@@ -283,6 +284,52 @@ describe("assistant boundary", () => {
         today: "2026-10-23",
       }),
     ).toEqual({ valid: false, unsupported: ["99.999,00"] });
+  });
+
+  it("answers meat purchases directly from the database summary", () => {
+    const evidence = [
+      {
+        query: {
+          dataset: "compras_itens",
+          from: "2026-10-01",
+          to: "2026-10-23",
+          search: "carne",
+        },
+        result: {
+          from: "2026-10-01",
+          to: "2026-10-23",
+          summary: {
+            totalValue: 220653.18,
+            invoiceCount: 44,
+            lineCount: 88,
+            classification: "A. PROTEINAS",
+            byUnit: [
+              { unitName: "Meet & Eat", totalValue: 85969.2 },
+              { unitName: "Frêneze", totalValue: 108303.2 },
+            ],
+          },
+          rows: [{ firstIssueDate: "2026-10-02", lastIssueDate: "2026-10-21" }],
+        },
+      },
+    ];
+    const amount = deterministicAssistantAnswer(
+      "Quanto compramos de carne esse mês?",
+      evidence,
+    );
+    expect(amount).toContain("220.653,18");
+    expect(amount).toContain("44 notas");
+    expect(amount).toContain("Meet & Eat");
+    expect(amount).toContain("85.969,20");
+    expect(verifyAssistantAnswer(amount!, evidence, {})).toEqual({
+      valid: true,
+      unsupported: [],
+    });
+
+    const dates = deterministicAssistantAnswer(
+      "Quando compramos carne esse mês?",
+      evidence,
+    );
+    expect(dates).toContain("entre 02/10/2026 e 21/10/2026");
   });
 
   it("requires a final evidence review with database summaries", () => {

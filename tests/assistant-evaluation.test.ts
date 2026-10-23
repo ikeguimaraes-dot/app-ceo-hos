@@ -28,6 +28,7 @@ const groups: {
       "Quanto foi pago de proteína?",
       "Quanto comprei de hortifruti?",
       "Qual o gasto com café?",
+      "Quando compramos de carne esse mes?",
     ],
   },
   {

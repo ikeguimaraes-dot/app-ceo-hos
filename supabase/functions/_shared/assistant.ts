@@ -559,6 +559,9 @@ function collectEvidenceNumbers(value: unknown, output: number[]) {
   }
   if (typeof value === "string") {
     output.push(...numericTokens(value).map((candidate) => candidate.value));
+    value
+      .match(/\d{4}-\d{2}-\d{2}/g)
+      ?.forEach((date) => output.push(...date.split("-").map(Number)));
     return;
   }
   if (Array.isArray(value)) {
@@ -589,6 +592,82 @@ export function verifyAssistantAnswer(
     )
     .map(({ token }) => token);
   return { valid: unsupported.length === 0, unsupported };
+}
+
+function brl(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+function brDate(value: unknown) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return null;
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+/** Produces factual answers directly from database summaries for high-value
+ * recipes. This removes the language model from arithmetic and zero-result
+ * decisions while keeping it available for open-ended analysis. */
+export function deterministicAssistantAnswer(
+  question: string,
+  evidence: unknown[],
+) {
+  if (evidence.length !== 1) return null;
+  const item = record(evidence[0]);
+  const query = record(item.query);
+  const result = record(item.result);
+  if (query.dataset !== "compras_itens") return null;
+  const summary = record(result.summary);
+  const totalValue = Number(summary.totalValue);
+  const invoiceCount = Number(summary.invoiceCount);
+  const lineCount = Number(summary.lineCount);
+  if (![totalValue, invoiceCount, lineCount].every(Number.isFinite))
+    return null;
+  const from = brDate(result.from ?? query.from);
+  const to = brDate(result.to ?? query.to);
+  const period =
+    from && to
+      ? from === to
+        ? `em ${from}`
+        : `de ${from} a ${to}`
+      : "no período consultado";
+  const search = typeof query.search === "string" ? query.search : "itens";
+  const classification =
+    typeof summary.classification === "string" && summary.classification
+      ? `, na classificação ${summary.classification}`
+      : "";
+  if (lineCount === 0)
+    return `Não encontrei compras de ${search} ${period} nas casas autorizadas.`;
+
+  const byUnit = Array.isArray(summary.byUnit)
+    ? summary.byUnit
+        .map(record)
+        .filter((unit) => Number.isFinite(Number(unit.totalValue)))
+        .map(
+          (unit) => `${String(unit.unitName)}: ${brl(Number(unit.totalValue))}`,
+        )
+    : [];
+  const units = byUnit.length ? ` Por casa: ${byUnit.join("; ")}.` : "";
+  if (/\bquando\b/i.test(question) && !/\bquanto\b/i.test(question)) {
+    const rows = Array.isArray(result.rows) ? result.rows.map(record) : [];
+    const dates = rows
+      .flatMap((row) => [row.firstIssueDate, row.lastIssueDate])
+      .filter((date): date is string => typeof date === "string")
+      .sort();
+    const first = brDate(dates[0]);
+    const last = brDate(dates.at(-1));
+    const purchasePeriod =
+      first && last
+        ? first === last
+          ? `em ${first}`
+          : `entre ${first} e ${last}`
+        : period;
+    return `As compras de ${search}${classification} ocorreram ${purchasePeriod}. O total foi ${brl(totalValue)}, em ${invoiceCount} notas.${units}`;
+  }
+  return `Foram comprados ${brl(totalValue)} de ${search}${classification} ${period}, em ${invoiceCount} notas.${units}`;
 }
 
 function record(value: unknown): Record<string, unknown> {

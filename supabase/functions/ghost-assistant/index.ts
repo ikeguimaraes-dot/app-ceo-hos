@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import {
   assistantDatasets,
   assistantModel,
+  deterministicAssistantAnswer,
   evidenceReviewPrompt,
   needsKphTool,
   normalizeAssistantSources,
@@ -349,25 +350,36 @@ Deno.serve(async (request) => {
     let modelMessage: Record<string, any> | undefined;
     let promptTokens = 0;
     let completionTokens = 0;
+    let deterministic = false;
 
     if (plannedQueries?.length) {
       for (const query of plannedQueries) {
         toolCallCount += 1;
         await executeQuery(query);
       }
-      messages.push({
-        role: "system",
-        content: [
-          "EVIDÊNCIA CONSULTADA DIRETAMENTE NO BANCO KPH:",
-          JSON.stringify(evidence),
-          evidenceReviewPrompt(input.question, toolCallCount),
-          "Responda em JSON no formato solicitado.",
-        ].join("\n"),
-      });
-      payload = await callModel(messages, false, false, true);
-      modelMessage = payload?.choices?.[0]?.message;
-      promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
-      completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+      const serverAnswer = deterministicAssistantAnswer(
+        input.question,
+        evidence,
+      );
+      if (serverAnswer) {
+        deterministic = true;
+        payload = {};
+        modelMessage = { content: serverAnswer };
+      } else {
+        messages.push({
+          role: "system",
+          content: [
+            "EVIDÊNCIA CONSULTADA DIRETAMENTE NO BANCO KPH:",
+            JSON.stringify(evidence),
+            evidenceReviewPrompt(input.question, toolCallCount),
+            "Responda em JSON no formato solicitado.",
+          ].join("\n"),
+        });
+        payload = await callModel(messages, false, false, true);
+        modelMessage = payload?.choices?.[0]?.message;
+        promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
+        completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
+      }
     } else {
       payload = await callModel(messages, true, needsKphTool(input.question));
       modelMessage = payload?.choices?.[0]?.message;
@@ -414,7 +426,7 @@ Deno.serve(async (request) => {
       completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
     }
     let answer = modelMessage?.content;
-    if (plannedQueries && typeof answer === "string") {
+    if (plannedQueries && !deterministic && typeof answer === "string") {
       try {
         const structured = JSON.parse(answer);
         answer = structured?.answer;
@@ -486,7 +498,12 @@ Deno.serve(async (request) => {
       });
       if (!verification.valid) throw new Error("assistant_unverified_numbers");
     }
-    await finish("success", "ok", promptTokens, completionTokens);
+    await finish(
+      "success",
+      deterministic ? "deterministic" : "ok",
+      promptTokens,
+      completionTokens,
+    );
     console.log(
       JSON.stringify({
         operation: "assistant.ask",

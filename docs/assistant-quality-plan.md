@@ -132,3 +132,10 @@ Segundo ciclo implementado em 23/10/2026:
 - telemetria de datasets consultados, chamadas, tentativas de validação, latência, modelo e tokens.
 
 Permanecem pendentes a validação por caminho de evidência para afirmações não numéricas e a auditoria de cobertura das áreas ainda ausentes.
+
+Correção factual adicional em 23/10/2026:
+
+- perguntas de valor comprado por produto ou categoria deixaram de depender do modelo para redigir o resultado;
+- o servidor responde diretamente com total, período, número de notas e divisão por casa calculados pelo PostgreSQL;
+- “quanto compramos de carne” e a variação “quando compramos de carne” possuem regressões específicas;
+- resultados vazios só são declarados quando `lineCount` do banco é zero.
