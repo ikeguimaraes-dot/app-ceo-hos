@@ -30,10 +30,12 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page.getByRole("tab", { name: "NF" }).click();
   await expect(page.getByText("Notas fiscais")).toBeVisible();
   await expect(page.getByText("Bonas Comércio e Distribuição")).toBeVisible();
-  await page
-    .getByLabel("Buscar produto, fornecedor ou número da nota")
-    .fill("Produto fresco");
+  const invoiceSearch = page.getByLabel(
+    "Buscar produto, fornecedor ou número da nota",
+  );
+  await invoiceSearch.fill("Produto fresco");
   await expect(page.getByText(/Resultados para/)).toBeVisible();
+  await expect(invoiceSearch).toBeFocused();
   await page.getByLabel("Limpar busca").click();
   await page.screenshot({
     path: "docs/screenshots/product-invoices.png",

@@ -256,6 +256,8 @@ describe("session and access boundaries", () => {
     expect(todayPayables.openAmount).toBe(12680.5);
     expect(todayPayables.items).toHaveLength(1);
     expect(todayPayables.items[0]?.status).toBe("due_today");
+    expect(todayPayables.overdueAmount).toBe(9840.2);
+    expect(todayPayables.next7DaysAmount).toBe(18750);
     const cashFlow = await gateways.cashFlow.getWeek(scope, 0);
     expect(cashFlow.weekStart).toBe("2026-10-19");
     expect(cashFlow.weekEnd).toBe("2026-10-25");

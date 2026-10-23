@@ -59,6 +59,7 @@ export function ProductInvoicesExperience() {
         searchTerm,
       ),
     enabled: !!session && !!unit,
+    placeholderData: (previousData) => previousData,
   });
   const items = query.data?.items ?? [];
 

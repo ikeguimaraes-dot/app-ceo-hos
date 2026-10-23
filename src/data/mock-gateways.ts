@@ -334,13 +334,13 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
             (total, item) => total + item.amount,
             0,
           ),
-          overdueAmount: openInPeriod
+          overdueAmount: normalized
             .filter((item) => item.status === "overdue")
             .reduce((total, item) => total + item.amount, 0),
-          dueTodayAmount: openInPeriod
+          dueTodayAmount: normalized
             .filter((item) => item.status === "due_today")
             .reduce((total, item) => total + item.amount, 0),
-          next7DaysAmount: openInPeriod
+          next7DaysAmount: normalized
             .filter(
               (item) => item.dueDate! > today && item.dueDate! <= nextWeek,
             )
@@ -350,7 +350,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
             0,
           ),
           openCount: openInPeriod.length,
-          overdueCount: openInPeriod.filter((item) => item.status === "overdue")
+          overdueCount: normalized.filter((item) => item.status === "overdue")
             .length,
           paidCount: paidInPeriod.length,
           items,
