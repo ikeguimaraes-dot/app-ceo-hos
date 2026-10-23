@@ -242,7 +242,7 @@ export interface DashboardGateway {
   get(scope: Scope, month?: string): Promise<Dashboard>;
 }
 export interface ProductInvoicesGateway {
-  get(scope: Scope, month: string): Promise<ProductInvoices>;
+  get(scope: Scope, month: string, search?: string): Promise<ProductInvoices>;
 }
 export interface PendingItemsGateway {
   list(scope: Scope, cursor?: string | null): Promise<Page<PendingItem>>;
@@ -252,11 +252,21 @@ export interface PendingItemsGateway {
   ): Promise<PendingDecisionResult>;
 }
 export interface PayablesGateway {
-  get(scope: Scope, filter?: PayableFilter, allUnits?: boolean): Promise<Payables>;
+  get(
+    scope: Scope,
+    filter?: PayableFilter,
+    allUnits?: boolean,
+    period?: DatePeriod,
+  ): Promise<Payables>;
 }
 export type PayableFilter = "open" | "upcoming" | "overdue" | "paid";
+export type DatePeriod = { start: string; end: string };
 export interface CashFlowGateway {
-  getWeek(scope: Scope, weekOffset: number, allUnits?: boolean): Promise<CashFlowWeek>;
+  getWeek(
+    scope: Scope,
+    weekOffset: number,
+    allUnits?: boolean,
+  ): Promise<CashFlowWeek>;
 }
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;

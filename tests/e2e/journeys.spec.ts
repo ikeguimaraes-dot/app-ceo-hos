@@ -30,6 +30,11 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   await page.getByRole("tab", { name: "NF" }).click();
   await expect(page.getByText("Notas fiscais")).toBeVisible();
   await expect(page.getByText("Bonas Comércio e Distribuição")).toBeVisible();
+  await page
+    .getByLabel("Buscar produto, fornecedor ou número da nota")
+    .fill("Produto fresco");
+  await expect(page.getByText(/Resultados para/)).toBeVisible();
+  await page.getByLabel("Limpar busca").click();
   await page.screenshot({
     path: "docs/screenshots/product-invoices.png",
     fullPage: true,
@@ -42,8 +47,8 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   });
   await page.getByRole("tab", { name: "A pagar" }).click();
   await expect(page.getByText("Contas a pagar")).toBeVisible();
-  await expect(page.getByText("Distribuidora Horizonte")).toBeVisible();
-  await expect(page.getByText("R$ 496.891")).toBeVisible();
+  await expect(page.getByText("Energia Centro")).toBeVisible();
+  await expect(page.getByText("R$ 25.381").first()).toBeVisible();
   await page.waitForTimeout(700);
   await page.screenshot({
     path: "docs/screenshots/payables.png",
@@ -105,9 +110,7 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
   ).toBeVisible();
   expect(external).toEqual([]);
 });
-test("protected deep link survives login", async ({
-  page,
-}) => {
+test("protected deep link survives login", async ({ page }) => {
   await page.goto("/notifications");
   await expect(page).toHaveURL(/login/);
   await page.getByRole("button", { name: "Entrar na demonstração" }).click();
@@ -174,7 +177,7 @@ test("recovery, empty, offline, retry and dark appearance", async ({
   await page.getByRole("button", { name: "Normal", exact: true }).click();
   await page.goBack();
   await page.getByRole("tab", { name: "A pagar" }).click();
-  await expect(page.getByText("Distribuidora Horizonte")).toBeVisible();
+  await expect(page.getByText("Energia Centro")).toBeVisible();
 });
 test("authenticated deep link still denies missing capability", async ({
   page,

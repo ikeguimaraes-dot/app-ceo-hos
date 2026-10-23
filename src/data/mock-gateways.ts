@@ -105,7 +105,8 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
     dashboard: {
       async get(scope, month) {
         await check(scope, "dashboard.read");
-        const base = demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
+        const base =
+          demo.dashboards[scope.unitId as keyof typeof demo.dashboards];
         const requested = month?.slice(0, 7) ?? base.periodStart.slice(0, 7);
         const scale = requested === base.periodStart.slice(0, 7) ? 1 : 0.86;
         const moveDate = (date: string) => `${requested}-${date.slice(8, 10)}`;
@@ -134,7 +135,8 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               ...base,
               periodStart: `${requested}-01`,
               periodEnd: moveDate(base.periodEnd),
-              revenue: base.revenue == null ? null : Math.round(base.revenue * scale),
+              revenue:
+                base.revenue == null ? null : Math.round(base.revenue * scale),
               goal: base.goal == null ? null : Math.round(base.goal * scale),
               grossRevenue: Math.round(base.grossRevenue * scale),
               netRevenue: Math.round(base.netRevenue * scale),
@@ -145,13 +147,30 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               series: base.series.map((point) => ({
                 ...point,
                 date: moveDate(point.date),
-                revenue: point.revenue == null ? null : Math.round(point.revenue * scale),
-                goal: point.goal == null ? null : Math.round(point.goal * scale),
-                received: point.received == null ? null : Math.round(point.received * scale),
-                debt: point.debt == null ? null : Math.round(point.debt * scale),
-                discount: point.discount == null ? null : Math.round(point.discount * scale),
-                tips: point.tips == null ? null : Math.round(point.tips * scale),
-                shifts: point.shifts.map((shift) => ({ ...shift, revenue: Math.round(shift.revenue * scale), tips: shift.tips == null ? null : Math.round(shift.tips * scale) })),
+                revenue:
+                  point.revenue == null
+                    ? null
+                    : Math.round(point.revenue * scale),
+                goal:
+                  point.goal == null ? null : Math.round(point.goal * scale),
+                received:
+                  point.received == null
+                    ? null
+                    : Math.round(point.received * scale),
+                debt:
+                  point.debt == null ? null : Math.round(point.debt * scale),
+                discount:
+                  point.discount == null
+                    ? null
+                    : Math.round(point.discount * scale),
+                tips:
+                  point.tips == null ? null : Math.round(point.tips * scale),
+                shifts: point.shifts.map((shift) => ({
+                  ...shift,
+                  revenue: Math.round(shift.revenue * scale),
+                  tips:
+                    shift.tips == null ? null : Math.round(shift.tips * scale),
+                })),
               })),
             };
       },
@@ -212,36 +231,132 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
       },
     },
     payables: {
-      async get(scope, filter: PayableFilter = "open", allUnits = false) {
+      async get(
+        scope,
+        filter: PayableFilter = "open",
+        allUnits = false,
+        period,
+      ) {
         await check(scope, "dashboard.read");
-        const unitIds = allUnits ? demo.units.map((unit) => unit.id) : [scope.unitId];
-        const sources = unitIds.map((id) => demo.payables[id as keyof typeof demo.payables]).filter(Boolean);
-        const normalized: PayableItem[] = sources.flatMap((source, sourceIndex) => source.items.map((item): PayableItem => ({
-          ...item,
-          unitId: unitIds[sourceIndex]!,
-          unitName: demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)?.name ?? "Unidade",
-          paidDate: null,
-        })));
-        const paid: PayableItem[] = sources.map((source, sourceIndex): PayableItem => {
-          const item = source.items[0]! as PayableItem;
-          return { ...item, id: `${item.id}-paid`, unitId: unitIds[sourceIndex]!, unitName: demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)?.name ?? "Unidade", paidDate: "2026-10-20", dueDate: "2026-10-18", status: "paid" as const, daysOverdue: 0 };
-        });
-        const items = filter === "paid" ? paid : normalized.filter((item) => filter === "open" || (filter === "overdue" ? item.status === "overdue" : item.status !== "overdue"));
+        const unitIds = allUnits
+          ? demo.units.map((unit) => unit.id)
+          : [scope.unitId];
+        const sources = unitIds
+          .map((id) => demo.payables[id as keyof typeof demo.payables])
+          .filter(Boolean);
+        const todayDate = new Date(now());
+        const formatDate = (value: Date) =>
+          `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+        const today = formatDate(todayDate);
+        const shiftDate = (value: string) => {
+          const anchor = new Date("2026-10-22T12:00:00");
+          const sourceDate = new Date(`${value}T12:00:00`);
+          const shifted = new Date(todayDate);
+          shifted.setDate(
+            todayDate.getDate() +
+              Math.round(
+                (sourceDate.getTime() - anchor.getTime()) / 86_400_000,
+              ),
+          );
+          return formatDate(shifted);
+        };
+        const normalized: PayableItem[] = sources.flatMap(
+          (source, sourceIndex) =>
+            source.items.map((item): PayableItem => {
+              const dueDate = shiftDate(item.dueDate);
+              return {
+                ...item,
+                dueDate,
+                status:
+                  dueDate < today
+                    ? "overdue"
+                    : dueDate === today
+                      ? "due_today"
+                      : "upcoming",
+                daysOverdue:
+                  dueDate < today
+                    ? Math.round(
+                        (new Date(`${today}T12:00:00`).getTime() -
+                          new Date(`${dueDate}T12:00:00`).getTime()) /
+                          86_400_000,
+                      )
+                    : 0,
+                unitId: unitIds[sourceIndex]!,
+                unitName:
+                  demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)
+                    ?.name ?? "Unidade",
+                paidDate: null,
+              };
+            }),
+        );
+        const paid: PayableItem[] = sources.map(
+          (source, sourceIndex): PayableItem => {
+            const item = source.items[0]! as PayableItem;
+            return {
+              ...item,
+              id: `${item.id}-paid`,
+              unitId: unitIds[sourceIndex]!,
+              unitName:
+                demo.units.find((unit) => unit.id === unitIds[sourceIndex]!)
+                  ?.name ?? "Unidade",
+              paidDate: shiftDate("2026-10-20"),
+              dueDate: shiftDate("2026-10-18"),
+              status: "paid" as const,
+              daysOverdue: 0,
+            };
+          },
+        );
+        const start = period?.start ?? today;
+        const end = period?.end ?? start;
+        const inPeriod = (item: PayableItem) =>
+          !!item.dueDate && item.dueDate >= start && item.dueDate <= end;
+        const candidates =
+          filter === "paid"
+            ? paid
+            : normalized.filter(
+                (item) =>
+                  filter === "open" ||
+                  (filter === "overdue"
+                    ? item.status === "overdue"
+                    : item.status !== "overdue"),
+              );
+        const items = candidates.filter(inPeriod);
+        const openInPeriod = normalized.filter(inPeriod);
+        const paidInPeriod = paid.filter(inPeriod);
+        const sevenDays = new Date(todayDate);
+        sevenDays.setDate(todayDate.getDate() + 7);
+        const nextWeek = formatDate(sevenDays);
         const result: Payables = {
           updatedAt: sources[0]?.updatedAt ?? "2026-10-22T15:00:00Z",
-          asOf: "2026-10-22",
+          asOf: today,
           scope: allUnits ? "all" : "unit",
-          openAmount: sources.reduce((total, source) => total + source.openAmount, 0),
-          overdueAmount: sources.reduce((total, source) => total + source.overdueAmount, 0),
-          dueTodayAmount: sources.reduce((total, source) => total + source.dueTodayAmount, 0),
-          next7DaysAmount: sources.reduce((total, source) => total + source.next7DaysAmount, 0),
-          paidAmount: paid.reduce((total, item) => total + item.amount, 0),
-          openCount: sources.reduce((total, source) => total + source.openCount, 0),
-          overdueCount: sources.reduce((total, source) => total + source.overdueCount, 0),
-          paidCount: paid.length,
+          openAmount: openInPeriod.reduce(
+            (total, item) => total + item.amount,
+            0,
+          ),
+          overdueAmount: openInPeriod
+            .filter((item) => item.status === "overdue")
+            .reduce((total, item) => total + item.amount, 0),
+          dueTodayAmount: openInPeriod
+            .filter((item) => item.status === "due_today")
+            .reduce((total, item) => total + item.amount, 0),
+          next7DaysAmount: openInPeriod
+            .filter(
+              (item) => item.dueDate! > today && item.dueDate! <= nextWeek,
+            )
+            .reduce((total, item) => total + item.amount, 0),
+          paidAmount: paidInPeriod.reduce(
+            (total, item) => total + item.amount,
+            0,
+          ),
+          openCount: openInPeriod.length,
+          overdueCount: openInPeriod.filter((item) => item.status === "overdue")
+            .length,
+          paidCount: paidInPeriod.length,
           items,
         };
-        if (mode === "empty") return {
+        if (mode === "empty")
+          return {
             ...result,
             openAmount: 0,
             overdueAmount: 0,
@@ -259,56 +374,171 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
     cashFlow: {
       async getWeek(scope, weekOffset, allUnits = false) {
         await check(scope, "dashboard.read");
-        const unitIds = allUnits ? demo.units.map((unit) => unit.id) : [scope.unitId];
-        const sources = unitIds.map((id) => demo.cashFlow[id as keyof typeof demo.cashFlow]).filter(Boolean);
-        if (!sources.length) throw new Error("Unidade sem fluxo de caixa simulado.");
+        const unitIds = allUnits
+          ? demo.units.map((unit) => unit.id)
+          : [scope.unitId];
+        const sources = unitIds
+          .map((id) => demo.cashFlow[id as keyof typeof demo.cashFlow])
+          .filter(Boolean);
+        if (!sources.length)
+          throw new Error("Unidade sem fluxo de caixa simulado.");
         const factors = [0.22, 0.25, 0.2, 0.18, 0.2, 0.4, 0.35];
-        const dates = ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"];
+        const dates = [
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25",
+        ];
         const rawDays = dates.map((date, index) => ({
           date,
-          actualIncoming: index < 3 ? sources.reduce((total, source) => total + source.incoming * factors[index]!, 0) : 0,
-          projectedIncoming: index >= 3 ? sources.reduce((total, source) => total + source.incoming * factors[index]!, 0) : 0,
+          actualIncoming:
+            index < 3
+              ? sources.reduce(
+                  (total, source) => total + source.incoming * factors[index]!,
+                  0,
+                )
+              : 0,
+          projectedIncoming:
+            index >= 3
+              ? sources.reduce(
+                  (total, source) => total + source.incoming * factors[index]!,
+                  0,
+                )
+              : 0,
           projected: index >= 3,
-          outgoing: sources.reduce((total, source) => total + (source.days[index]?.outgoing ?? 0), 0),
+          outgoing: sources.reduce(
+            (total, source) => total + (source.days[index]?.outgoing ?? 0),
+            0,
+          ),
         }));
         let running = 0;
-        const currentDays = rawDays.map((day) => { const incoming = day.actualIncoming + day.projectedIncoming; running += incoming - day.outgoing; return { ...day, incoming, balance: running }; });
+        const currentDays = rawDays.map((day) => {
+          const incoming = day.actualIncoming + day.projectedIncoming;
+          running += incoming - day.outgoing;
+          return { ...day, incoming, balance: running };
+        });
         const current: CashFlowWeek = {
-          updatedAt: "2026-10-22T15:00:00Z", weekStart: dates[0]!, weekEnd: dates[6]!, scope: allUnits ? "all" : "unit", historyWeeks: 5,
-          actualIncoming: currentDays.reduce((total, day) => total + day.actualIncoming, 0), projectedIncoming: currentDays.reduce((total, day) => total + day.projectedIncoming, 0),
-          incoming: currentDays.reduce((total, day) => total + day.incoming, 0), outgoing: currentDays.reduce((total, day) => total + day.outgoing, 0), balance: running, goesNegative: currentDays.some((day) => day.balance < 0), days: currentDays,
+          updatedAt: "2026-10-22T15:00:00Z",
+          weekStart: dates[0]!,
+          weekEnd: dates[6]!,
+          scope: allUnits ? "all" : "unit",
+          historyWeeks: 5,
+          actualIncoming: currentDays.reduce(
+            (total, day) => total + day.actualIncoming,
+            0,
+          ),
+          projectedIncoming: currentDays.reduce(
+            (total, day) => total + day.projectedIncoming,
+            0,
+          ),
+          incoming: currentDays.reduce((total, day) => total + day.incoming, 0),
+          outgoing: currentDays.reduce((total, day) => total + day.outgoing, 0),
+          balance: running,
+          goesNegative: currentDays.some((day) => day.balance < 0),
+          days: currentDays,
         };
-        if (mode === "empty") return { ...current, actualIncoming: 0, projectedIncoming: 0, incoming: 0, outgoing: 0, balance: 0, goesNegative: false, days: current.days.map((day) => ({ ...day, actualIncoming: 0, projectedIncoming: 0, incoming: 0, outgoing: 0, balance: 0 })) };
+        if (mode === "empty")
+          return {
+            ...current,
+            actualIncoming: 0,
+            projectedIncoming: 0,
+            incoming: 0,
+            outgoing: 0,
+            balance: 0,
+            goesNegative: false,
+            days: current.days.map((day) => ({
+              ...day,
+              actualIncoming: 0,
+              projectedIncoming: 0,
+              incoming: 0,
+              outgoing: 0,
+              balance: 0,
+            })),
+          };
         if (weekOffset === 0) return current;
         const shift = weekOffset * 7 * 86400000;
-        const move = (date: string) => new Date(new Date(`${date}T12:00:00Z`).getTime() + shift).toISOString().slice(0, 10);
+        const move = (date: string) =>
+          new Date(new Date(`${date}T12:00:00Z`).getTime() + shift)
+            .toISOString()
+            .slice(0, 10);
         running = 0;
-        const futureDays = current.days.map((day) => { const incoming = day.incoming; running += incoming - day.outgoing; return { ...day, date: move(day.date), actualIncoming: 0, projectedIncoming: incoming, projected: true, balance: running }; });
+        const futureDays = current.days.map((day) => {
+          const incoming = day.incoming;
+          running += incoming - day.outgoing;
+          return {
+            ...day,
+            date: move(day.date),
+            actualIncoming: 0,
+            projectedIncoming: incoming,
+            projected: true,
+            balance: running,
+          };
+        });
         return {
-          ...current, weekStart: move(current.weekStart), weekEnd: move(current.weekEnd), actualIncoming: 0,
-          projectedIncoming: current.incoming, balance: running, goesNegative: futureDays.some((day) => day.balance < 0), days: futureDays,
+          ...current,
+          weekStart: move(current.weekStart),
+          weekEnd: move(current.weekEnd),
+          actualIncoming: 0,
+          projectedIncoming: current.incoming,
+          balance: running,
+          goesNegative: futureDays.some((day) => day.balance < 0),
+          days: futureDays,
         };
       },
     },
     productInvoices: {
-      async get(scope, month) {
+      async get(scope, month, search) {
         await check(scope, "operation.read");
-        const source = demo.productInvoices[scope.unitId as keyof typeof demo.productInvoices] ?? [];
-        const items = mode === "empty" ? [] : source.map((item) => ({
-          ...item,
-          issueDate: `${month.slice(0, 7)}-${item.issueDate.slice(8, 10)}`,
-          items: Array.from({ length: Math.min(item.itemCount, 4) }, (_, index) => ({
-            id: `${item.id}-item-${index}`,
-            description: ["Produto fresco", "Bebida", "Insumo de cozinha", "Material de apoio"][index]!,
-            category: index === 3 ? "Material" : "Alimentos e bebidas",
-            quantity: index + 1,
-            unit: "UN",
-            unitCost: item.totalValue / item.itemCount,
-            totalCost: item.totalValue / Math.min(item.itemCount, 4),
-            variation: index === 0 ? 0.032 : null,
-            includedInCmv: index !== 3,
-          })),
-        }));
+        const source =
+          demo.productInvoices[
+            scope.unitId as keyof typeof demo.productInvoices
+          ] ?? [];
+        const allItems =
+          mode === "empty"
+            ? []
+            : source.map((item) => ({
+                ...item,
+                issueDate: `${month.slice(0, 7)}-${item.issueDate.slice(8, 10)}`,
+                items: Array.from(
+                  { length: Math.min(item.itemCount, 4) },
+                  (_, index) => ({
+                    id: `${item.id}-item-${index}`,
+                    description: [
+                      "Produto fresco",
+                      "Bebida",
+                      "Insumo de cozinha",
+                      "Material de apoio",
+                    ][index]!,
+                    category: index === 3 ? "Material" : "Alimentos e bebidas",
+                    quantity: index + 1,
+                    unit: "UN",
+                    unitCost: item.totalValue / item.itemCount,
+                    totalCost: item.totalValue / Math.min(item.itemCount, 4),
+                    variation: index === 0 ? 0.032 : null,
+                    includedInCmv: index !== 3,
+                  }),
+                ),
+              }));
+        const needle = search?.trim().toLocaleLowerCase("pt-BR");
+        const items = needle
+          ? allItems.filter((item) =>
+              [
+                item.invoiceNumber,
+                item.supplier,
+                item.cfop ?? "",
+                ...item.items.flatMap((line) => [
+                  line.description,
+                  line.category ?? "",
+                ]),
+              ]
+                .join(" ")
+                .toLocaleLowerCase("pt-BR")
+                .includes(needle),
+            )
+          : allItems;
         return {
           updatedAt: "2026-10-22T15:00:00Z",
           periodStart: `${month.slice(0, 7)}-01`,

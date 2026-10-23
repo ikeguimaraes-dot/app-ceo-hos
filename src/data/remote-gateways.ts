@@ -37,19 +37,26 @@ const dailyReminderId = "ghost-daily-summary";
 async function getDailyReminder(): Promise<DailyReminder> {
   if (Platform.OS === "web") return { enabled: false, time: "09:00" };
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-  const reminder = scheduled.find((item) => item.identifier === dailyReminderId);
+  const reminder = scheduled.find(
+    (item) => item.identifier === dailyReminderId,
+  );
   const time = reminder?.content.data?.time;
   return {
     enabled: !!reminder,
-    time: typeof time === "string" && /^\d{2}:\d{2}$/.test(time) ? time : "09:00",
+    time:
+      typeof time === "string" && /^\d{2}:\d{2}$/.test(time) ? time : "09:00",
   };
 }
 
-async function setDailyReminder(reminder: DailyReminder): Promise<DailyReminder> {
+async function setDailyReminder(
+  reminder: DailyReminder,
+): Promise<DailyReminder> {
   if (Platform.OS !== "ios" && Platform.OS !== "android")
     throw new Error("O lembrete diário está disponível no aplicativo móvel.");
   if (!reminder.enabled) {
-    await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(() => undefined);
+    await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(
+      () => undefined,
+    );
     return reminder;
   }
   const match = /^(\d{2}):(\d{2})$/.exec(reminder.time);
@@ -58,16 +65,23 @@ async function setDailyReminder(reminder: DailyReminder): Promise<DailyReminder>
   const minute = Number(match[2]);
   if (hour > 23 || minute > 59) throw new Error("Informe um horário válido.");
   const current = await Notifications.getPermissionsAsync();
-  const permission = current.status === "granted" ? current : await Notifications.requestPermissionsAsync();
+  const permission =
+    current.status === "granted"
+      ? current
+      : await Notifications.requestPermissionsAsync();
   if (permission.status !== "granted")
-    throw new Error("Permita notificações nos Ajustes do aparelho para ativar o lembrete.");
+    throw new Error(
+      "Permita notificações nos Ajustes do aparelho para ativar o lembrete.",
+    );
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("ghost-daily", {
       name: "Resumo diário",
       importance: AndroidImportance.DEFAULT,
     });
   }
-  await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(() => undefined);
+  await Notifications.cancelScheduledNotificationAsync(dailyReminderId).catch(
+    () => undefined,
+  );
   await Notifications.scheduleNotificationAsync({
     identifier: dailyReminderId,
     content: {
@@ -140,15 +154,17 @@ const dashboardSchema = z.object({
       customers: z.number().nullable(),
       averageTicket: z.number().nullable(),
       cmvPercentage: z.number().nullable(),
-      shifts: z.array(z.object({
-        id: z.string(),
-        name: z.enum(["almoco", "jantar", "dia_inteiro"]),
-        revenue: z.number(),
-        tips: z.number().nullable(),
-        customers: z.number().nullable(),
-        averageTicket: z.number().nullable(),
-        derived: z.boolean(),
-      })),
+      shifts: z.array(
+        z.object({
+          id: z.string(),
+          name: z.enum(["almoco", "jantar", "dia_inteiro"]),
+          revenue: z.number(),
+          tips: z.number().nullable(),
+          customers: z.number().nullable(),
+          averageTicket: z.number().nullable(),
+          derived: z.boolean(),
+        }),
+      ),
     }),
   ),
 });
@@ -159,27 +175,31 @@ const productInvoicesSchema = z.object({
   totalPurchased: z.number().nonnegative(),
   invoiceCount: z.number().int().nonnegative(),
   supplierCount: z.number().int().nonnegative(),
-  items: z.array(z.object({
-    id: z.string(),
-    invoiceNumber: z.string(),
-    issueDate: z.string(),
-    supplier: z.string(),
-    cfop: z.string().nullable(),
-    status: z.string().nullable(),
-    totalValue: z.number().nonnegative(),
-    itemCount: z.number().int().nonnegative(),
-    items: z.array(z.object({
+  items: z.array(
+    z.object({
       id: z.string(),
-      description: z.string(),
-      category: z.string().nullable(),
-      quantity: z.number().nullable(),
-      unit: z.string().nullable(),
-      unitCost: z.number().nullable(),
-      totalCost: z.number().nonnegative(),
-      variation: z.number().nullable(),
-      includedInCmv: z.boolean().nullable(),
-    })),
-  })),
+      invoiceNumber: z.string(),
+      issueDate: z.string(),
+      supplier: z.string(),
+      cfop: z.string().nullable(),
+      status: z.string().nullable(),
+      totalValue: z.number().nonnegative(),
+      itemCount: z.number().int().nonnegative(),
+      items: z.array(
+        z.object({
+          id: z.string(),
+          description: z.string(),
+          category: z.string().nullable(),
+          quantity: z.number().nullable(),
+          unit: z.string().nullable(),
+          unitCost: z.number().nullable(),
+          totalCost: z.number().nonnegative(),
+          variation: z.number().nullable(),
+          includedInCmv: z.boolean().nullable(),
+        }),
+      ),
+    }),
+  ),
 });
 const pendingItemSchema = z.object({
   id: z.string(),
@@ -236,17 +256,19 @@ const cashFlowWeekSchema = z.object({
   goesNegative: z.boolean(),
   historyWeeks: z.number().int().positive(),
   scope: z.enum(["unit", "all"]),
-  days: z.array(
-    z.object({
-      date: z.string(),
-      actualIncoming: z.number().nonnegative(),
-      projectedIncoming: z.number().nonnegative(),
-      projected: z.boolean(),
-      incoming: z.number().nonnegative(),
-      outgoing: z.number().nonnegative(),
-      balance: z.number(),
-    }),
-  ).length(7),
+  days: z
+    .array(
+      z.object({
+        date: z.string(),
+        actualIncoming: z.number().nonnegative(),
+        projectedIncoming: z.number().nonnegative(),
+        projected: z.boolean(),
+        incoming: z.number().nonnegative(),
+        outgoing: z.number().nonnegative(),
+        balance: z.number(),
+      }),
+    )
+    .length(7),
 });
 const notificationItemSchema = z.object({
   id: z.string().uuid(),
@@ -555,14 +577,16 @@ export function createRemoteGateways(): Gateways {
       },
     },
     payables: {
-      async get(scope, filter = "open", allUnits = false) {
+      async get(scope, filter = "open", allUnits = false, period) {
+        const today = new Date().toLocaleDateString("en-CA");
         return payablesSchema.parse(
           await rpc(
-            "ghost_payables_v2",
+            "ghost_payables_v3",
             {
               p_unit_id: allUnits ? null : scope.unitId,
               p_status: filter,
-              p_as_of: new Date().toISOString().slice(0, 10),
+              p_from: period?.start ?? today,
+              p_to: period?.end ?? today,
               p_limit: 100,
             },
             scope.signal,
@@ -575,20 +599,28 @@ export function createRemoteGateways(): Gateways {
         return cashFlowWeekSchema.parse(
           await rpc(
             "ghost_cash_flow_week_v2",
-            { p_unit_id: allUnits ? null : scope.unitId, p_week_offset: weekOffset },
+            {
+              p_unit_id: allUnits ? null : scope.unitId,
+              p_week_offset: weekOffset,
+            },
             scope.signal,
           ),
         ) satisfies CashFlowWeek;
       },
     },
     productInvoices: {
-      async get(scope, month) {
+      async get(scope, month, search) {
         return productInvoicesSchema.parse(
-          await rpc("ghost_product_invoices_v1", {
-            p_unit_id: scope.unitId,
-            p_month: month,
-            p_limit: 100,
-          }, scope.signal),
+          await rpc(
+            "ghost_product_invoices_v2",
+            {
+              p_unit_id: scope.unitId,
+              p_month: month,
+              p_search: search?.trim() || null,
+              p_limit: 100,
+            },
+            scope.signal,
+          ),
         ) satisfies ProductInvoices;
       },
     },

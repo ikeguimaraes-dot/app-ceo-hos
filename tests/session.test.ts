@@ -52,9 +52,18 @@ describe("session and access boundaries", () => {
 
   it("stores and updates the daily reminder through the notification gateway", async () => {
     const { gateways } = setup();
-    expect(await gateways.notifications.getDailyReminder()).toEqual({ enabled: false, time: "09:00" });
-    await gateways.notifications.setDailyReminder({ enabled: true, time: "08:30" });
-    expect(await gateways.notifications.getDailyReminder()).toEqual({ enabled: true, time: "08:30" });
+    expect(await gateways.notifications.getDailyReminder()).toEqual({
+      enabled: false,
+      time: "09:00",
+    });
+    await gateways.notifications.setDailyReminder({
+      enabled: true,
+      time: "08:30",
+    });
+    expect(await gateways.notifications.getDailyReminder()).toEqual({
+      enabled: true,
+      time: "08:30",
+    });
   });
 
   it("protects deep links before login, including initial startup", async () => {
@@ -145,21 +154,39 @@ describe("session and access boundaries", () => {
     expect(dashboard.periodStart).toBe("2026-10-01");
     expect(dashboard.revenue).toBe(864250);
     expect(dashboard.series).toHaveLength(14);
-    expect(dashboard.series.every((point) => point.date.startsWith("2026-10-"))).toBe(true);
+    expect(
+      dashboard.series.every((point) => point.date.startsWith("2026-10-")),
+    ).toBe(true);
     expect(dashboard.grossRevenue).toBeGreaterThan(0);
     expect(dashboard.customers).toBeGreaterThan(0);
-    const previous = await gateways.dashboard.get({ session: c.state.session!, unitId: c.state.unitId! }, "2026-09-01");
+    const previous = await gateways.dashboard.get(
+      { session: c.state.session!, unitId: c.state.unitId! },
+      "2026-09-01",
+    );
     expect(previous.periodStart).toBe("2026-09-01");
-    expect(previous.series.every((point) => point.date.startsWith("2026-09-"))).toBe(true);
+    expect(
+      previous.series.every((point) => point.date.startsWith("2026-09-")),
+    ).toBe(true);
   });
   it("lists product invoices by unit and selected month", async () => {
     const { controller: c, gateways } = setup();
     await enter(c);
     await c.selectUnit("demo-garden");
-    const result = await gateways.productInvoices.get({ session: c.state.session!, unitId: c.state.unitId! }, "2026-09-01");
+    const result = await gateways.productInvoices.get(
+      { session: c.state.session!, unitId: c.state.unitId! },
+      "2026-09-01",
+    );
     expect(result.invoiceCount).toBe(3);
-    expect(result.items.every((item) => item.issueDate.startsWith("2026-09-"))).toBe(true);
+    expect(
+      result.items.every((item) => item.issueDate.startsWith("2026-09-")),
+    ).toBe(true);
     expect(result.totalPurchased).toBeCloseTo(10688.22);
+    const productMatch = await gateways.productInvoices.get(
+      { session: c.state.session!, unitId: c.state.unitId! },
+      "2026-09-01",
+      "material de apoio",
+    );
+    expect(productMatch.items).toHaveLength(3);
   });
   it("expires session and removes business cache, identity and local marker", async () => {
     const { controller: c, storage, queries } = setup();
@@ -225,11 +252,16 @@ describe("session and access boundaries", () => {
     expect(await gateways.dashboard.get(scope)).toEqual(
       await gateways.dashboard.get(scope),
     );
-    expect((await gateways.payables.get(scope)).openAmount).toBe(184320.45);
+    const todayPayables = await gateways.payables.get(scope);
+    expect(todayPayables.openAmount).toBe(12680.5);
+    expect(todayPayables.items).toHaveLength(1);
+    expect(todayPayables.items[0]?.status).toBe("due_today");
     const cashFlow = await gateways.cashFlow.getWeek(scope, 0);
     expect(cashFlow.weekStart).toBe("2026-10-19");
     expect(cashFlow.weekEnd).toBe("2026-10-25");
-    expect(cashFlow.incoming).toBeCloseTo(cashFlow.actualIncoming + cashFlow.projectedIncoming);
+    expect(cashFlow.incoming).toBeCloseTo(
+      cashFlow.actualIncoming + cashFlow.projectedIncoming,
+    );
     expect(cashFlow.actualIncoming).toBeGreaterThan(0);
     expect(cashFlow.projectedIncoming).toBeGreaterThan(0);
     expect(cashFlow.historyWeeks).toBe(5);
