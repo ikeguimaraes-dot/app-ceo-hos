@@ -12,7 +12,7 @@
 | 2E — confiabilidade                 | Implementada em dev  | Reconciliação de instalações push, expiração, logs técnicos sem PII e validação do worker                                                    |
 | 2F — prontidão de release           | Implementada no repo | Gate automatizado de ambientes/IDs/EAS/Vercel e CI em runtime suportado; distribuição física continua nos gates externos                     |
 | 2G — assistente executivo           | Implementada em dev  | Chat global no rodapé, portfólio derivado no servidor, contexto minimizado, limites e auditoria sem conteúdo                                 |
-| 3 — expansão financeira/operacional | Em andamento         | Fluxo semanal implementado; receber, DRE, CMV, produtos, orçamento, conciliação e operação por contratos minimizados                         |
+| 3 — expansão financeira/operacional | Em andamento         | Fluxo, DRE, despesas, CMV, produtos e conciliação de pagamentos implementados; receber aguarda fonte oficial do KPH                           |
 | 4 — pessoas                         | Pendente             | Descoberta da fonte proprietária, minimização e fluxos RH por papel/recurso                                                                  |
 | 5 — lojas                           | Pendente             | Privacidade, acessibilidade física, performance, observabilidade, assinatura, rollout e rollback                                             |
 

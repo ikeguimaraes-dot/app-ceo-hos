@@ -85,6 +85,7 @@ describe("assistant boundary", () => {
     expect(assistantDatasets).toContain("contas_pagar");
     expect(assistantDatasets).toContain("vendas_produtos");
     expect(assistantDatasets).toContain("folha_resumo");
+    expect(assistantDatasets).toContain("conciliacao_pagamentos");
     expect(needsKphTool("Quanto eu faturei no Meet ontem?")).toBe(true);
     expect(needsKphTool("Olá!")).toBe(false);
     expect(
@@ -148,6 +149,9 @@ describe("assistant boundary", () => {
         "descontos",
       ),
     ).toBe("descontos");
+    expect(
+      preferredDatasetForQuestion("Mostre as linhas do DRE", "dre_mensal"),
+    ).toBe("dre_detalhes");
   });
 
   it("accepts a bounded conversation without client-selected unit scope", () => {
@@ -475,6 +479,113 @@ describe("assistant boundary", () => {
     );
     expect(answer).toContain("10,00");
     expect(answer).toContain("0 caixas sem horário de fechamento");
+  });
+
+  it("answers expenses from a complete database aggregate", () => {
+    const evidence = [
+      {
+        query: {
+          dataset: "despesas",
+          from: "2026-04-01",
+          to: "2026-04-30",
+          search: "marketing",
+        },
+        result: {
+          from: "2026-04-01",
+          to: "2026-04-30",
+          summary: {
+            expenseCount: 12,
+            totalValue: 45678.9,
+            authorizedUnitCount: 4,
+            unitsWithDataCount: 2,
+            missingUnits: ["Frêneze", "Match Point"],
+            byUnit: [
+              { unitName: "Meet & Eat", totalValue: 25000, expenseCount: 7 },
+              { unitName: "Madonna", totalValue: 20678.9, expenseCount: 5 },
+            ],
+          },
+          rows: [],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Quanto gastamos com marketing?",
+      evidence,
+    );
+    expect(answer).toContain("45.678,90");
+    expect(answer).toContain("12 despesas");
+    expect(answer).toContain("2 de 4 casas");
+  });
+
+  it("answers realized DRE without mixing it with budget", () => {
+    const evidence = [
+      {
+        query: { dataset: "dre_mensal", from: "2026-04-01", to: "2026-04-30" },
+        result: {
+          from: "2026-04-01",
+          to: "2026-04-30",
+          summary: {
+            byType: [
+              {
+                type: "orcado",
+                grossRevenue: 2000000,
+                cmv: -500000,
+                people: -400000,
+                ebitda: 300000,
+                netResult: 250000,
+              },
+              {
+                type: "realizado",
+                grossRevenue: 1750000,
+                cmv: -490000,
+                people: -385000,
+                ebitda: 210000,
+                netResult: 165000,
+              },
+            ],
+          },
+          rows: [],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Qual foi o EBITDA realizado?",
+      evidence,
+    );
+    expect(answer).toContain("210.000,00");
+    expect(answer).not.toContain("300.000,00");
+  });
+
+  it("answers payment reconciliation without exposing statement details", () => {
+    const evidence = [
+      {
+        query: {
+          dataset: "conciliacao_pagamentos",
+          from: "2026-10-01",
+          to: "2026-10-23",
+        },
+        result: {
+          from: "2026-10-01",
+          to: "2026-10-23",
+          summary: {
+            shifts: 98,
+            reconciledShifts: 95,
+            closedPaymentValue: 1740672.44,
+            receivedPaymentValue: 1742847.17,
+            difference: -2174.73,
+            byUnit: [],
+          },
+          rows: [],
+        },
+      },
+    ];
+    const answer = deterministicAssistantAnswer(
+      "Quantos pagamentos estão conciliados?",
+      evidence,
+    );
+    expect(answer).toContain("95 de 98 turnos");
+    expect(answer).toContain("-R$ 2.174,73");
+    expect(answer).not.toContain("conta bancária");
   });
 
   it("requires a final evidence review with database summaries", () => {

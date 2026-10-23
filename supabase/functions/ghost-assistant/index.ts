@@ -200,7 +200,7 @@ Deno.serve(async (request) => {
     began = true;
 
     const { data: catalog, error: catalogError } = await supabase.rpc(
-      "ghost_assistant_catalog_v2",
+      "ghost_assistant_catalog_v3",
     );
     if (catalogError) throw catalogError;
     const catalogRecord =
@@ -325,7 +325,7 @@ Deno.serve(async (request) => {
     const executeQuery = async (
       query: ReturnType<typeof parseKphQueryToolInput>,
     ) => {
-      const { data, error } = await supabase!.rpc("ghost_assistant_query_v3", {
+      const { data, error } = await supabase!.rpc("ghost_assistant_query_v4", {
         p_dataset: query.dataset,
         p_from: query.from ?? null,
         p_to: query.to ?? null,

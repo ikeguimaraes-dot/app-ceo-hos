@@ -88,6 +88,7 @@ export const assistantDatasets = [
   "fichas_tecnicas",
   "recebimentos",
   "caixas",
+  "conciliacao_pagamentos",
 ] as const;
 
 export type KphQueryToolInput = {
@@ -228,6 +229,12 @@ export function preferredDatasetForQuestion(
   search?: string,
 ): KphQueryToolInput["dataset"] {
   if (preferPurchaseItems(question, selected, search)) return "compras_itens";
+  if (
+    /\b(detalhes? (?:da|do)? ?dre|linhas? (?:da|do)? ?dre|contas? (?:da|do)? ?dre)\b/i.test(
+      question,
+    )
+  )
+    return "dre_detalhes";
   const intents: [RegExp, KphQueryToolInput["dataset"]][] = [
     [
       /\b(contas? a pagar|t[ií]tulos? a pagar|boletos?|vencid[ao]s?|a vencer)\b/i,
@@ -266,6 +273,14 @@ export function preferredDatasetForQuestion(
     [
       /\b(fechamentos? de caixa|diferen[cç]a de caixa|quebra de caixa|caixas? abertos?)\b/i,
       "caixas",
+    ],
+    [
+      /\b(concilia[cç][aã]o (?:de )?pagamentos?|pagamentos? (?:est[aã]o )?conciliados?|turnos? (?:foram )?conciliados?)\b/i,
+      "conciliacao_pagamentos",
+    ],
+    [
+      /\b(dre|ebitda|resultado l[ií]quido|prime cost|margem operacional)\b/i,
+      "dre_mensal",
     ],
   ];
   const matches = intents.filter(([pattern]) => pattern.test(question));
@@ -502,6 +517,20 @@ export function planAssistantQueries(
   )
     return query("caixas");
   if (
+    /\b(conciliacao (?:de )?pagamentos?|pagamentos? (?:estao )?conciliados?|turnos? (?:foram )?conciliados?)\b/.test(
+      lower,
+    )
+  )
+    return query("conciliacao_pagamentos", undefined, "month");
+  if (
+    /\b(detalhes? (?:da|do)? ?dre|linhas? (?:da|do)? ?dre|contas? (?:da|do)? ?dre)\b/.test(
+      lower,
+    )
+  )
+    return query("dre_detalhes", undefined, "month");
+  if (/\b(dre|ebitda|resultado liquido|prime cost|margem operacional)\b/.test(lower))
+    return query("dre_mensal", undefined, "month");
+  if (
     /\b(conta|despesa|gast\w*)\b/.test(lower) &&
     /\b(luz|energia|agua|gas|telefone|internet)\b/.test(lower)
   ) {
@@ -510,6 +539,12 @@ export function planAssistantQueries(
     )?.[1];
     return query("despesas", search);
   }
+  if (
+    /\bdespesas?\b/.test(lower) ||
+    (/\bgast\w*\b/.test(lower) &&
+      /\b(marketing|aluguel|ocupacao|administrativ\w*|operacion\w*|financeir\w*|utilidades)\b/.test(lower))
+  )
+    return query("despesas");
   if (
     /\b(formas? de pagamento|pagamentos? por forma|pix|dinheiro|cartao)\b/.test(
       lower,
@@ -861,6 +896,61 @@ export function deterministicAssistantAnswer(
     if (![registers, closed, received, difference, open].every(Number.isFinite))
       return null;
     return `Os ${registers} caixas ${period} registram ${brl(closed)} no total fechado, ${brl(received)} no total recebido e diferença de ${brl(difference)}. Há ${open} caixas sem horário de fechamento.${formatByUnit(summary.byUnit, "difference")}${coverageNote(summary)}`;
+  }
+
+  if (dataset === "despesas" && factual) {
+    const count = Number(summary.expenseCount);
+    const total = Number(summary.totalValue);
+    if (![count, total].every(Number.isFinite)) return null;
+    if (count === 0)
+      return `Não encontrei despesas registradas ${period} nas casas autorizadas.${coverageNote(summary)}`;
+    const search = typeof query.search === "string" ? ` de ${query.search}` : "";
+    return `Foram registradas ${count} despesas${search} ${period}, somando ${brl(total)}.${formatByUnit(summary.byUnit, "totalValue", "expenseCount", "lançamentos")}${coverageNote(summary)}`;
+  }
+
+  if (dataset === "dre_mensal" && factual) {
+    const byType = Array.isArray(summary.byType)
+      ? summary.byType.map(record)
+      : [];
+    const requestedType = /\b(or[cç]ad[oa]|meta|previst[oa])\b/i.test(question)
+      ? "orcado"
+      : "realizado";
+    const selected =
+      byType.find(
+        (entry) =>
+          String(entry.type ?? "").toLocaleLowerCase("pt-BR") === requestedType,
+      ) ?? byType[0];
+    if (!selected)
+      return `Não há DRE ${requestedType === "orcado" ? "orçado" : "realizado"} registrada ${period} nas casas autorizadas.`;
+    const revenue = Number(selected.grossRevenue);
+    const cmv = Number(selected.cmv);
+    const people = Number(selected.people);
+    const ebitda = Number(selected.ebitda);
+    const net = Number(selected.netResult);
+    if (![revenue, cmv, people, ebitda, net].every(Number.isFinite)) return null;
+    const label = requestedType === "orcado" ? "orçado" : "realizado";
+    return `O DRE ${label} ${period} registra receita bruta de ${brl(revenue)}, CMV de ${brl(Math.abs(cmv))}, pessoal de ${brl(Math.abs(people))}, EBITDA de ${brl(ebitda)} e resultado líquido de ${brl(net)}.`;
+  }
+
+  if (dataset === "dre_detalhes" && factual) {
+    const count = Number(summary.lineCount);
+    const absolute = Number(summary.absoluteValue);
+    const net = Number(summary.netValue);
+    if (![count, absolute, net].every(Number.isFinite)) return null;
+    return `O detalhamento do DRE ${period} contém ${count} linhas, com ${brl(absolute)} em valores absolutos e saldo algébrico de ${brl(net)}.`;
+  }
+
+  if (dataset === "conciliacao_pagamentos" && factual) {
+    const shifts = Number(summary.shifts);
+    const reconciled = Number(summary.reconciledShifts);
+    const closed = Number(summary.closedPaymentValue);
+    const received = Number(summary.receivedPaymentValue);
+    const difference = Number(summary.difference);
+    if (![shifts, reconciled, closed, received, difference].every(Number.isFinite))
+      return null;
+    if (shifts === 0)
+      return `Não há turnos na fonte de conciliação de pagamentos ${period} para as casas autorizadas.${coverageNote(summary)}`;
+    return `A conciliação de pagamentos ${period} cobre ${reconciled} de ${shifts} turnos. O valor fechado soma ${brl(closed)}, o recebido soma ${brl(received)} e a diferença registrada é ${brl(difference)}.${formatByUnit(summary.byUnit, "difference")}${coverageNote(summary)}`;
   }
 
   if (dataset !== "compras_itens") return null;

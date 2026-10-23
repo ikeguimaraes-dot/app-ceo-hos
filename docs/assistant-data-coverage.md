@@ -7,8 +7,8 @@ Auditoria atualizada em 23/10/2026. O assistente consulta apenas RPCs `security 
 | Área                                   | Dataset semântico                  | Resumo calculado pelo banco | Resposta factual determinística |
 | -------------------------------------- | ---------------------------------- | --------------------------- | ------------------------------- |
 | Faturamento, meta, clientes e ticket   | `financeiro`                       | Sim                         | Sim                             |
-| DRE mensal e linhas da DRE             | `dre_mensal`, `dre_detalhes`       | Parcial                     | Ainda não                       |
-| Despesas por competência               | `despesas`                         | Linhas filtradas            | Ainda não                       |
+| DRE mensal e linhas da DRE             | `dre_mensal`, `dre_detalhes`       | Sim, realizado/orçado       | Sim                             |
+| Despesas por competência               | `despesas`                         | Sim, categoria e casa       | Sim                             |
 | Pedidos e notas de compra              | `compras_pedidos`, `compras_notas` | Notas: sim                  | Notas: sim                      |
 | Itens, produtos e categorias compradas | `compras_itens`                    | Sim, inclusive por casa     | Sim                             |
 | Contas a pagar                         | `contas_pagar`                     | Sim                         | Sim                             |
@@ -23,17 +23,20 @@ Auditoria atualizada em 23/10/2026. O assistente consulta apenas RPCs `security 
 | Fichas técnicas e custo confiável      | `fichas_tecnicas`                  | Sim, com confiança          | Sim                             |
 | Recebimentos de mercadorias            | `recebimentos`                     | Sim, por unidade de medida  | Sim                             |
 | Fechamentos e diferenças de caixa      | `caixas`                           | Sim, sem dados do operador  | Sim                             |
+| Conciliação de vendas e pagamentos     | `conciliacao_pagamentos`           | Sim, mensal e por casa      | Sim                             |
 
 ## Fontes existentes que ainda precisam de contrato seguro
 
-As fontes de fichas técnicas e custos (`everest_fichas_tecnicas*`, `v_fichas_tecnicas_custo`), recebimentos (`recebimentos`, `recebimento_itens`) e caixas (`lorean_caixas`) agora entram somente por contratos semânticos autorizados. Custos sem a marca oficial `custo_confiavel` são ocultados; recebimentos não expõem assinatura, observação ou recebedor; caixas não expõem operador ou CPF.
+As fontes de fichas técnicas e custos (`everest_fichas_tecnicas*`, `v_fichas_tecnicas_custo`), recebimentos (`recebimentos`, `recebimento_itens`) e caixas (`lorean_caixas`) entram somente por contratos semânticos autorizados. Custos sem a marca oficial `custo_confiavel` são ocultados; recebimentos não expõem assinatura, observação ou recebedor; caixas não expõem operador ou CPF.
 
-Ainda faltam contratos confirmados para orçamento, contas a receber consolidadas, conciliação de caixa, benefícios agregados, escalas e marketing. A existência de uma tabela com nome parecido não é suficiente para definir a regra de negócio.
+O DRE e as despesas agora usam agregados completos calculados no PostgreSQL. Valores de despesas, armazenados com sinal contábil negativo, são apresentados como valor positivo gasto. O DRE mantém realizado e orçado separados. A conciliação usa `v_lorean_reconciliacao_mensal` e expõe apenas totais por casa e mês; `conciliacao_extrato` continua fora do catálogo porque contém dados bancários e grande parte dos registros não tem `unit_id` para aplicar o escopo do usuário com segurança.
+
+Ainda faltam contratos confirmados para orçamento detalhado, contas a receber consolidadas, conciliação bancária por lançamento, benefícios agregados, escalas e marketing. A rota web `/financeiro/receber` é um placeholder e a auditoria não encontrou tabela, view ou RPC que defina uma fonte oficial de contas a receber. Entradas do extrato não serão tratadas como recebíveis porque isso produziria números incorretos.
 
 ## Próximas ampliações
 
-1. Definir com o KPH a métrica oficial de contas a receber e conciliação de caixa.
-2. Criar resumos completos de despesas, manutenção, pessoas, ausências, planos de ação e pedidos de venda para eliminar cálculos do modelo.
+1. Definir e materializar no KPH a fonte oficial de contas a receber, com competência, vencimento, baixa, saldo e unidade.
+2. Criar resumos completos de manutenção, pessoas, ausências, planos de ação e pedidos de venda para eliminar cálculos do modelo.
 3. Adicionar casos de avaliação a cada novo contrato antes de ativá-lo no catálogo.
 
 ## Garantias de qualidade

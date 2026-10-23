@@ -112,6 +112,7 @@ const protectedRpcs = [
   ["ghost_assistant_finance_v1", { p_from: "2026-10-21", p_to: "2026-10-21" }],
   ["ghost_assistant_catalog_v1"],
   ["ghost_assistant_catalog_v2"],
+  ["ghost_assistant_catalog_v3"],
   ["ghost_assistant_quality_v1", { p_days: 7 }],
   [
     "ghost_dashboard_v2",
@@ -192,6 +193,18 @@ const protectedRpcs = [
       p_unit: null,
       p_search: null,
       p_grain: "day",
+      p_limit: 20,
+    },
+  ],
+  [
+    "ghost_assistant_query_v4",
+    {
+      p_dataset: "conciliacao_pagamentos",
+      p_from: "2026-10-01",
+      p_to: "2026-10-21",
+      p_unit: null,
+      p_search: null,
+      p_grain: "month",
       p_limit: 20,
     },
   ],

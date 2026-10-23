@@ -40,6 +40,41 @@ const groups: {
       "Quanto foi a conta de gás?",
       "Qual a despesa de telefone?",
       "Quanto gastamos com internet?",
+      "Qual foi a despesa total deste mês?",
+      "Quanto gastamos com marketing?",
+    ],
+  },
+  {
+    dataset: "dre_mensal",
+    questions: [
+      "Qual foi o EBITDA deste mês?",
+      "Mostre o DRE realizado",
+      "Qual foi o resultado líquido?",
+      "Como está o prime cost?",
+      "Qual é a margem operacional?",
+      "Mostre o DRE orçado do Meet",
+    ],
+  },
+  {
+    dataset: "dre_detalhes",
+    questions: [
+      "Mostre os detalhes da DRE",
+      "Quais são as linhas da DRE?",
+      "Quero ver as contas da DRE",
+      "Liste o detalhe da DRE deste mês",
+      "Mostre as linhas do DRE do Meet",
+      "Quais contas do DRE formam o resultado?",
+    ],
+  },
+  {
+    dataset: "conciliacao_pagamentos",
+    questions: [
+      "Como está a conciliação de pagamentos?",
+      "Quantos pagamentos estão conciliados?",
+      "Quantos turnos foram conciliados?",
+      "Mostre a conciliação de pagamento do Meet",
+      "Qual o total dos pagamentos conciliados?",
+      "Compare a conciliação de pagamentos das casas",
     ],
   },
   {
