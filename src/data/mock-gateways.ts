@@ -128,6 +128,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               customers: null,
               averageTicket: null,
               projection: null,
+              portfolioSnapshot: null,
               series: [],
               summary: "Nenhum fechamento neste período simulado.",
             }
@@ -144,6 +145,15 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               discount: Math.round(base.discount * scale),
               tips: Math.round(base.tips * scale),
               projection: Math.round(base.projection * scale),
+              portfolioSnapshot: {
+                asOf: moveDate(base.periodEnd),
+                monthGoal: Math.round((base.goal / 20) * 31 * scale),
+                accumulatedGoal: Math.round(base.goal * scale),
+                accumulatedRevenue: Math.round(base.revenue * scale),
+                difference: Math.round((base.revenue - base.goal) * scale),
+                deviation:
+                  base.goal === 0 ? null : (base.revenue - base.goal) / base.goal,
+              },
               series: base.series.map((point) => ({
                 ...point,
                 date: moveDate(point.date),

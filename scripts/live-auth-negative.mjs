@@ -122,6 +122,13 @@ const protectedRpcs = [
     },
   ],
   [
+    "ghost_dashboard_v3",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_month: "2026-10-01",
+    },
+  ],
+  [
     "ghost_payables_v1",
     {
       p_unit_id: "00000000-0000-0000-0000-000000000000",

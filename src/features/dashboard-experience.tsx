@@ -32,6 +32,17 @@ const compactCurrency = new Intl.NumberFormat("pt-BR", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
+const preciseCurrency = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const percentage = new Intl.NumberFormat("pt-BR", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 type BrandStyle = {
   label: string;
@@ -214,6 +225,62 @@ function PortfolioCard({ unit, data, onPress, delay }: { unit: Unit; data?: Dash
   );
 }
 
+function PortfolioSnapshotCard({ unit, data, onPress, delay }: { unit: Unit; data?: Dashboard; onPress: () => void; delay: number }) {
+  const brand = brandStyle(unit);
+  const snapshot = data?.portfolioSnapshot;
+  const positive = (snapshot?.difference ?? 0) >= 0;
+  const accent = positive ? "#A7F3D0" : "#FFD2D2";
+  const asOf = snapshot?.asOf
+    ? new Date(`${snapshot.asOf}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+    : "ontem";
+  const value = (amount: number | null | undefined) => amount == null ? "—" : preciseCurrency.format(amount);
+  return (
+    <Reveal delay={delay}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver posição mensal ${brand.label}`}
+        onPress={onPress}
+        style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}
+      >
+        <LinearGradient
+          colors={brand.colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ minHeight: 222, borderRadius: 25, padding: 17, overflow: "hidden", shadowColor: brand.glow, shadowOpacity: 0.24, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 7 }}
+        >
+          <View style={{ position: "absolute", width: 130, height: 130, borderRadius: 65, backgroundColor: "rgba(255,255,255,0.12)", right: -48, top: -46 }} />
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <View>
+              <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900", letterSpacing: -0.5 }}>{brand.label}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.68)", fontSize: 9, fontWeight: "700", letterSpacing: 1.1, marginTop: 2 }}>POSIÇÃO DO MÊS</Text>
+            </View>
+            <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name={brand.icon} size={17} color="#FFFFFF" />
+            </View>
+          </View>
+          <View style={{ gap: 8 }}>
+            <SnapshotLine label="Meta do mês" value={value(snapshot?.monthGoal)} />
+            <SnapshotLine label={`Meta até ${asOf}`} value={value(snapshot?.accumulatedGoal)} />
+            <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.17)", marginVertical: 1 }} />
+            <SnapshotLine label="Faturamento acumulado" value={value(snapshot?.accumulatedRevenue)} strong />
+            <SnapshotLine label="Diferença acumulada" value={value(snapshot?.difference)} valueColor={snapshot?.difference == null ? undefined : accent} />
+            <SnapshotLine label="Desvio da meta" value={snapshot?.deviation == null ? "—" : percentage.format(snapshot.deviation)} valueColor={snapshot?.deviation == null ? undefined : accent} />
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Reveal>
+  );
+}
+
+function SnapshotLine({ label, value, strong = false, valueColor }: { label: string; value: string; strong?: boolean; valueColor?: string }) {
+  return (
+    <View style={{ gap: 2 }}>
+      <Text style={{ color: "rgba(255,255,255,0.68)", fontSize: 9, fontWeight: "700", letterSpacing: 0.45 }}>{label.toUpperCase()}</Text>
+      <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: valueColor ?? "#FFFFFF", fontSize: strong ? 16 : 13, fontWeight: strong ? "900" : "700", fontVariant: ["tabular-nums"] }}>{value}</Text>
+    </View>
+  );
+}
+
 function AnimatedProgress({ value, color }: { value: number; color: string }) {
   const [width] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -388,6 +455,19 @@ export function DashboardExperience() {
                 </View>
               </View>
             </Reveal>
+            <View style={{ gap: 13 }}>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Mês até ontem</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Meta e faturamento acumulado por casa</Text>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                {units.map((unit, index) => (
+                  <View key={unit.id} style={{ flexGrow: 1, flexBasis: Platform.OS === "web" ? 300 : "46%", minWidth: 150 }}>
+                    <PortfolioSnapshotCard unit={unit} data={queries[index]?.data} onPress={() => void select(unit)} delay={540 + index * 80} />
+                  </View>
+                ))}
+              </View>
+            </View>
           </>
         ) : !currentUnit || currentQuery?.isPending ? (
           <Loading />

@@ -45,6 +45,14 @@ export type Dashboard = {
   customers: number | null;
   averageTicket: number | null;
   projection: number | null;
+  portfolioSnapshot: {
+    asOf: string | null;
+    monthGoal: number | null;
+    accumulatedGoal: number | null;
+    accumulatedRevenue: number | null;
+    difference: number | null;
+    deviation: number | null;
+  } | null;
   series: DashboardPoint[];
   summary: string;
 };

@@ -144,6 +144,16 @@ const dashboardSchema = z.object({
   customers: z.number().nullable(),
   averageTicket: z.number().nullable(),
   projection: z.number().nullable(),
+  portfolioSnapshot: z
+    .object({
+      asOf: z.string().nullable(),
+      monthGoal: z.number().nullable(),
+      accumulatedGoal: z.number().nullable(),
+      accumulatedRevenue: z.number().nullable(),
+      difference: z.number().nullable(),
+      deviation: z.number().nullable(),
+    })
+    .nullable(),
   series: z.array(
     z.object({
       date: z.string(),
@@ -584,7 +594,7 @@ export function createRemoteGateways(): Gateways {
       async get(scope, month) {
         const data = dashboardSchema.parse(
           await rpc(
-            "ghost_dashboard_v2",
+            "ghost_dashboard_v3",
             {
               p_unit_id: scope.unitId,
               p_month: month ?? new Date().toISOString().slice(0, 10),

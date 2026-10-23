@@ -55,7 +55,7 @@ O fluxo de entrega web usa `npm run vercel-build` e publica `dist/` conforme [ve
 O adapter real usa Supabase Auth com sessão em SecureStore, PKCE para recuperação, refresh ligado ao estado do app e RPCs autenticadas versionadas. A Fase 2C adiciona paginação e resumos mínimos; a Fase 2E preserva a identidade da instalação entre sessões para reconciliar push com segurança:
 
 - `ghost_bootstrap_v1`
-- `ghost_dashboard_v2`
+- `ghost_dashboard_v3`
 - `ghost_product_invoices_v1`
 - `ghost_payables_v1`
 - `ghost_cash_flow_week_v1`
