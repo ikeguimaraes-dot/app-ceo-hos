@@ -5,7 +5,7 @@
 | 0 — descoberta                      | Concluída            | Inventário KPH, auditoria remota, riscos e matriz de segurança                                                                               |
 | 1A — fundação mock                  | Concluída            | Expo/Router, tema, componentes, navegação, gateways, estados, catálogo, testes e builds locais                                               |
 | 1B — backend dev                    | Concluída            | Auth real, SecureStore, PKCE, bootstrap/capabilities, dashboard, pendências, notificações, instalação push e RPCs seguras no desenvolvimento |
-| 2A — distribuição controlada        | Em andamento         | Projeto EAS e builds internos; iOS físico/APNs aguardam aprovação Apple, FCM e conta KPH de teste ainda faltam                               |
+| 2A — distribuição controlada        | Em andamento         | Apple aprovada e TestFlight interno disponível; validar instalação/login físico e entrega APNs/FCM                               |
 | 2B — notificações reais             | Implementada em dev  | Preferências, fila privada, deduplicação, retentativas, receipts, limpeza e worker Edge Function; entrega física aguarda APNs/FCM            |
 | 2C — piloto operacional             | Implementada em dev  | Paginação, resumos mínimos, revogação e controles de coorte; ativação aguarda usuários nomeados                                              |
 | 2D — decisões                       | Implementada em dev  | Contrato transacional de aprovação, capabilities por recurso, idempotência, conflito, auditoria e validação remota sem decisões persistidas  |

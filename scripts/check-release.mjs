@@ -88,6 +88,18 @@ assert(
   eas.build?.["preview-simulator"]?.ios?.simulator === true,
   "Preview de simulador iOS inválido",
 );
+assert(
+  eas.build?.testflight?.extends === "preview" &&
+    eas.build?.testflight?.distribution === "store" &&
+    eas.build?.testflight?.ios?.simulator === false &&
+    eas.build?.testflight?.autoIncrement === true,
+  "TestFlight deve usar assinatura store, aparelho físico e ambiente preview",
+);
+assert(
+  eas.submit?.testflight?.ios?.ascAppId === "6829441595" &&
+    eas.submit?.testflight?.ios?.appleTeamId === "ZR3LMRS4N5",
+  "Destino do TestFlight divergente do Ghost preview na organização Apple",
+);
 assert(vercel.outputDirectory === "dist", "Vercel deve publicar somente dist");
 assert(
   vercel.buildCommand === "npm run vercel-build",

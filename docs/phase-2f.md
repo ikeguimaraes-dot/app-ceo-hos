@@ -19,8 +19,8 @@ O workflow usa permissões somente de leitura, concorrência com cancelamento de
 
 ## Estado das credenciais externas
 
-- Apple Developer: inscrição da organização ainda em processamento. O EAS não possui build credentials, APNs ou App Store Connect para `com.grupomeeteat.ghost.preview`.
+- Apple Developer: organização aprovada, assinatura store configurada e Ghost preview cadastrado no App Store Connect em 2026-11-01. O perfil `testflight` mantém ambiente preview, incrementa build number e usa o destino Apple fixado no gate. Veja [TestFlight](testflight.md). A chave APNs continua pendente.
 - Android preview: keystore existente e usada pelo build interno. Nenhuma credencial FCM Legacy/V1 ou conta de submissão Google Play está associada.
 - Nenhuma senha Apple, fingerprint de certificado, conteúdo de keystore ou chave de serviço foi copiada para o repositório ou documentação.
 
-O próximo avanço físico depende da conclusão da inscrição Apple e da criação/aprovação do projeto Firebase/Google Play. A criação desses recursos externos permanece separada do build.
+O avanço Android depende da criação/aprovação do projeto Firebase/Google Play. A distribuição iOS passa pelo TestFlight; instalação e login KPH em aparelho físico precisam de evidência própria.

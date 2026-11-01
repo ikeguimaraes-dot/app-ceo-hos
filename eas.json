@@ -26,6 +26,22 @@
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_DATA_MODE": "remote"
       }
+    },
+    "testflight": {
+      "extends": "preview",
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {
+        "ascAppId": "6829441595",
+        "appleTeamId": "ZR3LMRS4N5"
+      }
     }
   }
 }

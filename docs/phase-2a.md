@@ -25,8 +25,8 @@ Os dois aplicativos usam `com.grupomeeteat.ghost.preview` e executam sem Metro o
 
 ## Dependências externas abertas
 
-- O portal Apple mostra `ORK IA SOLUCAO TECNOLOGIA LTDA (Pendente)`. Enquanto a inscrição não for aprovada, não é possível criar certificado de distribuição, perfil ad hoc, chave APNs ou enviar ao TestFlight.
+- A organização `ORK IA SOLUCAO TECNOLOGIA LTDA` foi aprovada. Em 2026-11-01, o Ghost preview foi cadastrado no App Store Connect com assinatura store e envio TestFlight preparado; veja [distribuição TestFlight](testflight.md). A chave APNs continua pendente.
 - FCM requer um projeto Firebase e uma service account FCM v1 fornecida ao EAS. Nenhum arquivo ou segredo Firebase foi inventado ou colocado no cliente.
 - A jornada positiva ainda requer uma conta KPH de desenvolvimento vinculada. Os testes negativos e de autorização do backend continuam válidos.
 
-Quando a Apple liberar a organização, executar `npm run build:preview:ios`, cadastrar os UDIDs necessários e validar em iPhone físico. Quando as credenciais FCM/APNs existirem, configurá-las no EAS e executar os casos de push do [checklist de dispositivos](device-checklist.md).
+Para TestFlight, usar o perfil `testflight`, que dispensa cadastro de UDIDs. O perfil `preview` continua disponível para distribuição ad hoc. Quando as credenciais FCM/APNs existirem, configurá-las no EAS e executar os casos de push do [checklist de dispositivos](device-checklist.md).
