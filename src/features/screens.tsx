@@ -76,15 +76,14 @@ export function Login() {
   const canSaveLogin = environment.isRemote && Platform.OS !== "web";
   const [remember, setRemember] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
-  const [loadingSavedLogin, setLoadingSavedLogin] = useState(canSaveLogin);
+  const [loadingSavedLogin, setLoadingSavedLogin] = useState(
+    canSaveLogin && controller.state.generation === 0,
+  );
   useEffect(() => {
     if (!canSaveLogin) return;
     // Logout renders this screen before remote revocation/secure cleanup ends.
     // Only restore saved credentials at cold start, never during that window.
-    if (controller.state.generation > 0) {
-      setLoadingSavedLogin(false);
-      return;
-    }
+    if (controller.state.generation > 0) return;
     let active = true;
     void readSavedLogin()
       .then((saved) => {
