@@ -51,3 +51,41 @@ Versão `0.1.0`, build `3`.
 - Teste externo permanece `READY_FOR_BETA_SUBMISSION`; não houve envio para revisão beta externa
   nem publicação pública na App Store.
 - Não foi executado login KPH positivo nem instalação física desta distribuição.
+
+## Push, acesso salvo e compartilhamento externo — 2026-11-01
+
+A chave APNs válida existente foi associada ao Ghost no EAS. A fila privada de
+desenvolvimento e o agendamento a cada minuto estavam ativos; as três respostas
+HTTP mais recentes foram 200. Havia zero instalações ativas, portanto essa
+verificação não comprova recebimento físico de push. No iPhone, entrar, permitir
+notificações e registrar a instalação antes do teste ponta a ponta.
+
+O login nativo oferece “Salvar login e senha neste aparelho”, desativado por
+padrão. Só salva após autenticação e bootstrap ativo. Usa SecureStore com acesso
+somente no aparelho desbloqueado, sem backup/migração e sem fallback inseguro.
+Desmarcar ou sair apaga o acesso salvo. Campos suportam preenchimento pelo
+gerenciador de senhas; a web não persiste senhas pelo app. Escritas interrompidas
+removem fragmentos antes de devolver erro.
+
+209 testes, lint, typecheck, check:boundaries, check:release, exportações e oito
+E2E passaram; teste remoto negativo confirmou 32 RPCs anônimas bloqueadas.
+
+Grupo externo criado: `Ghost — Teste externo`, limite de 100 testadores.
+Link público habilitado: https://testflight.apple.com/join/41JRK7ea
+
+O build final `0.1.0 (6)` foi compilado para aparelho e enviado à Apple:
+
+- [Build EAS](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/builds/994994f2-19ad-4f54-98bc-92db64267a7e).
+- [Submissão EAS](https://expo.dev/accounts/grupomeeteat/projects/ghost-mobile/submissions/ccc7e540-a93c-4a61-957b-84194669e5db).
+- App Store Connect: `processingState=VALID`, `internalState=IN_BETA_TESTING`.
+- Build 6 associado ao grupo externo; link público habilitado para 100 testadores.
+- Contato de revisão e descrições beta em pt-BR/en-US salvos na Apple.
+- A conta de demonstração fornecida pelo usuário autenticou via HTTP no backend
+  dev com publishable key; bootstrap retornou `active` e quatro unidades. Isso
+  comprova Auth/RPC reais, não uma jornada positiva na UI móvel.
+- Credenciais de revisão fornecidas pelo usuário foram transmitidas somente ao
+  Auth KPH e App Store Connect, em memória e sem eco. Não estão no repositório,
+  documentação, exemplos, logs ou artefatos do app.
+- Revisão beta `79389727-f798-461c-9974-511596ab3240` enviada com status
+  `WAITING_FOR_REVIEW`. A liberação de instalações pelo link depende da Apple.
+- Ainda não houve instalação física nem recebimento real de push desta versão.

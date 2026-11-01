@@ -6,7 +6,7 @@ Status: Fase 1 concluída e Fase 2A de distribuição controlada em andamento. G
 
 Expo + React Native + TypeScript estrito, Expo Router para rotas e links; TanStack Query para dados remotos; Supabase JS para Auth; SecureStore para sessão; Local Authentication para bloqueio local opcional; Notifications para registro e recepção push; Zod para respostas remotas. Componentes React Native próprios evitam dependência de UI web. Dependências têm versões exatas e lockfile.
 
-O projeto EAS `@grupomeeteat/ghost-mobile` está vinculado. Perfis development/preview/production, um perfil iOS de simulador e schemes distintos estão configurados. Preview usa `com.grupomeeteat.ghost.preview`; produção reserva `com.grupomeeteat.ghost`. OTA permanece desativado. A keystore Android é gerenciada pelo EAS; certificados Apple e credenciais APNs/FCM ainda dependem das contas externas. A chave APNs foi associada ao Ghost preview no EAS em 2026-11-01; FCM segue pendente. Segredos de assinatura e push ficam no serviço de build/backend, nunca em EXPO_PUBLIC.
+O projeto EAS `@grupomeeteat/ghost-mobile` está vinculado. Perfis development/preview/production, um perfil iOS de simulador e schemes distintos estão configurados. Preview usa `com.grupomeeteat.ghost.preview`; produção reserva `com.grupomeeteat.ghost`. OTA permanece desativado. A keystore Android é gerenciada pelo EAS; assinatura iOS e APNs estão configuradas, e as credenciais FCM Android continuam pendentes. A chave APNs foi associada ao Ghost preview no EAS em 2026-11-01; FCM segue pendente. Segredos de assinatura e push ficam no serviço de build/backend, nunca em EXPO_PUBLIC.
 
 ```text
 app/                         rotas públicas, callback e árvore autenticada

@@ -36,4 +36,4 @@ O payload contém apenas versão, IDs opacos, categoria e destino permitido. Tí
 
 Os testes unitários cobrem lotes, payload genérico, tickets, receipts, comparação do segredo e deep link permitido. Lint, TypeScript e a barreira de acesso direto passam. Em dev, três RPCs recusaram acesso anônimo; o endpoint do worker retornou 401 sem segredo e 200 com o segredo armazenado.
 
-A entrega física permanece dependente de credenciais FCM v1 para Android e de APNs após a aprovação da organização Apple. Uma conta KPH de desenvolvimento vinculada ainda é necessária para o teste ponta a ponta positivo. Até essas dependências existirem, a fila e o worker podem ser validados sem enviar dados reais a aparelhos.
+A chave APNs válida foi associada ao Ghost preview no EAS em 2026-11-01. A entrega física continua dependendo de login, permissão e registro de instalação em um iPhone; Android ainda depende de credenciais FCM v1. Uma conta KPH de desenvolvimento vinculada ainda é necessária para o teste ponta a ponta positivo. Até essas dependências existirem, a fila e o worker podem ser validados sem enviar dados reais a aparelhos.

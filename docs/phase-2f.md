@@ -19,7 +19,7 @@ O workflow usa permissões somente de leitura, concorrência com cancelamento de
 
 ## Estado das credenciais externas
 
-- Apple Developer: organização aprovada, assinatura store configurada e Ghost preview cadastrado no App Store Connect em 2026-11-01. O perfil `testflight` mantém ambiente preview, incrementa build number e usa o destino Apple fixado no gate. Veja [TestFlight](testflight.md). A chave APNs continua pendente.
+- Apple Developer: organização aprovada, assinatura store configurada e Ghost preview cadastrado no App Store Connect em 2026-11-01. O perfil `testflight` mantém ambiente preview, incrementa build number e usa o destino Apple fixado no gate. Veja [TestFlight](testflight.md). A chave APNs válida foi associada ao Ghost no EAS em 2026-11-01; entrega física ainda precisa de teste em aparelho.
 - Android preview: keystore existente e usada pelo build interno. Nenhuma credencial FCM Legacy/V1 ou conta de submissão Google Play está associada.
 - Nenhuma senha Apple, fingerprint de certificado, conteúdo de keystore ou chave de serviço foi copiada para o repositório ou documentação.
 

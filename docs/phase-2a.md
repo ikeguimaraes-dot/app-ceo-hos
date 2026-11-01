@@ -25,7 +25,7 @@ Os dois aplicativos usam `com.grupomeeteat.ghost.preview` e executam sem Metro o
 
 ## Dependências externas abertas
 
-- A organização `ORK IA SOLUCAO TECNOLOGIA LTDA` foi aprovada. Em 2026-11-01, o Ghost preview foi cadastrado no App Store Connect com assinatura store e envio TestFlight preparado; veja [distribuição TestFlight](testflight.md). A chave APNs continua pendente.
+- A organização `ORK IA SOLUCAO TECNOLOGIA LTDA` foi aprovada. Em 2026-11-01, o Ghost preview foi cadastrado no App Store Connect com assinatura store e envio TestFlight preparado; veja [distribuição TestFlight](testflight.md). A chave APNs válida foi associada ao Ghost no EAS em 2026-11-01; entrega física ainda precisa de teste em aparelho.
 - FCM requer um projeto Firebase e uma service account FCM v1 fornecida ao EAS. Nenhum arquivo ou segredo Firebase foi inventado ou colocado no cliente.
 - A jornada positiva ainda requer uma conta KPH de desenvolvimento vinculada. Os testes negativos e de autorização do backend continuam válidos.
 
