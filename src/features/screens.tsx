@@ -80,55 +80,81 @@ export function Login() {
   useEffect(() => {
     if (!canSaveLogin) return;
     let active = true;
-    void readSavedLogin().then((saved) => {
-      if (active && saved) {
-        setEmail(saved.email);
-        setPassword(saved.password);
-        setRemember(true);
-      }
-    }).catch(() => {
-      if (active) Alert.alert("Acesso salvo", "Não foi possível ler o acesso salvo. Digite suas credenciais para entrar.");
-    }).finally(() => { if (active) setLoadingSavedLogin(false); });
-    return () => { active = false; };
+    void readSavedLogin()
+      .then((saved) => {
+        if (active && saved) {
+          setEmail(saved.email);
+          setPassword(saved.password);
+          setRemember(true);
+        }
+      })
+      .catch(() => {
+        if (active)
+          Alert.alert(
+            "Acesso salvo",
+            "Não foi possível ler o acesso salvo. Digite suas credenciais para entrar.",
+          );
+      })
+      .finally(() => {
+        if (active) setLoadingSavedLogin(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [canSaveLogin]);
   async function toggleRemember(value: boolean) {
     setRemember(value);
     if (value) return;
     setLoadingSavedLogin(true);
-    try { await saveLogin(null); }
-    catch {
+    try {
+      await saveLogin(null);
+    } catch {
       setRemember(true);
-      Alert.alert("Acesso salvo", "Não foi possível remover o acesso salvo. Tente novamente.");
-    } finally { setLoadingSavedLogin(false); }
+      Alert.alert(
+        "Acesso salvo",
+        "Não foi possível remover o acesso salvo. Tente novamente.",
+      );
+    } finally {
+      setLoadingSavedLogin(false);
+    }
   }
   async function login() {
     if (loggingIn || loadingSavedLogin) return;
     setLoggingIn(true);
     try {
-    await controller.login(
-      email,
-      password,
-      environment.isRemote ? undefined : scenario,
-    );
-    if (controller.state.status === "ready") {
-      const signedInUserId = controller.state.session?.userId;
-      if (canSaveLogin) {
-        try {
-          await saveLogin(remember ? { email: email.trim(), password } : null);
-        } catch {
-          Alert.alert("Acesso não salvo", "Você entrou, mas não foi possível salvar o acesso com segurança neste aparelho.");
+      await controller.login(
+        email,
+        password,
+        environment.isRemote ? undefined : scenario,
+      );
+      if (controller.state.status === "ready") {
+        const signedInUserId = controller.state.session?.userId;
+        if (canSaveLogin) {
+          try {
+            await saveLogin(
+              remember ? { email: email.trim(), password } : null,
+            );
+          } catch {
+            Alert.alert(
+              "Acesso não salvo",
+              "Você entrou, mas não foi possível salvar o acesso com segurança neste aparelho.",
+            );
+          }
+          if (
+            controller.state.status !== "ready" ||
+            controller.state.session?.userId !== signedInUserId
+          ) {
+            await saveLogin(null);
+            return;
+          }
         }
-        if (controller.state.status !== "ready" || controller.state.session?.userId !== signedInUserId) {
-          await saveLogin(null);
-          return;
-        }
-      }
-      setPassword("");
-      router.replace(safeDestination(params.next));
+        setPassword("");
+        router.replace(safeDestination(params.next));
+      } else if (["unlinked", "inactive"].includes(controller.state.status))
+        router.replace("/status");
+    } finally {
+      setLoggingIn(false);
     }
-    else if (["unlinked", "inactive"].includes(controller.state.status))
-      router.replace("/status");
-    } finally { setLoggingIn(false); }
   }
   return (
     <Screen
@@ -152,8 +178,15 @@ export function Login() {
           autoCapitalize="none"
           keyboardType="email-address"
           autoCorrect={false}
-          editable={!loadingSavedLogin && !loggingIn && state.status !== "loading"}
-          {...(Platform.OS === "ios" ? { textContentType: "username" as const } : { autoComplete: "username" as const, importantForAutofill: "yes" as const })}
+          editable={
+            !loadingSavedLogin && !loggingIn && state.status !== "loading"
+          }
+          {...(Platform.OS === "ios"
+            ? { textContentType: "username" as const }
+            : {
+                autoComplete: "username" as const,
+                importantForAutofill: "yes" as const,
+              })}
         />
         <Field
           label={environment.isRemote ? "Senha" : "Senha de demonstração"}
@@ -162,26 +195,56 @@ export function Login() {
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
-          editable={!loadingSavedLogin && !loggingIn && state.status !== "loading"}
-          {...(Platform.OS === "ios" ? { textContentType: "password" as const } : { autoComplete: "current-password" as const, importantForAutofill: "yes" as const })}
+          editable={
+            !loadingSavedLogin && !loggingIn && state.status !== "loading"
+          }
+          {...(Platform.OS === "ios"
+            ? { textContentType: "password" as const }
+            : {
+                autoComplete: "current-password" as const,
+                importantForAutofill: "yes" as const,
+              })}
         />
-        {canSaveLogin && <View style={{ gap: 4 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-            <Label size={14}>Salvar login e senha neste aparelho</Label>
-            <Switch accessibilityLabel="Salvar login e senha neste aparelho" value={remember} disabled={loadingSavedLogin || loggingIn || state.status === "loading"} onValueChange={(value) => void toggleRemember(value)} />
+        {canSaveLogin && (
+          <View style={{ gap: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Label size={14}>Salvar login e senha neste aparelho</Label>
+              </View>
+              <Switch
+                accessibilityLabel="Salvar login e senha neste aparelho"
+                value={remember}
+                disabled={
+                  loadingSavedLogin || loggingIn || state.status === "loading"
+                }
+                onValueChange={(value) => void toggleRemember(value)}
+              />
+            </View>
+            <Label muted size={12}>
+              Protegidos pelo aparelho. Ao sair da conta, o acesso salvo será
+              apagado.
+            </Label>
           </View>
-          <Label muted size={12}>Protegidos pelo aparelho. Ao sair da conta, o acesso salvo será apagado.</Label>
-        </View>}
+        )}
         {state.error && <Text accessibilityRole="alert">{state.error}</Text>}
         <Button
           title={
-            (loggingIn || state.status === "loading")
+            loggingIn || state.status === "loading"
               ? "Entrando…"
               : environment.isRemote
                 ? "Entrar"
                 : "Entrar na demonstração"
           }
-          disabled={loggingIn || state.status === "loading" || loadingSavedLogin}
+          disabled={
+            loggingIn || state.status === "loading" || loadingSavedLogin
+          }
           onPress={() => void login()}
         />
         <Button
