@@ -1,0 +1,4 @@
+project_id = "czoakcsntfxmqfssubbe"
+
+[functions.ghost-reservations]
+verify_jwt = false

@@ -73,3 +73,12 @@ Simuladores comprovam build, instalação, abertura e SecureStore nativo. Os tr�
 - O repositório KPH não foi modificado.
 - A conta sintética não foi criada; teste SQL com claims em rollback não equivale a login real.
 - Nenhuma aprovação ou escrita financeira foi implementada.
+
+## Cores das casas — 2026-10-26
+
+Paleta compartilhada atualizada: Meet vermelho, Madonna verde, Match azul e Frêneze
+laranja ácido. Aplicação nos cards de portfólio, dashboards, seleção de casas e notas fiscais.
+Lint, typecheck, 193 testes, seis E2E, exportações mock/remotas e boundary check passaram.
+Teste HTTP negativo: 32 RPCs e tokens inválidos bloqueados. Build iOS Release concluído,
+assinatura verificada e atualização instalada no iPhone Itner físico. Web publicada em
+app-ceo-hos.vercel.app, deploy dpl_81rHAJsFq3YqLRcK1FhrKPTZicNU (READY).

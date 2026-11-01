@@ -152,7 +152,9 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
                 accumulatedRevenue: Math.round(base.revenue * scale),
                 difference: Math.round((base.revenue - base.goal) * scale),
                 deviation:
-                  base.goal === 0 ? null : (base.revenue - base.goal) / base.goal,
+                  base.goal === 0
+                    ? null
+                    : (base.revenue - base.goal) / base.goal,
               },
               series: base.series.map((point) => ({
                 ...point,
@@ -571,6 +573,45 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               oldestPendingDate: null,
             }
           : { ...demo.operation };
+      },
+    },
+    reservations: {
+      async get(scope, date) {
+        await check(scope, "operation.read");
+        const empty = mode === "empty";
+        return {
+          updatedAt: new Date(now()).toISOString(),
+          date,
+          unitId: scope.unitId,
+          connected: true,
+          total: empty ? 0 : 2,
+          guests: empty ? 0 : 6,
+          confirmed: empty ? 0 : 1,
+          pending: empty ? 0 : 1,
+          cancelled: 0,
+          items: empty
+            ? []
+            : [
+                {
+                  id: `${scope.unitId}-1`,
+                  guestName: "Mariana Oliveira",
+                  time: "19:00:00",
+                  guests: 4,
+                  status: "confirmada",
+                  origin: "pagina",
+                  table: "12",
+                },
+                {
+                  id: `${scope.unitId}-2`,
+                  guestName: "Rafael Santos",
+                  time: "20:30:00",
+                  guests: 2,
+                  status: "pendente",
+                  origin: "whatsapp",
+                  table: null,
+                },
+              ],
+        };
       },
     },
     people: {

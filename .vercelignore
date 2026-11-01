@@ -9,3 +9,6 @@ playwright-report/
 supabase/.temp/
 *.apk
 *.xip
+
+# Local environment files are never uploaded.
+.env*

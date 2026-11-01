@@ -260,7 +260,12 @@ function CapabilityButton({
 }: {
   capability: Capability;
   title: string;
-  path: "/pending" | "/notifications" | "/assistant" | "/assistant-quality";
+  path:
+    | "/pending"
+    | "/notifications"
+    | "/assistant"
+    | "/assistant-quality"
+    | "/people";
 }) {
   const { controller } = useGhost();
   return controller.can(capability) ? (
@@ -481,6 +486,11 @@ export function More() {
         }
         secondary
         onPress={() => router.push("/preferences")}
+      />
+      <CapabilityButton
+        capability="people.read"
+        title="Pessoas"
+        path="/people"
       />
       <CapabilityButton
         capability="notifications.read"

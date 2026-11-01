@@ -35,6 +35,29 @@ import {
   secureStorageKeys,
 } from "../security/storage";
 
+const reservationsSchema = z.object({
+  updatedAt: z.string().datetime({ offset: true }),
+  date: z.string(),
+  unitId: z.string().uuid(),
+  connected: z.boolean(),
+  total: z.number().int().nonnegative(),
+  guests: z.number().int().nonnegative(),
+  confirmed: z.number().int().nonnegative(),
+  pending: z.number().int().nonnegative(),
+  cancelled: z.number().int().nonnegative(),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      guestName: z.string().nullable().default(null),
+      time: z.string().nullable(),
+      guests: z.number().int().nonnegative(),
+      status: z.string(),
+      origin: z.string().nullable(),
+      table: z.string().nullable(),
+    }),
+  ),
+});
+
 const dailyReminderId = "ghost-daily-summary";
 
 async function getDailyReminder(): Promise<DailyReminder> {
@@ -391,6 +414,10 @@ function mapSession(session: SupabaseSession): Session {
 }
 
 function friendlyError(error: { message: string; code?: string } | null) {
+  if (error?.message.includes("serena_unavailable"))
+    return new Error(
+      "O Serena está indisponível no momento. Tente atualizar as reservas.",
+    );
   if (!error) return new Error("Resposta inválida do servidor.");
   if (/invalid login credentials/i.test(error.message))
     return new Error("E-mail ou senha inválidos.");
@@ -694,6 +721,20 @@ export function createRemoteGateways(): Gateways {
             scope.signal,
           ),
         ) satisfies OperationSummary;
+      },
+    },
+    reservations: {
+      async get(scope, date) {
+        const result = reservationsSchema.parse(
+          await rpc(
+            "ghost_reservations_v1",
+            { p_unit_id: scope.unitId, p_date: date },
+            scope.signal,
+          ),
+        );
+        if (result.unitId !== scope.unitId || result.date !== date)
+          throw new Error("Resposta de reservas fora do contexto solicitado.");
+        return result;
       },
     },
     people: {

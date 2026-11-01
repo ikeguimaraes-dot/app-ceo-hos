@@ -7,7 +7,15 @@ import { useGhost } from "../../../src/state/provider";
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
-function TabIcon({ focused, active, inactive }: { focused: boolean; active: TabIconName; inactive: TabIconName }) {
+function TabIcon({
+  focused,
+  active,
+  inactive,
+}: {
+  focused: boolean;
+  active: TabIconName;
+  inactive: TabIconName;
+}) {
   const { colors } = useTheme();
   const [scale] = useState(() => new Animated.Value(focused ? 1 : 0));
 
@@ -34,13 +42,38 @@ function TabIcon({ focused, active, inactive }: { focused: boolean; active: TabI
         shadowOffset: { width: 0, height: 1 },
         elevation: focused ? 5 : 0,
         transform: [
-          { translateY: scale.interpolate({ inputRange: [0, 1], outputRange: [0, -1] }) },
-          { scale: scale.interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) },
+          {
+            translateY: scale.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -1],
+            }),
+          },
+          {
+            scale: scale.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.1],
+            }),
+          },
         ],
       }}
     >
-      {focused ? <Animated.View style={{ position: "absolute", width: 30, height: 30, borderRadius: 15, backgroundColor: `${colors.neon}18`, opacity: scale }} /> : null}
-      <Ionicons name={focused ? active : inactive} size={focused ? 26 : 22} color={focused ? colors.neon : colors.muted} />
+      {focused ? (
+        <Animated.View
+          style={{
+            position: "absolute",
+            width: 30,
+            height: 30,
+            borderRadius: 15,
+            backgroundColor: `${colors.neon}18`,
+            opacity: scale,
+          }}
+        />
+      ) : null}
+      <Ionicons
+        name={focused ? active : inactive}
+        size={focused ? 26 : 22}
+        color={focused ? colors.neon : colors.muted}
+      />
     </Animated.View>
   );
 }
@@ -76,7 +109,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Início",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="grid" inactive="grid-outline" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} active="grid" inactive="grid-outline" />
+          ),
         }}
       />
       <Tabs.Screen
@@ -84,7 +119,13 @@ export default function TabLayout() {
         options={{
           title: "A pagar",
           href: controller.can("dashboard.read") ? "/pending" : null,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="wallet" inactive="wallet-outline" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              active="wallet"
+              inactive="wallet-outline"
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -92,7 +133,13 @@ export default function TabLayout() {
         options={{
           title: "IA",
           href: controller.canAny("assistant.ask") ? "/assistant" : null,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="chatbubble-ellipses" inactive="chatbubble-ellipses-outline" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              active="chatbubble-ellipses"
+              inactive="chatbubble-ellipses-outline"
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -100,22 +147,40 @@ export default function TabLayout() {
         options={{
           title: "NF",
           href: controller.can("operation.read") ? "/operation" : null,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="receipt" inactive="receipt-outline" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              active="receipt"
+              inactive="receipt-outline"
+            />
+          ),
         }}
       />
       <Tabs.Screen
-        name="people"
+        name="reservations"
         options={{
-          title: "Pessoas",
-          href: controller.can("people.read") ? "/people" : null,
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="people" inactive="people-outline" />,
+          title: "Reservas",
+          href: controller.canAny("operation.read") ? "/reservations" : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              active="calendar"
+              inactive="calendar-outline"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: "Mais",
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} active="ellipsis-horizontal-circle" inactive="ellipsis-horizontal" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              active="ellipsis-horizontal-circle"
+              inactive="ellipsis-horizontal"
+            />
+          ),
         }}
       />
     </Tabs>

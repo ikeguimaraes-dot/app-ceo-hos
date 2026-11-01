@@ -334,6 +334,29 @@ export interface CashFlowGateway {
 export interface OperationGateway {
   get(scope: Scope): Promise<OperationSummary>;
 }
+export type Reservations = {
+  updatedAt: string;
+  date: string;
+  unitId: string;
+  connected: boolean;
+  total: number;
+  guests: number;
+  confirmed: number;
+  pending: number;
+  cancelled: number;
+  items: {
+    id: string;
+    guestName: string | null;
+    time: string | null;
+    guests: number;
+    status: string;
+    origin: string | null;
+    table: string | null;
+  }[];
+};
+export interface ReservationsGateway {
+  get(scope: Scope, date: string): Promise<Reservations>;
+}
 export interface PeopleGateway {
   get(scope: Scope): Promise<PeopleSummary>;
 }
@@ -378,6 +401,7 @@ export interface Gateways {
   productInvoices: ProductInvoicesGateway;
   operation: OperationGateway;
   people: PeopleGateway;
+  reservations: ReservationsGateway;
   assistant: AssistantGateway;
   notifications: NotificationGateway;
   simulation: { setMode(mode: DataMode): void; reset(): void };

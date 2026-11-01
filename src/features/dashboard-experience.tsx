@@ -54,20 +54,20 @@ type BrandStyle = {
 const stylesByBrand: Record<string, BrandStyle> = {
   meet: {
     label: "Meet",
-    colors: ["#0B694E", "#13A275", "#62E6B7"],
-    glow: "#49E5B0",
+    colors: ["#941B2D", "#D92B3F", "#FF6370"],
+    glow: "#FF596B",
     icon: "restaurant-outline",
   },
   mdna: {
     label: "Mdna",
-    colors: ["#5A2FA0", "#8B5CF6", "#D9C5FF"],
-    glow: "#B99AFF",
+    colors: ["#0B694E", "#13A275", "#62E6B7"],
+    glow: "#49E5B0",
     icon: "sparkles-outline",
   },
   freneze: {
     label: "Freneze",
-    colors: ["#A33D42", "#EC6B5F", "#FFB58D"],
-    glow: "#FF957C",
+    colors: ["#A83B00", "#F56600", "#FFAD00"],
+    glow: "#FF8500",
     icon: "flame-outline",
   },
   match: {

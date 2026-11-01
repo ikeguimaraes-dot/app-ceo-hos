@@ -17,6 +17,14 @@ const client = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 const protectedRpcs = [
+  [
+    "ghost_reservations_authorize_v1",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
+  [
+    "ghost_reservations_v1",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000", p_date: "2026-10-23" },
+  ],
   ["ghost_bootstrap_v1"],
   ["ghost_notification_preferences_v1"],
   ["ghost_internal_push_claim_v1"],
@@ -218,19 +226,46 @@ const protectedRpcs = [
 ];
 for (const [rpc, args] of protectedRpcs) {
   const anonymousRpc = await client.rpc(rpc, args);
-  if (!anonymousRpc.error)
-    throw new Error(`${rpc} anônima deveria ser negada.`);
+  if (anonymousRpc.error?.code !== "42501")
+    throw new Error(
+      `${rpc}: esperado 42501, recebido ${anonymousRpc.error?.code ?? "sem código"}. Falha de rede não prova bloqueio.`,
+    );
 }
 const invalidLogin = await client.auth.signInWithPassword({
   email: "ghost.invalid-login@example.invalid",
   password: "invalid-password-never-use",
 });
-if (!invalidLogin.error || invalidLogin.data.session)
+if (
+  invalidLogin.error?.code !== "invalid_credentials" ||
+  invalidLogin.data.session
+)
   throw new Error("Credenciais inválidas deveriam ser recusadas.");
+for (const authorization of [null, "Bearer invalid-test-token"]) {
+  const response = await fetch(
+    "https://czoakcsntfxmqfssubbe.supabase.co/functions/v1/ghost-reservations",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { authorization } : {}),
+      },
+      body: JSON.stringify({
+        unitId: "f2a6c9f8-929f-447b-9f77-edd8dad19bd0",
+        date: "2026-10-23",
+      }),
+      signal: AbortSignal.timeout(15000),
+    },
+  );
+  if (response.status !== 401)
+    throw new Error(
+      `Serena deveria recusar token ausente/inválido com 401; recebido ${response.status}`,
+    );
+}
 process.stdout.write(
   JSON.stringify({
     publicEndpoint: true,
     anonymousRpcsDenied: protectedRpcs.length,
     invalidCredentialsDenied: true,
+    serenaInvalidTokensDenied: true,
   }),
 );

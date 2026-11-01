@@ -41,12 +41,27 @@ test("login, dashboard, unit isolation, notifications and logout stay inside the
     path: "docs/screenshots/product-invoices.png",
     fullPage: true,
   });
-  await page.getByRole("tab", { name: "Pessoas" }).click();
+  await page.getByRole("tab", { name: "Reservas" }).click();
+  await expect(page.getByText("Reservas por casa")).toBeVisible();
+  await expect(page.getByText("19:00", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Mariana Oliveira", { exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "docs/screenshots/reservations.png",
+    fullPage: true,
+  });
+  await expect(
+    page.getByRole("tab", { name: "Pessoas", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Mais" }).click();
+  await page.getByRole("button", { name: "Pessoas", exact: true }).click();
   await expect(page.getByText("COLABORADORES NA UNIDADE")).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/people.png",
     fullPage: true,
   });
+  await page.goBack();
   await page.getByRole("tab", { name: "A pagar" }).click();
   await expect(page.getByText("Contas a pagar")).toBeVisible();
   await expect(page.getByText("Energia Centro")).toBeVisible();
