@@ -31,8 +31,10 @@ EXPO_PUBLIC_APP_ENV=preview EXPO_PUBLIC_DATA_MODE=remote npx --yes eas-cli@25.3.
 ```
 
 O envio é para TestFlight. Uma publicação pública na App Store é uma etapa separada.
-A configuração opcional de chave APNs não foi realizada; não declarar push remoto
-funcional com base apenas no entitlement da assinatura.
+A chave APNs existente e válida da organização foi associada ao Ghost preview no
+EAS em 2026-11-01, com autorização do usuário. Worker dev ativo e HTTP 200 nas
+execuções observadas. Nenhuma instalação estava registrada nessa verificação;
+a entrega física de push ainda requer login e permissão em um aparelho.
 
 ## Primeira distribuição — 2026-11-01
 

@@ -6,6 +6,7 @@ export interface LocalStorage {
 const authKey = "ghost.auth.session";
 const installationKey = "ghost.installation.id";
 const assistantModelKey = "ghost.assistant.model";
+const savedLoginKey = "ghost.auth.saved-login";
 const chunkSize = 1800;
 const webMemory = new Map<string, string>();
 
@@ -53,20 +54,35 @@ export const secureSessionStorage = {
     }
     await removeChunks(key);
     const chunks = value.match(new RegExp(`.{1,${chunkSize}}`, "gs")) ?? [""];
-    await Promise.all(
-      chunks.map((chunk, index) =>
-        SecureStore.setItemAsync(partKey(key, index), chunk, {
+    try {
+      const writes = await Promise.allSettled(
+        chunks.map((chunk, index) =>
+          SecureStore.setItemAsync(partKey(key, index), chunk, {
+            keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+          }),
+        ),
+      );
+      const failed = writes.find((result) => result.status === "rejected");
+      if (failed?.status === "rejected") throw failed.reason;
+      await SecureStore.setItemAsync(
+        partKey(key, "count"),
+        String(chunks.length),
+        {
           keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-        }),
-      ),
-    );
-    await SecureStore.setItemAsync(
-      partKey(key, "count"),
-      String(chunks.length),
-      {
-        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-      },
-    );
+        },
+      );
+    } catch (error) {
+      // An interrupted write must not leave password/session fragments without
+      // a count marker that logout would be unable to discover.
+      await Promise.allSettled([
+        ...chunks.map((_, index) =>
+          SecureStore.deleteItemAsync(partKey(key, index)),
+        ),
+        SecureStore.deleteItemAsync(partKey(key, "count")),
+        SecureStore.deleteItemAsync(key),
+      ]);
+      throw error;
+    }
   },
   removeItem: removeChunks,
 };
@@ -102,8 +118,43 @@ export const secureStorage: LocalStorage = {
     // The installation identifier belongs to this app installation, not to an
     // account. Keeping it across logout lets the backend atomically hand a
     // shared device to the next authenticated user and retire stale bindings.
-    await removeChunks(authKey);
+    await Promise.all([removeChunks(authKey), removeChunks(savedLoginKey)]);
   },
 };
+
+export async function readSavedLogin(): Promise<{
+  email: string;
+  password: string;
+} | null> {
+  if (Platform.OS === "web") return null;
+  const raw = await secureSessionStorage.getItem(savedLoginKey);
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (
+      value &&
+      typeof value === "object" &&
+      "email" in value &&
+      "password" in value &&
+      typeof value.email === "string" &&
+      typeof value.password === "string" &&
+      value.email.length > 0 &&
+      value.password.length > 0
+    )
+      return { email: value.email, password: value.password };
+  } catch {
+    /* Invalid local data is discarded, never used for authentication. */
+  }
+  await removeChunks(savedLoginKey);
+  return null;
+}
+
+export async function saveLogin(
+  value: { email: string; password: string } | null,
+) {
+  if (Platform.OS === "web") return;
+  if (!value) return removeChunks(savedLoginKey);
+  await secureSessionStorage.setItem(savedLoginKey, JSON.stringify(value));
+}
 
 export const secureStorageKeys = { auth: authKey };

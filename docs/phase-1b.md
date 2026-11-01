@@ -18,7 +18,7 @@ As funções usam `SECURITY DEFINER` com `search_path` vazio, nomes totalmente q
 
 ## Sessão móvel
 
-O Supabase JS persiste somente a sessão nativa em SecureStore. Valores grandes são divididos em partes com nomes aceitos pelo keychain; não existe fallback para AsyncStorage. No web a sessão é apenas memória. O fluxo de recuperação usa PKCE, scheme por ambiente e uma tela exclusiva de nova senha. Auto-refresh inicia em foreground e para em background.
+O Supabase JS persiste a sessão nativa em SecureStore. Desde 2026-11-01, o usuário também pode optar por salvar e-mail/senha no armazenamento seguro do aparelho; o logout remove ambos. Valores grandes são divididos em partes com nomes aceitos pelo keychain; não existe fallback para AsyncStorage. No web a sessão é apenas memória. O fluxo de recuperação usa PKCE, scheme por ambiente e uma tela exclusiva de nova senha. Auto-refresh inicia em foreground e para em background.
 
 Logout tenta revogar primeiro a instalação push com a sessão válida, encerra Auth e sempre limpa queries, unidade, link pendente e armazenamento local. Uma falha de rede não mantém dados locais.
 
