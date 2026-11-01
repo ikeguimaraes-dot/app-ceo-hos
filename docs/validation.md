@@ -82,3 +82,19 @@ Lint, typecheck, 193 testes, seis E2E, exportações mock/remotas e boundary che
 Teste HTTP negativo: 32 RPCs e tokens inválidos bloqueados. Build iOS Release concluído,
 assinatura verificada e atualização instalada no iPhone Itner físico. Web publicada em
 app-ceo-hos.vercel.app, deploy dpl_81rHAJsFq3YqLRcK1FhrKPTZicNU (READY).
+
+## Home na virada do mês — 2026-11-01
+
+A Home usa o mês da data de ontem em `America/Sao_Paulo`: no dia 1 conserva o
+mês anterior; no dia 2 passa ao novo. “Ontem nas casas” consulta a série desse
+mesmo período. O mês selecionado no detalhe é descartado ao voltar ao portfólio,
+e o período automático é reavaliado a cada 30 segundos com o app aberto.
+
+Lint, typecheck, 202 testes unitários e check:boundaries passaram. Exportação
+remota concluída para Android/iOS/web e exportação mock para web. Os oito casos
+E2E passaram (sete na execução geral e o caso da virada repetido após ajustar o
+relógio e o seletor do teste). A simulação cruza a meia-noite sem expirar a sessão
+mock. O teste remoto negativo confirmou 32 RPCs anônimas e credenciais/tokens
+inválidos negados. Não houve login móvel positivo, build nativo, instalação em
+aparelho ou publicação desta alteração. A mudança seleciona o período de ontem;
+não implementa busca automática de meses mais antigos quando a importação atrasa.

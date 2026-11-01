@@ -19,7 +19,8 @@ import { useGhost } from "../state/provider";
 import { environment } from "../config/environment";
 import { ErrorState, Loading } from "../ui/components";
 import { useTheme } from "../ui/theme";
-import { currentMonth, MonthSelector, monthLabel } from "../ui/month-selector";
+import { MonthSelector, monthLabel } from "../ui/month-selector";
+import { dashboardPeriod } from "../domain/dashboard-period";
 
 const currency = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -216,7 +217,7 @@ function PortfolioCard({ unit, data, onPress, delay }: { unit: Unit; data?: Dash
             </Text>
             <AnimatedAmount value={data?.revenue ?? null} color="#FFFFFF" size={28} />
             <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>
-              {data?.goalProgress == null ? "Mês atual" : `${Math.round(data.goalProgress * 100)}% da meta até agora`}
+              {data?.goalProgress == null ? "Meta indisponível" : `${Math.round(data.goalProgress * 100)}% da meta até agora`}
             </Text>
           </View>
         </LinearGradient>
@@ -370,7 +371,16 @@ export function DashboardExperience() {
   const { colors } = useTheme();
   const [view, setView] = useState<"portfolio" | "detail">("portfolio");
   const [picker, setPicker] = useState(false);
-  const [month, setMonth] = useState(currentMonth);
+  const [period, setPeriod] = useState(dashboardPeriod);
+  const [selectedMonth, setMonth] = useState<string | null>(null);
+  const month = view === "portfolio" ? period.month : selectedMonth ?? period.month;
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const next = dashboardPeriod();
+      setPeriod((previous) => previous.yesterday === next.yesterday ? previous : next);
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, []);
   const units = useMemo(() => orderPortfolioUnits(state.bootstrap?.units ?? []), [state.bootstrap?.units]);
   const session = state.session;
   const queries = useQueries({
@@ -392,9 +402,8 @@ export function DashboardExperience() {
     setView("detail");
   }
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+  const yesterdayKey = period.yesterday;
+  const yesterdayLabel = yesterdayKey.split("-").reverse().join("/");
 
   if (!session) return null;
   return (
@@ -423,7 +432,7 @@ export function DashboardExperience() {
             </Reveal>
             <Reveal delay={70}>
               <View style={{ padding: 22, borderRadius: 26, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.line, gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1.3 }}>FATURAMENTO DO PORTFÓLIO · MÊS ATUAL</Text>
+                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1.3 }}>FATURAMENTO DO PORTFÓLIO · {monthLabel(period.month, true).toUpperCase()}</Text>
                 {pending ? <Text style={{ color: colors.text, fontSize: 32, fontWeight: "800" }}>Calculando…</Text> : <AnimatedAmount value={total} color={colors.text} size={34} />}
                 <Text style={{ color: colors.muted, fontSize: 13 }}>{units.length} casas autorizadas · dados consolidados pelo KPH</Text>
               </View>
@@ -445,7 +454,7 @@ export function DashboardExperience() {
             </Reveal>
             <Reveal delay={480}>
               <View style={{ gap: 13 }}>
-                <View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Ontem nas casas</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Faturamento de {yesterday.toLocaleDateString("pt-BR")}</Text></View>
+                <View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Ontem nas casas</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Faturamento de {yesterdayLabel}</Text></View>
                 <View style={{ gap: 9 }}>
                   {units.map((unit, index) => {
                     const brand = brandStyle(unit);
@@ -458,7 +467,7 @@ export function DashboardExperience() {
             <View style={{ gap: 13 }}>
               <View>
                 <Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Mês até ontem</Text>
-                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Meta e faturamento acumulado por casa</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>{monthLabel(period.month, true)} · meta e faturamento acumulado por casa</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {units.map((unit, index) => (
@@ -474,7 +483,7 @@ export function DashboardExperience() {
         ) : currentQuery?.error ? (
           <ErrorState message={currentQuery.error.message} retry={() => void currentQuery.refetch()} />
         ) : currentQuery?.data ? (
-          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} month={month} onMonth={setMonth} onBack={() => { setMonth(currentMonth()); setView("portfolio"); }} onPick={() => setPicker(true)} />
+          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} month={month} onMonth={setMonth} onBack={() => { setMonth(null); setView("portfolio"); }} onPick={() => setPicker(true)} />
         ) : null}
       </ScrollView>
       <HousePicker visible={picker} units={units} onClose={() => setPicker(false)} onSelect={(unit) => void select(unit)} />

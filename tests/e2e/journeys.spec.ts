@@ -214,3 +214,33 @@ test("authenticated deep link still denies missing capability", async ({
   ).toBeVisible();
   await expect(page.getByText("Uma conta vence hoje")).toHaveCount(0);
 });
+
+test("Home keeps the previous month on day one and switches on day two", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-01T23:59:00-03:00") });
+  await login(page);
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · OUTUBRO DE 2026")).toBeVisible();
+  await expect(page.getByText("R$ 864.250")).toBeVisible();
+  await expect(page.getByText("Faturamento de 31/10/2026", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
+  await page.getByRole("tab", { name: /setembro de 2026/i }).click();
+  await page.getByRole("button", { name: "Voltar ao portfólio" }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · OUTUBRO DE 2026")).toBeVisible();
+  await expect(page.getByText("R$ 864.250")).toBeVisible();
+
+  await page.clock.setSystemTime(new Date("2026-11-02T00:00:00-03:00"));
+  await page.clock.runFor(30_000);
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · NOVEMBRO DE 2026")).toBeVisible();
+  await expect(page.getByText("Faturamento de 01/11/2026", { exact: true })).toBeVisible();
+  await expect(page.getByText("R$ 743.255", { exact: true })).toBeVisible();
+});
+
+test("Yesterday revenue returns after browsing a different month", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-21T12:00:00-03:00") });
+  await login(page);
+  await expect(page.getByText("R$ 51 mil", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
+  await page.getByRole("tab", { name: /setembro de 2026/i }).click();
+  await page.getByRole("button", { name: "Voltar ao portfólio" }).click();
+  await expect(page.getByText("Faturamento de 20/10/2026", { exact: true })).toBeVisible();
+  await expect(page.getByText("R$ 51 mil", { exact: true })).toBeVisible();
+});
