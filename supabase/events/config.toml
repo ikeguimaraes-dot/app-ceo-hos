@@ -1,0 +1,4 @@
+project_id = "rpavxnjchfmeiacnumpk"
+
+[functions.ghost-events-revenue]
+verify_jwt = false

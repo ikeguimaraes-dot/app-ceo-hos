@@ -159,6 +159,7 @@ const dashboardSchema = z.object({
   goalProgress: z.number().nullable(),
   hasData: z.boolean(),
   provisional: z.boolean(),
+  eventsRevenue: z.number().nonnegative(),
   grossRevenue: z.number().nullable(),
   netRevenue: z.number().nullable(),
   receivedRevenue: z.number().nullable(),
@@ -193,7 +194,7 @@ const dashboardSchema = z.object({
       shifts: z.array(
         z.object({
           id: z.string(),
-          name: z.enum(["almoco", "jantar", "dia_inteiro"]),
+          name: z.enum(["almoco", "jantar", "eventos", "dia_inteiro"]),
           revenue: z.number(),
           tips: z.number().nullable(),
           customers: z.number().nullable(),
@@ -621,7 +622,7 @@ export function createRemoteGateways(): Gateways {
       async get(scope, month) {
         const data = dashboardSchema.parse(
           await rpc(
-            "ghost_dashboard_v3",
+            "ghost_dashboard_v4",
             {
               p_unit_id: scope.unitId,
               p_month: month ?? new Date().toISOString().slice(0, 10),

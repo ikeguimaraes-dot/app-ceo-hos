@@ -37,6 +37,7 @@ export type Dashboard = {
   goalProgress: number | null;
   hasData: boolean;
   provisional: boolean;
+  eventsRevenue: number;
   grossRevenue: number | null;
   netRevenue: number | null;
   receivedRevenue: number | null;
@@ -103,7 +104,7 @@ export type DashboardPoint = {
 };
 export type DashboardShift = {
   id: string;
-  name: "almoco" | "jantar" | "dia_inteiro";
+  name: "almoco" | "jantar" | "eventos" | "dia_inteiro";
   revenue: number;
   tips: number | null;
   customers: number | null;

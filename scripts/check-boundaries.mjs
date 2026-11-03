@@ -9,6 +9,7 @@ const source = [
   ...walk("src"),
   ...walk("supabase/functions"),
   ...walk("supabase/serena/functions"),
+  ...walk("supabase/events/functions"),
   ".env.example",
   "app.config.ts",
   "eas.json",

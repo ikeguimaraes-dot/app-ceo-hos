@@ -120,6 +120,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               goalProgress: null,
               hasData: false,
               provisional: false,
+              eventsRevenue: 0,
               grossRevenue: null,
               netRevenue: null,
               receivedRevenue: null,
@@ -139,6 +140,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               revenue:
                 base.revenue == null ? null : Math.round(base.revenue * scale),
               goal: base.goal == null ? null : Math.round(base.goal * scale),
+              eventsRevenue: scope.unitId === "demo-garden" ? Math.round(5000 * scale) : 0,
               grossRevenue: Math.round(base.grossRevenue * scale),
               netRevenue: Math.round(base.netRevenue * scale),
               receivedRevenue: Math.round(base.receivedRevenue * scale),

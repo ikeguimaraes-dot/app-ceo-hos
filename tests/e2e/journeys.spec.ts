@@ -1,4 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+// Demo fixtures belong to October 2026; keep date-based assertions deterministic.
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-10-21T12:00:00-03:00") });
+});
 async function login(page: Page, scenario?: string) {
   await page.goto("/login");
   if (scenario)
@@ -216,7 +220,7 @@ test("authenticated deep link still denies missing capability", async ({
 });
 
 test("Home keeps the previous month on day one and switches on day two", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-11-01T23:59:00-03:00") });
+  await page.clock.setSystemTime(new Date("2026-11-01T23:59:00-03:00"));
   await login(page);
   await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · OUTUBRO DE 2026")).toBeVisible();
   await expect(page.getByText("R$ 864.250")).toBeVisible();
@@ -235,7 +239,7 @@ test("Home keeps the previous month on day one and switches on day two", async (
 });
 
 test("Yesterday revenue returns after browsing a different month", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-10-21T12:00:00-03:00") });
+  await page.clock.setSystemTime(new Date("2026-10-21T12:00:00-03:00"));
   await login(page);
   await expect(page.getByText("R$ 51 mil", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
@@ -243,4 +247,19 @@ test("Yesterday revenue returns after browsing a different month", async ({ page
   await page.getByRole("button", { name: "Voltar ao portfólio" }).click();
   await expect(page.getByText("Faturamento de 20/10/2026", { exact: true })).toBeVisible();
   await expect(page.getByText("R$ 51 mil", { exact: true })).toBeVisible();
+});
+
+test("daily house revenue shows Events separately from restaurant shifts", async ({ page }) => {
+  await page.clock.setSystemTime(new Date("2026-10-21T12:00:00-03:00"));
+  await login(page);
+  await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
+  await page.getByRole("button", { name: "Faturamento de 20/10/2026", exact: true }).click();
+  await expect(page.getByText("Eventos", { exact: true }).filter({ visible: true })).toHaveCount(2);
+  await expect(page.getByText("R$ 5.000,00", { exact: true })).toBeVisible();
+  await expect(page.getByText("Almoço", { exact: true })).toBeVisible();
+  await expect(page.getByText("Jantar", { exact: true })).toBeVisible();
+  await expect(page.getByText("R$ 17.020", { exact: true })).toBeVisible();
+  await expect(page.getByText("R$ 28.980", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Faturamento de 19/10/2026", exact: true }).click();
+  await expect(page.getByText("R$ 0,00", { exact: true })).toBeVisible();
 });

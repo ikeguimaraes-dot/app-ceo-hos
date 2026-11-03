@@ -17,6 +17,8 @@ const client = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 const protectedRpcs = [
+  ["ghost_dashboard_v4", { p_unit_id: "00000000-0000-0000-0000-000000000000", p_month: "2026-10-01" }],
+  ["ghost_events_authorize_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
   [
     "ghost_reservations_authorize_v1",
     { p_unit_id: "00000000-0000-0000-0000-000000000000" },
@@ -261,11 +263,24 @@ for (const authorization of [null, "Bearer invalid-test-token"]) {
       `Serena deveria recusar token ausente/inválido com 401; recebido ${response.status}`,
     );
 }
+for (const authorization of [null, "Bearer invalid-test-token"]) {
+  const response = await fetch(
+    "https://rpavxnjchfmeiacnumpk.supabase.co/functions/v1/ghost-events-revenue",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(authorization ? { authorization } : {}) },
+      body: JSON.stringify({ unitId: "674eac8c-5a38-4a42-aa60-0a666387909b", start: "2026-10-01", end: "2026-10-31" }),
+      signal: AbortSignal.timeout(15000),
+    },
+  );
+  if (response.status !== 401) throw new Error(`Eventos deveria recusar token ausente/inválido com 401; recebido ${response.status}`);
+}
 process.stdout.write(
   JSON.stringify({
     publicEndpoint: true,
     anonymousRpcsDenied: protectedRpcs.length,
     invalidCredentialsDenied: true,
     serenaInvalidTokensDenied: true,
+    eventsInvalidTokensDenied: true,
   }),
 );

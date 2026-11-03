@@ -92,8 +92,9 @@ export const demo = {
           averageTicket: 250,
           cmvPercentage: 0.24,
           shifts: [
-            { id: `mock-almoco-${index}`, name: "almoco" as const, revenue: value * 370, tips: value * 40, customers: value * 2, averageTicket: 185, derived: false },
-            { id: `mock-jantar-${index}`, name: "jantar" as const, revenue: value * 630, tips: value * 70, customers: value * 2, averageTicket: 315, derived: false },
+            { id: `mock-almoco-${index}`, name: "almoco" as const, revenue: value * 370 - (index === 13 ? 1850 : 0), tips: value * 40, customers: value * 2, averageTicket: 185, derived: false },
+            { id: `mock-jantar-${index}`, name: "jantar" as const, revenue: value * 630 - (index === 13 ? 3150 : 0), tips: value * 70, customers: value * 2, averageTicket: 315, derived: false },
+            { id: `mock-eventos-${index}`, name: "eventos" as const, revenue: index === 13 ? 5000 : 0, tips: 0, customers: null, averageTicket: null, derived: false },
           ],
         }),
       ),

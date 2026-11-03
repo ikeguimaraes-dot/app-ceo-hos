@@ -393,7 +393,9 @@ export function DashboardExperience() {
   const currentIndex = units.findIndex((unit) => unit.id === state.unitId);
   const currentUnit = currentIndex >= 0 ? units[currentIndex] : units[0];
   const currentQuery = currentIndex >= 0 ? queries[currentIndex] : queries[0];
-  const total = queries.reduce((sum, query) => sum + (query.data?.revenue ?? 0), 0);
+  const total = queries.some((query) => query.error) || !queries.some((query) => query.data?.revenue != null)
+    ? null
+    : queries.reduce((sum, query) => sum + (query.data?.revenue ?? 0), 0);
   const pending = queries.some((query) => query.isPending);
 
   async function select(unit: Unit) {
@@ -549,7 +551,7 @@ function DailyRevenueList({ points, color }: { points: DashboardPoint[]; color: 
   };
   return <Reveal delay={420}>
     <View style={{ borderRadius: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, overflow: "hidden" }}>
-      <View style={{ padding: 19, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Faturamento dia a dia</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Toque em um dia para ver os turnos</Text></View>{days.some((day) => day.shifts.length > 0) && <Pressable accessibilityRole="button" onPress={toggleAll} style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: colors.soft, opacity: pressed ? 0.7 : 1 })}><Text style={{ color, fontSize: 10, fontWeight: "800" }}>{allExpanded ? "RECOLHER" : "EXPANDIR"}</Text></Pressable>}</View>
+      <View style={{ padding: 19, flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Faturamento dia a dia</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Toque em um dia para ver turnos e eventos</Text></View>{days.some((day) => day.shifts.length > 0) && <Pressable accessibilityRole="button" onPress={toggleAll} style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 13, backgroundColor: colors.soft, opacity: pressed ? 0.7 : 1 })}><Text style={{ color, fontSize: 10, fontWeight: "800" }}>{allExpanded ? "RECOLHER" : "EXPANDIR"}</Text></Pressable>}</View>
       {days.length === 0 ? <Text style={{ color: colors.muted, padding: 20 }}>Nenhum fechamento neste mês.</Text> : days.map((day) => {
         const expanded = expandedDates.has(day.date);
         const goalProgress = day.goal && day.goal > 0 && day.revenue != null ? day.revenue / day.goal : null;
@@ -561,7 +563,7 @@ function DailyRevenueList({ points, color }: { points: DashboardPoint[]; color: 
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}><DayMetric label="Meta" value={day.goal == null ? "—" : compactCurrency.format(day.goal)} /><DayMetric label="Desconto" value={day.discount == null ? "—" : compactCurrency.format(day.discount)} /><DayMetric label="Gorjeta" value={day.tips == null ? "—" : compactCurrency.format(day.tips)} /><DayMetric label="Clientes" value={day.customers?.toLocaleString("pt-BR") ?? "—"} /><DayMetric label="Ticket" value={day.averageTicket == null ? "—" : currency.format(day.averageTicket)} /></View>
           </Pressable>
           {expanded && <View style={{ paddingHorizontal: 16, paddingBottom: 15, gap: 8, backgroundColor: colors.soft }}>
-            {day.shifts.map((shift) => <View key={shift.id} style={{ padding: 13, borderRadius: 17, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 9 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shift.name === "almoco" ? "#F5A623" : shift.name === "jantar" ? "#8B7CFF" : color }} /><Text style={{ color: colors.text, fontWeight: "800" }}>{shift.name === "almoco" ? "Almoço" : shift.name === "jantar" ? "Jantar" : "Dia inteiro"}</Text>{shift.derived && <Text style={{ color: colors.muted, fontSize: 8, fontWeight: "800", borderWidth: 1, borderColor: colors.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 }}>DERIVADO</Text>}</View><Text style={{ color: colors.text, fontWeight: "900" }}>{currency.format(shift.revenue)}</Text></View><View style={{ flexDirection: "row", gap: 12 }}><Text style={{ color: colors.muted, fontSize: 11 }}>Gorjeta: {shift.tips == null ? "—" : currency.format(shift.tips)}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Clientes: {shift.customers ?? "—"}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Ticket: {shift.averageTicket == null ? "—" : currency.format(shift.averageTicket)}</Text></View></View>)}
+            {day.shifts.map((shift) => <View key={shift.id} style={{ padding: 13, borderRadius: 17, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 9 }}><View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shift.name === "almoco" ? "#F5A623" : shift.name === "jantar" ? "#8B7CFF" : shift.name === "eventos" ? "#38BDF8" : color }} /><Text style={{ color: colors.text, fontWeight: "800" }}>{shift.name === "almoco" ? "Almoço" : shift.name === "jantar" ? "Jantar" : shift.name === "eventos" ? "Eventos" : "Dia inteiro"}</Text>{shift.derived && <Text style={{ color: colors.muted, fontSize: 8, fontWeight: "800", borderWidth: 1, borderColor: colors.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 }}>DERIVADO</Text>}</View><Text style={{ color: colors.text, fontWeight: "900" }}>{(shift.name === "eventos" ? preciseCurrency : currency).format(shift.revenue)}</Text></View>{shift.name !== "eventos" && <View style={{ flexDirection: "row", gap: 12 }}><Text style={{ color: colors.muted, fontSize: 11 }}>Gorjeta: {shift.tips == null ? "—" : currency.format(shift.tips)}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Clientes: {shift.customers ?? "—"}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>Ticket: {shift.averageTicket == null ? "—" : currency.format(shift.averageTicket)}</Text></View>}</View>)}
           </View>}
         </View>;
       })}
@@ -579,6 +581,7 @@ function RevenueOverview({ dashboard, color }: { dashboard: Dashboard; color: st
   const metrics = [
     ["Projeção", dashboard.projection, "trending-up-outline"],
     ["Receita bruta", dashboard.grossRevenue, "cash-outline"],
+    ["Eventos", dashboard.eventsRevenue, "calendar-outline"],
     ["Recebido", dashboard.receivedRevenue, "checkmark-circle-outline"],
     ["Receita líquida", dashboard.netRevenue, "wallet-outline"],
     ["Descontos", dashboard.discount, "pricetag-outline"],
@@ -587,10 +590,11 @@ function RevenueOverview({ dashboard, color }: { dashboard: Dashboard; color: st
   return (
     <Reveal delay={360}>
       <View style={{ padding: 20, borderRadius: 28, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 17 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Receita do mês</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Mesma leitura financeira do KPH</Text></View><View style={{ width: 39, height: 39, borderRadius: 14, backgroundColor: `${color}20`, alignItems: "center", justifyContent: "center" }}><Ionicons name="analytics-outline" size={20} color={color} /></View></View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}><View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Receita do mês</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Restaurante + eventos do MISE</Text></View><View style={{ width: 39, height: 39, borderRadius: 14, backgroundColor: `${color}20`, alignItems: "center", justifyContent: "center" }}><Ionicons name="analytics-outline" size={20} color={color} /></View></View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {metrics.map(([label, value, icon]) => <View key={label} style={{ width: "48%", minHeight: 94, borderRadius: 19, backgroundColor: colors.soft, padding: 13, justifyContent: "space-between" }}><Ionicons name={icon} color={color} size={17} /><View><Text adjustsFontSizeToFit numberOfLines={1} style={{ color: colors.text, fontWeight: "800", fontSize: 16 }}>{value == null ? "—" : compactCurrency.format(value)}</Text><Text style={{ color: colors.muted, fontSize: 10, marginTop: 3 }}>{label}</Text></View></View>)}
         </View>
+        <Text style={{ color: colors.muted, fontSize: 11 }}>Recebido, líquido, descontos, gorjeta, clientes e ticket referem-se ao restaurante.</Text>
         <View style={{ flexDirection: "row", gap: 10 }}><View style={{ flex: 1, borderRadius: 18, padding: 14, backgroundColor: colors.glass }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>{dashboard.customers?.toLocaleString("pt-BR") ?? "—"}</Text><Text style={{ color: colors.muted, fontSize: 10 }}>Clientes</Text></View><View style={{ flex: 1, borderRadius: 18, padding: 14, backgroundColor: colors.glass }}><Text style={{ color: colors.text, fontSize: 20, fontWeight: "800" }}>{dashboard.averageTicket == null ? "—" : currency.format(dashboard.averageTicket)}</Text><Text style={{ color: colors.muted, fontSize: 10 }}>Ticket médio</Text></View></View>
       </View>
     </Reveal>
