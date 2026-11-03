@@ -58,3 +58,19 @@ O repositório KPH foi usado somente para leitura.
   integrações Serena e Eventos recusando tokens ausentes/inválidos.
 - RPC fonte sem `EXECUTE` para anon/authenticated. Security Advisor antes/depois
   sem novos avisos nos dois projetos; passivo anterior permanece fora desta mudança.
+
+## Distribuição
+
+- Commit de implementação: `161d523`.
+- Web publicada em https://app-ceo-hos.vercel.app, deployment
+  `dpl_AGJf4bqEqektpxTkAimNGyCN8Fvg` com status READY. HTML/bundle verificados;
+  Chrome confirmou login remoto, redirecionamento protegido e nenhum erro de
+  página ou HTTP do app nessa verificação sem sessão.
+- iOS `0.1.0 (7)`, build EAS
+  `372a84f6-47bb-417a-8332-dea68dc4fa7f`, compilado para aparelho com assinatura store.
+- Submissão EAS: `f759f420-00c9-4cf9-9dc1-2a5b21d5d42c`.
+- Consulta em 03/11/2026 às 11h26 (São Paulo): `IN_QUEUE`, sem erro informado.
+  O build 7 ainda não está disponível no TestFlight; a atribuição ao grupo externo
+  e eventual revisão beta dependem do envio e processamento pela Apple.
+- A atualização no TestFlight é necessária; versões antigas continuam usando v3.
+- Não foi executada instalação nem jornada positiva em aparelho físico desta versão.
