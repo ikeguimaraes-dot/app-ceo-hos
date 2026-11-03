@@ -1,4 +1,5 @@
 import React from "react";
+import { BrandLogo } from "./brand-logo";
 import {
   ActivityIndicator,
   Pressable,
@@ -139,16 +140,7 @@ export function Screen({
             alignItems: "center",
           }}
         >
-          <Text
-            style={{
-              color: colors.accent,
-              fontSize: 24,
-              fontWeight: "700",
-              letterSpacing: -1,
-            }}
-          >
-            ghost<Text style={{ color: colors.muted }}> ·</Text>
-          </Text>
+          <BrandLogo />
           <Text
             style={{ fontSize: 10, letterSpacing: 1.5, color: colors.muted }}
           >

@@ -19,6 +19,7 @@ import { useGhost } from "../state/provider";
 import { environment } from "../config/environment";
 import { ErrorState, Loading } from "../ui/components";
 import { useTheme } from "../ui/theme";
+import { BrandLogo } from "../ui/brand-logo";
 import { MonthSelector, monthLabel } from "../ui/month-selector";
 import { dashboardPeriod } from "../domain/dashboard-period";
 
@@ -415,7 +416,7 @@ export function DashboardExperience() {
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: 760, alignSelf: "center", padding: 22, paddingBottom: 54, gap: 22 }} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ color: colors.text, fontSize: 24, fontWeight: "900", letterSpacing: -1.2 }}>ghost</Text>
+            <BrandLogo />
             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: colors.neon }} />
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 99, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.line }}>

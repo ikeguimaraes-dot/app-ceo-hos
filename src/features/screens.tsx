@@ -167,7 +167,7 @@ export function Login() {
       subtitle="Seu espaço de gestão, onde você estiver."
     >
       <Card>
-        <Label size={20}>Entrar no Ghost</Label>
+        <Label size={20}>Entrar no CEO de bolso</Label>
         <Label muted size={13}>
           {environment.isRemote
             ? "Use seu acesso KPH. Sua unidade e permissões serão validadas pelo servidor."
@@ -627,7 +627,7 @@ export function More() {
       />
       <CapabilityButton
         capability="assistant.ask"
-        title="Qualidade do Ghost IA"
+        title="Qualidade do CEO de bolso IA"
         path="/assistant-quality"
       />
       {__DEV__ && (
@@ -668,7 +668,7 @@ function AssistantQualityContent() {
     assistantModels.find((model) => model.id === id)?.name ?? id;
   return (
     <Screen
-      title="Qualidade do Ghost IA"
+      title="Qualidade do CEO de bolso IA"
       subtitle="Resultados reais, sem armazenar perguntas ou respostas"
     >
       <View style={{ flexDirection: "row", gap: 8 }}>
@@ -852,7 +852,7 @@ function AssistantContent() {
   }
   return (
     <Screen
-      title="Ghost IA"
+      title="CEO de bolso IA"
       subtitle="Conversa com a visão de todas as suas empresas autorizadas"
     >
       <View style={{ gap: 8 }}>
@@ -903,7 +903,7 @@ function AssistantContent() {
       {messages.length === 0 && (
         <>
           <View
-            accessibilityLabel="Mensagem do Ghost"
+            accessibilityLabel="Mensagem do CEO de bolso"
             style={{
               alignSelf: "stretch",
               borderRadius: 18,
@@ -939,7 +939,7 @@ function AssistantContent() {
         <View
           key={`${message.role}-${index}`}
           accessibilityLabel={
-            message.role === "user" ? "Sua pergunta" : "Resposta do Ghost"
+            message.role === "user" ? "Sua pergunta" : "Resposta do CEO de bolso"
           }
           style={{
             alignSelf: message.role === "user" ? "flex-end" : "stretch",
@@ -1005,7 +1005,7 @@ function AssistantContent() {
           </View>
           {feedback !== null && (
             <Label muted size={12}>
-              Obrigado. Esse retorno será usado para melhorar o Ghost.
+              Obrigado. Esse retorno será usado para melhorar o CEO de bolso.
             </Label>
           )}
         </View>
@@ -1024,7 +1024,7 @@ function AssistantContent() {
           label="Sua pergunta"
           value={question}
           onChangeText={setQuestion}
-          placeholder="Converse com o Ghost…"
+          placeholder="Converse com o CEO de bolso…"
           multiline
           maxLength={1000}
         />
@@ -1156,7 +1156,7 @@ function DeviceNotificationsCard() {
     <Card>
       <Label size={20}>Notificações no aparelho</Label>
       <Label muted>
-        Ative os avisos do Ghost e escolha um horário para receber seu resumo
+        Ative os avisos do CEO de bolso e escolha um horário para receber seu resumo
         todos os dias.
       </Label>
       <Button
@@ -1315,7 +1315,7 @@ export function Preferences() {
         return;
       }
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Ativar bloqueio do Ghost",
+        promptMessage: "Ativar bloqueio do CEO de bolso",
         disableDeviceFallback: true,
       });
       if (result.success) {
@@ -1407,7 +1407,7 @@ export function Lock() {
         title="Desbloquear com biometria"
         onPress={() =>
           void LocalAuthentication.authenticateAsync({
-            promptMessage: "Desbloquear Ghost",
+            promptMessage: "Desbloquear CEO de bolso",
             disableDeviceFallback: true,
           })
             .then((result) => {
@@ -1435,7 +1435,7 @@ export function Lock() {
 export function Catalog() {
   return (
     <Screen
-      title="Elementos do Ghost"
+      title="Elementos do CEO de bolso"
       subtitle="Catálogo interno • somente desenvolvimento"
     >
       <Card>

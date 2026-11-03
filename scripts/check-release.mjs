@@ -35,6 +35,7 @@ const expected = [
 
 for (const item of expected) {
   const config = expoConfig(item.name, item.dataMode);
+  assert(config.name === "CEO de bolso", `${item.name}: nome público inválido`);
   assert(
     config.scheme === `ghost-${item.name}`,
     `${item.name}: scheme inválido`,

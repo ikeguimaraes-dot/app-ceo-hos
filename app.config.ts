@@ -8,7 +8,7 @@ if (!["mock", "remote"].includes(dataMode))
   throw new Error("EXPO_PUBLIC_DATA_MODE inválido.");
 const suffix = environment === "production" ? "" : `.${environment}`;
 const config: ExpoConfig = {
-  name: `Ghost${environment === "production" ? "" : ` ${environment}`}`,
+  name: "CEO de bolso",
   slug: "ghost-mobile",
   version: "0.1.0",
   scheme: `ghost-${environment}`,
@@ -36,7 +36,7 @@ const config: ExpoConfig = {
       "expo-local-authentication",
       {
         faceIDPermission:
-          "Permitir que o Ghost use Face ID para desbloqueio local.",
+          "Permitir que o CEO de bolso use Face ID para desbloqueio local.",
       },
     ],
     ["expo-splash-screen", { backgroundColor: "#101A15" }],

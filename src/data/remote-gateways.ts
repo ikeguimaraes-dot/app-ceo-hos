@@ -112,7 +112,7 @@ async function setDailyReminder(
     identifier: dailyReminderId,
     content: {
       title: "Seu resumo diário está pronto",
-      body: "Abra o Ghost para acompanhar faturamento, contas e operação.",
+      body: "Abra o CEO de bolso para acompanhar faturamento, contas e operação.",
       data: { kind: "ghost_daily_summary", time: reminder.time, target: "/" },
     },
     trigger: {
@@ -410,7 +410,7 @@ const assistantQualitySchema = z.object({
 function mapSession(session: SupabaseSession): Session {
   return {
     userId: session.user.id,
-    displayName: "Usuário Ghost",
+    displayName: "Usuário CEO de bolso",
     expiresAt:
       (session.expires_at ?? Math.floor(Date.now() / 1000) + 60) * 1000,
   };
@@ -426,7 +426,7 @@ function friendlyError(error: { message: string; code?: string } | null) {
     return new Error("E-mail ou senha inválidos.");
   if (/fetch|network|offline/i.test(error.message))
     return new Error(
-      "Sem conexão com o Ghost. Verifique sua internet e tente novamente.",
+      "Sem conexão com o CEO de bolso. Verifique sua internet e tente novamente.",
     );
   if (
     error.code === "42501" ||
@@ -485,7 +485,7 @@ async function friendlyFunctionError(error: unknown) {
       "Muitas perguntas foram enviadas em pouco tempo. Aguarde um instante e tente novamente.",
     );
   if (serverCode === "forbidden")
-    return new Error("Seu vínculo não permite usar o Ghost IA.");
+    return new Error("Seu vínculo não permite usar o CEO de bolso IA.");
   return friendlyError({
     message: candidate.message ?? String(error),
     code: candidate.code,
@@ -776,7 +776,7 @@ export function createRemoteGateways(): Gateways {
         const parsed = assistantAnswerSchema.safeParse(data);
         if (!parsed.success)
           throw new Error(
-            "A resposta do Ghost chegou incompleta. Tente novamente.",
+            "A resposta do CEO de bolso chegou incompleta. Tente novamente.",
           );
         return parsed.data satisfies AssistantAnswer;
       },
