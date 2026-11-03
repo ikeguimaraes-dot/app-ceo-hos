@@ -141,11 +141,13 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
                 base.revenue == null ? null : Math.round(base.revenue * scale),
               goal: base.goal == null ? null : Math.round(base.goal * scale),
               eventsRevenue: scope.unitId === "demo-garden" ? Math.round(5000 * scale) : 0,
-              grossRevenue: Math.round(base.grossRevenue * scale),
-              netRevenue: Math.round(base.netRevenue * scale),
-              receivedRevenue: Math.round(base.receivedRevenue * scale),
-              discount: Math.round(base.discount * scale),
-              tips: Math.round(base.tips * scale),
+              grossRevenue: scope.session.scenario === "restricted" ? null : Math.round(base.grossRevenue * scale),
+              netRevenue: scope.session.scenario === "restricted" ? null : Math.round(base.netRevenue * scale),
+              receivedRevenue: scope.session.scenario === "restricted" ? null : Math.round(base.receivedRevenue * scale),
+              discount: scope.session.scenario === "restricted" ? null : Math.round(base.discount * scale),
+              tips: scope.session.scenario === "restricted" ? null : Math.round(base.tips * scale),
+              customers: scope.session.scenario === "restricted" ? null : base.customers,
+              averageTicket: scope.session.scenario === "restricted" ? null : base.averageTicket,
               projection: Math.round(base.projection * scale),
               portfolioSnapshot: {
                 asOf: moveDate(base.periodEnd),
@@ -161,6 +163,9 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               series: base.series.map((point) => ({
                 ...point,
                 date: moveDate(point.date),
+                customers: scope.session.scenario === "restricted" ? null : point.customers,
+                averageTicket: scope.session.scenario === "restricted" ? null : point.averageTicket,
+                cmvPercentage: scope.session.scenario === "restricted" ? null : point.cmvPercentage,
                 revenue:
                   point.revenue == null
                     ? null
@@ -168,22 +173,24 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
                 goal:
                   point.goal == null ? null : Math.round(point.goal * scale),
                 received:
-                  point.received == null
+                  scope.session.scenario === "restricted" || point.received == null
                     ? null
                     : Math.round(point.received * scale),
                 debt:
-                  point.debt == null ? null : Math.round(point.debt * scale),
+                  scope.session.scenario === "restricted" || point.debt == null ? null : Math.round(point.debt * scale),
                 discount:
-                  point.discount == null
+                  scope.session.scenario === "restricted" || point.discount == null
                     ? null
                     : Math.round(point.discount * scale),
                 tips:
-                  point.tips == null ? null : Math.round(point.tips * scale),
+                  scope.session.scenario === "restricted" || point.tips == null ? null : Math.round(point.tips * scale),
                 shifts: point.shifts.map((shift) => ({
                   ...shift,
+                  customers: scope.session.scenario === "restricted" ? null : shift.customers,
+                  averageTicket: scope.session.scenario === "restricted" ? null : shift.averageTicket,
                   revenue: Math.round(shift.revenue * scale),
                   tips:
-                    shift.tips == null ? null : Math.round(shift.tips * scale),
+                    scope.session.scenario === "restricted" || shift.tips == null ? null : Math.round(shift.tips * scale),
                 })),
               })),
             };
@@ -251,7 +258,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
         allUnits = false,
         period,
       ) {
-        await check(scope, "dashboard.read");
+        await check(scope, "payables.read");
         const unitIds = allUnits
           ? demo.units.map((unit) => unit.id)
           : [scope.unitId];
@@ -387,7 +394,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
     },
     cashFlow: {
       async getWeek(scope, weekOffset, allUnits = false) {
-        await check(scope, "dashboard.read");
+        await check(scope, "payables.read");
         const unitIds = allUnits
           ? demo.units.map((unit) => unit.id)
           : [scope.unitId];

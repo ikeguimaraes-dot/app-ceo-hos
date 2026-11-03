@@ -127,6 +127,8 @@ async function setDailyReminder(
 
 const capability = z.enum([
   "dashboard.read",
+  "dashboard.details",
+  "payables.read",
   "pending.read",
   "maintenance.decide",
   "punch.decide",
@@ -614,7 +616,7 @@ export function createRemoteGateways(): Gateways {
     bootstrap: {
       async load() {
         return bootstrapSchema.parse(
-          await rpc("ghost_bootstrap_v1"),
+          await rpc("ghost_bootstrap_v2"),
         ) satisfies Bootstrap;
       },
     },

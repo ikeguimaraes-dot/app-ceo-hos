@@ -1,5 +1,7 @@
 export type Capability =
   | "dashboard.read"
+  | "dashboard.details"
+  | "payables.read"
   | "pending.read"
   | "maintenance.decide"
   | "punch.decide"

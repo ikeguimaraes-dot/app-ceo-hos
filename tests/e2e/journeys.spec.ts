@@ -158,7 +158,16 @@ test("restricted access hides unauthorized tabs and logout protects history", as
   await login(page, "Acesso restrito");
   await expect(page.getByText("R$ 864.250")).toBeVisible();
   await expect(page.getByRole("tab", { name: /IA$/ })).toHaveCount(0);
-  await expect(page.getByRole("tab", { name: "A pagar" })).toBeVisible();
+  for (const name of ["A pagar", "IA", "NF", "Reservas"]) {
+    await expect(page.getByRole("tab", { name, exact: true })).toHaveCount(0);
+  }
+  await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
+  await expect(page.getByText("Receita do mês", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Faturamento de 20/10/2026", exact: true }).click();
+  await expect(page.getByText("Almoço", { exact: true })).toBeVisible();
+  await expect(page.getByText("Gorjeta", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Clientes", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("R$ 5.000,00", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Mais" }).click();
   await page.getByRole("button", { name: "Sair da demonstração" }).click();
   await expect(page).toHaveURL(/login/);
@@ -262,4 +271,16 @@ test("daily house revenue shows Events separately from restaurant shifts", async
   await expect(page.getByText("R$ 28.980", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Faturamento de 19/10/2026", exact: true }).click();
   await expect(page.getByText("R$ 0,00", { exact: true })).toBeVisible();
+});
+
+
+test("partner deep link falls back to home without payables access", async ({ page }) => {
+  await page.goto("/pending");
+  await page.getByRole("button", { name: "Acesso restrito", exact: true }).click();
+  await page.getByRole("button", { name: "Entrar na demonstração" }).click();
+  await expect(page.getByRole("tab", { name: /Início$/ })).toBeVisible();
+  await expect(page.getByText("R$ 864.250", { exact: true })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "A pagar" })).toHaveCount(0);
+  await expect(page.getByText("Contas a pagar", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Energia Centro")).toHaveCount(0);
 });

@@ -11,6 +11,8 @@ export const demo = {
       capabilities: [
         "assistant.ask",
         "dashboard.read",
+        "dashboard.details",
+        "payables.read",
         "pending.read",
         "maintenance.decide",
         "punch.decide",
@@ -27,6 +29,8 @@ export const demo = {
       capabilities: [
         "assistant.ask",
         "dashboard.read",
+        "dashboard.details",
+        "payables.read",
         "pending.read",
         "notifications.read",
       ],
@@ -39,6 +43,8 @@ export const demo = {
       capabilities: [
         "assistant.ask",
         "dashboard.read",
+        "dashboard.details",
+        "payables.read",
         "pending.read",
         "operation.read",
         "people.read",
@@ -53,6 +59,8 @@ export const demo = {
       capabilities: [
         "assistant.ask",
         "dashboard.read",
+        "dashboard.details",
+        "payables.read",
         "pending.read",
         "operation.read",
         "people.read",

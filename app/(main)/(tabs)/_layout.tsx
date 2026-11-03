@@ -118,7 +118,7 @@ export default function TabLayout() {
         name="pending"
         options={{
           title: "A pagar",
-          href: controller.can("dashboard.read") ? "/pending" : null,
+          href: controller.canAny("payables.read") ? "/pending" : null,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}

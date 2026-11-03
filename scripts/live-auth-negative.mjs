@@ -17,6 +17,7 @@ const client = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 const protectedRpcs = [
+  ["ghost_bootstrap_v2"],
   ["ghost_dashboard_v4", { p_unit_id: "00000000-0000-0000-0000-000000000000", p_month: "2026-10-01" }],
   ["ghost_events_authorize_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
   [

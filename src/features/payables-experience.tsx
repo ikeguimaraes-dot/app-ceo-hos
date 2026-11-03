@@ -460,7 +460,7 @@ export function PayablesExperience() {
   const units = useMemo(
     () =>
       (state.bootstrap?.units ?? []).filter((unit) =>
-        unit.capabilities.includes("dashboard.read"),
+        unit.capabilities.includes("payables.read"),
       ),
     [state.bootstrap?.units],
   );
@@ -488,7 +488,7 @@ export function PayablesExperience() {
         allUnits,
         period,
       ),
-    enabled: !!session && !!unitId && view === "payables",
+    enabled: controller.canAny("payables.read") && !!session && !!unitId && view === "payables",
   });
   const flow = useQuery({
     queryKey: [
@@ -508,7 +508,7 @@ export function PayablesExperience() {
         weekOffset,
         allUnits,
       ),
-    enabled: !!session && !!unitId && view === "cashFlow",
+    enabled: controller.canAny("payables.read") && !!session && !!unitId && view === "cashFlow",
   });
   const maximum = Math.max(
     1,

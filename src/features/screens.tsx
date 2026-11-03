@@ -402,7 +402,7 @@ function CapabilityButton({
 }
 export function PendingScreen() {
   return (
-    <Access capability="dashboard.read">
+    <Access capability="payables.read">
       <PayablesExperience />
     </Access>
   );
