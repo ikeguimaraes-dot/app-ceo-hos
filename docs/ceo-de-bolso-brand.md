@@ -18,3 +18,15 @@ release; teste remoto negativo de 35 RPCs. Captura do login inspecionada com o
 logo real recebido. Sem alterações em módulos nativos ou integrações financeiras.
 Dez E2E e exportações remotas Android/iOS/web e mock web passaram.
 Não houve instalação ou jornada em aparelho físico desta atualização.
+
+## Distribuição
+
+- Commit de implementação `3f224f3`, enviado ao GitHub.
+- Web publicada e promovida em https://app-ceo-hos.vercel.app, deployment
+  `dpl_2Hfp3jJLGZiE2cjkhGciv3pz3FjJ`. Chrome confirmou título, logo visível,
+  login e bundle novo no domínio canônico; zero erros de página.
+- iOS `0.1.0 (9)`: build `8ed5de2b-b971-4cb1-9191-da423ac1ff81`,
+  em compilação (`IN_PROGRESS`) na consulta final.
+- Envio automático agendado: `8251ac0b-e345-4300-9a2b-0b317310cae2`.
+  Compilação, envio, processamento e liberação externa ainda precisam concluir;
+  a versão 9 ainda não foi confirmada disponível para instalação no TestFlight.
