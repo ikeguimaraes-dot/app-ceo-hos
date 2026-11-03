@@ -47,3 +47,25 @@ Não foram alterados módulos nativos nem o repositório KPH de referência.
   minimização inclusive de campos futuros e grants privados.
 - Exportações remotas Android/iOS/web e exportação mock web.
 - Testes HTTP Auth/RPC não equivalem a instalação ou jornada em aparelho físico.
+- Auth HTTP real de cada sócio: login válido, quatro casas, dashboards v1–v4
+  minimizados, unidade fora do escopo negada e 11 RPCs de módulos não concedidos
+  negadas com `42501`. Consulta legada da IA retorna zero registros autorizados.
+- Conta completa de revisão: bootstrap v1 compatível, v2 com permissões completas,
+  contas a pagar acessível e exemplo de eventos de 27/10 preservado.
+- Houve erros transitórios de transporte/HTTP 520 durante a verificação externa;
+  a verificação HTTP final passou com timeout e retentativas limitadas.
+
+## Publicação
+
+- Implementação: commit `dc15b2c`, enviado ao GitHub.
+- Web: https://app-ceo-hos.vercel.app, implantação
+  `dpl_DprLgoGjpZn27hyHJkhuEG7a3GXS`, READY e promovida ao domínio canônico.
+  HTML e bundle confirmados com RPC v2 e as duas permissões novas.
+- iOS: `0.1.0 (8)`, build `7e6fbf6d-290d-434e-9d1b-960b20980e9b`;
+  submissão automática `529e9921-e398-4beb-a903-df89cf32954b` agendada.
+- Link público preservado: https://testflight.apple.com/join/41JRK7ea.
+  Build e submissão ainda precisam concluir; isso não significa disponibilidade
+  para instalação externa no TestFlight.
+- Jornada web real no domínio canônico com a conta de Paulo: login, menu reduzido,
+  faturamento sem detalhes restritos e logout passaram; zero erros de página no
+  Chrome com viewport móvel. Não é validação de aparelho físico.
