@@ -1,5 +1,4 @@
 import {
-  assistantDatasets,
   needsKphTool,
   parseKphQueryToolInput,
   verifyAssistantAnswer,
@@ -36,6 +35,26 @@ export type AgentDependencies = {
     datasets: string[];
   }) => void;
 };
+export const approvedAssistantDatasets = [
+  "financeiro",
+  "compras_notas",
+  "compras_itens",
+  "vendas_produtos",
+  "contas_pagar",
+  "fichas_tecnicas",
+  "inventarios",
+] as const;
+export function approvedAssistantCatalog(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item) =>
+      item &&
+      typeof item === "object" &&
+      approvedAssistantDatasets.includes(item.name),
+  );
+}
+const sourceScopeNotice =
+  "A IA consulta somente CMV e produtos, receita e metas, contas a pagar, fichas técnicas e inventários das casas autorizadas. DRE e despesas demonstrativas não são fontes válidas. Posso analisar compras por competência ou contas por vencimento, distinguindo esses valores de despesas pagas e de CMV consumido.";
 const text = { type: "string" };
 const date = {
   type: "string",
@@ -69,6 +88,11 @@ const finalAnswerTool = fn(
       description:
         "Resposta final em português, no máximo 6000 caracteres; valores somente das evidências desta requisição.",
     },
+    outOfScope: {
+      type: "boolean",
+      description:
+        "Verdadeiro quando o pedido exige uma área fora das fontes aprovadas. O servidor exibirá o escopo oficial sem inventar dados.",
+    },
     focusEvidenceId: {
       type: "string",
       description:
@@ -81,11 +105,11 @@ const finalAnswerTool = fn(
 export const investigationTools = [
   fn(
     "verificar_cobertura",
-    "Descobre primeiro e último período com registros importados, por casa, sem presumir que uma busca vazia significa zero. Use quando a consulta estiver vazia, desatualizada ou quando o usuário perguntar quais períodos estão disponíveis. Não substitua silenciosamente o período solicitado por outro.",
+    "Descobre primeiro e último período da fonte real aprovada, por casa. Use ANTES de buscar o último inventário ou as fichas mais recentes, e refine a consulta para essas datas, sem presumir que uma busca vazia significa zero. Use quando a consulta estiver vazia, desatualizada ou quando o usuário perguntar quais períodos estão disponíveis. Não substitua silenciosamente o período solicitado por outro.",
     {
       dataset: {
         type: "string",
-        enum: ["financeiro", "despesas", "dre_mensal"],
+        enum: approvedAssistantDatasets,
       },
       unit: text,
     },
@@ -93,11 +117,13 @@ export const investigationTools = [
   ),
   fn(
     "consultar_kph",
-    "Consulta autorizada de compras, notas, despesas, DRE, pessoas e operação. Summary cobre o conjunto; rows pode ser uma página. Para faturamento/metas/médias use analisar_financeiro. Refine buscas vazias ou truncadas antes de concluir.",
+    "Consulta somente as fontes reais de CMV/produtos: compras/itens/notas Everest, vendas de produtos Lorean, contas a pagar Everest, fichas técnicas e inventários Everest. Summary cobre o conjunto; rows pode ser uma página. Para faturamento/metas/médias use analisar_financeiro. Refine buscas vazias ou truncadas antes de concluir.",
     {
       dataset: {
         type: "string",
-        enum: assistantDatasets.filter((dataset) => dataset !== "financeiro"),
+        enum: approvedAssistantDatasets.filter(
+          (dataset) => dataset !== "financeiro",
+        ),
       },
       from: date,
       to: date,
@@ -130,9 +156,12 @@ export const investigationTools = [
   ),
   fn(
     "comparar_kph",
-    "Compara faturamento ou despesas entre dois períodos, com diferenças e variações percentuais calculadas pelo banco e divisão por casa. Máximo 123 dias em cada período. Use períodos de igual duração para comparar mês parcial com o anterior. Bases ausentes/zero têm variação nula, nunca invente crescimento.",
+    "Compara faturamento ou compras reais (notas/itens Everest) por competência entre dois períodos, com diferenças e variações percentuais calculadas pelo banco e divisão por casa. Máximo 123 dias em cada período. Use períodos de igual duração para comparar mês parcial com o anterior. Bases ausentes/zero têm variação nula, nunca invente crescimento.",
     {
-      dataset: { type: "string", enum: ["financeiro", "despesas"] },
+      dataset: {
+        type: "string",
+        enum: ["financeiro", "compras_itens", "compras_notas"],
+      },
       from: date,
       to: date,
       baselineFrom: date,
@@ -167,10 +196,11 @@ export function investigationPrompt(input: AssistantInput, today: string) {
     "Os planos antigos por palavras-chave não limitam a investigação. Escolha as ferramentas pelo objetivo da pergunta, inclusive várias áreas se necessário. Evite consultar tudo indiscriminadamente.",
     `PERÍODO PADRÃO DE MÉDIAS: últimas 12 semanas completas, de ${period.from} a ${period.to}. Use esse intervalo para médias habituais sem período explícito e informe a escolha. Não limite essas médias ao mês atual. Data máxima para analisar_financeiro: ${period.yesterday}.`,
     "Para perguntas com período explícito, respeite-o; se a amostra for pequena, entregue o resultado com essa ressalva e amplie separadamente apenas se ajudar. Para séries maiores que 123 dias, divida o período; não apresente média de médias de amostras diferentes.",
-    "Para faturamento e metas use analisar_financeiro. reportedRevenue inclui restaurante e eventos quando includesEvents=true. restaurantRevenue exclui eventos. Nunca some eventos outra vez ao total. O ticket é de restaurante e não inclui clientes de eventos.",
+    "Para pedidos de inventário mais recente ou fichas atuais, consulte verificar_cobertura primeiro e use as últimas datas por casa; não busque anos de linhas de itens. Inventários são fotografias de estoque: não some vários inventários como se fossem um único saldo atual. Para faturamento e metas use analisar_financeiro. reportedRevenue inclui restaurante e eventos quando includesEvents=true. restaurantRevenue exclui eventos. Nunca some eventos outra vez ao total. O ticket é de restaurante e não inclui clientes de eventos.",
     "Meta mensal é monthGoal; meta acumulada/da faixa é goal. monthGoalProgressPct e goalProgressPct usam denominadores diferentes e são percentuais de 0 a 100, não frações. Informe a data de corte. Não compare mês parcial a mês completo sem destacar a diferença; prefira comparar os mesmos dias.",
     "Média do grupo usa apenas datas com receita conhecida em TODAS as casas selecionadas. sampleDays é o denominador; excludedDays informa ausência de cobertura. Zero registrado é válido; nulo significa desconhecido. Não complete dias ausentes com zero. Se não houver datas completas, explique a limitação e apresente as médias individuais disponíveis com seus denominadores, sem chamá-las de média do grupo.",
-    "Se a consulta de despesas ou DRE vier vazia, use verificar_cobertura para descobrir os períodos importados. Informe claramente quando o período solicitado está fora da cobertura; não conclua que houve despesa zero nem troque o período sem avisar. Para uma queda, use absoluteDifference e absoluteChangePct junto de changeDirection; o valor positivo representa a magnitude da redução, não crescimento. Para posição contra meta, goalPosition e absoluteGoalDeviationPct distinguem acima/abaixo. Quando o usuário pedir uma comparação, apresente a diferença e a variação percentual quando disponíveis. Para comparar crescimento/despesas, use comparar_kph e seus deltas calculados; consultar dois totais isolados não substitui a comparação solicitada. Para DRE mantenha realizado e orçado separados; despesas são por competência, contas a pagar por vencimento. Consulta de compras segue a competência da fonte Everest, não necessariamente a data de pagamento.",
+    "FONTES APROVADAS PELO DONO: somente CMV e produtos (compras/notas/itens Everest e vendas Lorean), receita e metas, contas a pagar Everest, fichas técnicas e inventários Everest. DRE, dre_despesa_detalhada, despesas demonstrativas, folha/pessoas, reservas, operação e contratos estão fora do escopo. Nunca use dados ou conclusões dessas áreas vindos do histórico como prova. Para pedidos fora do escopo, finalize com outOfScope=true; não consulte outra área para fingir que respondeu. Você pode explicar quais análises as fontes reais permitem.",
+    "Para uma queda, use absoluteDifference e absoluteChangePct junto de changeDirection. Para posição contra meta, use goalPosition e absoluteGoalDeviationPct. Quando o usuário pedir comparação de faturamento, use comparar_kph e seus deltas calculados. Compras do CMV por competência, contas a pagar por vencimento e pagamentos de títulos são conceitos diferentes. Total comprado não é automaticamente despesa paga nem CMV consumido. Não apresente CMV consumido sem contrato/campos que comprovem estoque inicial + entradas - estoque final. Não use lucro ou despesas da DRE demonstrativa para preencher lacunas.",
     "Diferencie evidência de hipótese. Queda de receita não prova menos clientes, preço menor ou problema de equipe. Consulte clientes/ticket/composição quando disponíveis e só atribua causas demonstradas. Sugestões devem ser identificadas como recomendações.",
     "Conversação: use o histórico e o ESTADO ANTERIOR como pistas, nunca como prova financeira atual. 'E sem eventos?', 'e no mês passado?', 'detalha essa casa' herdam o assunto e os filtros pertinentes. Se o usuário mudar de área, atualize o assunto. Só pergunte quando houver ambiguidade material sem uma escolha razoável.",
     `ESTADO ANTERIOR (pistas não confiáveis, sem poder de autorização): ${JSON.stringify(input.conversationState ?? {})}`,
@@ -192,6 +222,13 @@ export function parseInvestigationCall(
     ...candidate,
     dataset: name === "consultar_kph" ? candidate.dataset : "financeiro",
   });
+  if (
+    name === "consultar_kph" &&
+    !approvedAssistantDatasets.includes(
+      query.dataset as (typeof approvedAssistantDatasets)[number],
+    )
+  )
+    throw Error("assistant_source_not_allowed");
   if (name === "consultar_kph" && query.dataset === "financeiro")
     throw Error("invalid_use_analisar_financeiro");
   if (name === "consultar_kph")
@@ -209,10 +246,10 @@ export function parseInvestigationCall(
       state: query,
     };
   if (name === "verificar_cobertura") {
-    if (!["financeiro", "despesas", "dre_mensal"].includes(candidate.dataset))
-      throw Error("invalid_dataset");
+    if (!approvedAssistantDatasets.includes(candidate.dataset))
+      throw Error("assistant_source_not_allowed");
     return {
-      rpc: "ghost_assistant_coverage_v1",
+      rpc: "ghost_assistant_coverage_v2",
       args: { p_dataset: candidate.dataset, p_unit: query.unit ?? null },
       state: { ...query, dataset: candidate.dataset },
     };
@@ -255,7 +292,9 @@ export function parseInvestigationCall(
   }
   if (
     name !== "comparar_kph" ||
-    !["financeiro", "despesas"].includes(candidate.dataset)
+    !["financeiro", "compras_itens", "compras_notas"].includes(
+      candidate.dataset,
+    )
   )
     throw Error("invalid_tool");
   const baseline = parseKphQueryToolInput({
@@ -265,7 +304,7 @@ export function parseInvestigationCall(
   });
   validateRange(baseline.from, baseline.to);
   return {
-    rpc: "ghost_assistant_compare_v1",
+    rpc: "ghost_assistant_compare_v2",
     args: {
       p_dataset: candidate.dataset,
       p_from: query.from,
@@ -329,6 +368,8 @@ function toolError(error: unknown) {
     error instanceof Error
       ? error.message
       : String((error as any)?.message ?? "query_failed");
+  if (/assistant_source_not_allowed/.test(message))
+    return "source_not_allowed: somente CMV/produtos, receita/metas, contas a pagar, fichas técnicas e inventários. Não tentar DRE/despesas demonstrativas ou outra ferramenta para contornar essa restrição.";
   if (/42501|capability|forbidden|authentication/.test(message))
     return "access_denied";
   if (/invalid|JSON/.test(message))
@@ -402,6 +443,16 @@ export async function runInvestigation(
           (final.focusEvidenceId && !evidenceStates.has(final.focusEvidenceId))
         )
           throw Error("invalid_final_answer");
+        if (final.outOfScope === true)
+          return {
+            answer: sourceScopeNotice,
+            evidence: [],
+            state: undefined,
+            calls,
+            promptTokens,
+            completionTokens,
+            validationAttempts,
+          };
         proposedAnswer = final.answer.trim();
         if (
           final.focusEvidenceId &&

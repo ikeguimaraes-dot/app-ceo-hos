@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  approvedAssistantDatasets,
+  approvedAssistantCatalog,
+  investigationTools,
   investigationPeriod,
   investigationPrompt,
   parseInvestigationCall,
@@ -130,7 +133,7 @@ describe("executive investigation", () => {
       { model, query },
     );
     expect(result.calls).toBe(2);
-    expect(query.mock.calls[1]?.[0]).toBe("ghost_assistant_compare_v1");
+    expect(query.mock.calls[1]?.[0]).toBe("ghost_assistant_compare_v2");
   });
   it("preserves history and exclusion of events without overriding the selected dataset", async () => {
     const model = vi
@@ -197,7 +200,9 @@ describe("executive investigation", () => {
     const model = vi
       .fn()
       .mockResolvedValueOnce(
-        complete(call("consultar_kph", { dataset: "despesas", search: "999" })),
+        complete(
+          call("consultar_kph", { dataset: "compras_itens", search: "999" }),
+        ),
       )
       .mockResolvedValue(final("O total é R$ 999,00."));
     await expect(
@@ -268,18 +273,9 @@ describe("executive investigation", () => {
     expect(result.state.includeEvents).toBe(false);
     expect(result.calls).toBe(2);
   });
-  it("checks source coverage without losing the selected period", async () => {
+  it("refuses demonstration coverage without querying a database", async () => {
     const model = vi
       .fn()
-      .mockResolvedValueOnce(
-        complete(
-          call("consultar_kph", {
-            dataset: "despesas",
-            from: "2026-10-01",
-            to: "2026-10-31",
-          }),
-        ),
-      )
       .mockResolvedValueOnce(
         complete(
           call("verificar_cobertura", { dataset: "despesas" }, "coverage"),
@@ -290,24 +286,106 @@ describe("executive investigation", () => {
           call(
             "finalizar_resposta",
             {
-              answer: "A fonte está desatualizada para esse período.",
-              focusEvidenceId: "E1",
+              answer: "Fora do escopo.",
+              focusEvidenceId: "",
+              outOfScope: true,
             },
             "final",
           ),
         ),
       );
-    const query = vi
-      .fn()
-      .mockResolvedValue({ dataset: "despesas", lastDate: "2026-04-30" });
+    const query = vi.fn();
     const result = await runInvestigation(
-      input("Quais despesas tivemos em outubro?"),
+      input("Quero despesas da DRE"),
       "",
       today,
       { model, query },
     );
-    expect(result.state.from).toBe("2026-10-01");
-    expect(query.mock.calls[1]?.[0]).toBe("ghost_assistant_coverage_v1");
+    expect(query).not.toHaveBeenCalled();
+    expect(result.answer).toContain(
+      "DRE e despesas demonstrativas não são fontes válidas",
+    );
+    expect(result.evidence).toEqual([]);
+  });
+  it("advertises and accepts only the owner-approved sources", () => {
+    const allowed = [
+      "compras_notas",
+      "compras_itens",
+      "vendas_produtos",
+      "contas_pagar",
+      "fichas_tecnicas",
+      "inventarios",
+    ];
+    expect(approvedAssistantDatasets).toEqual(["financeiro", ...allowed]);
+    for (const dataset of allowed)
+      expect(
+        parseInvestigationCall("consultar_kph", { dataset }, today).rpc,
+      ).toBe("ghost_assistant_query_v4");
+    for (const dataset of [
+      "despesas",
+      "dre_mensal",
+      "dre_detalhes",
+      "pessoas",
+      "folha_resumo",
+      "reservas",
+      "eventos",
+      "compras_pedidos",
+      "caixas",
+    ]) {
+      expect(() =>
+        parseInvestigationCall("consultar_kph", { dataset }, today),
+      ).toThrow("assistant_source_not_allowed");
+    }
+    expect(
+      approvedAssistantCatalog([
+        { name: "despesas" },
+        { name: "compras_itens" },
+        { name: "dre_mensal" },
+      ]),
+    ).toEqual([{ name: "compras_itens" }]);
+    expect(JSON.stringify(investigationTools)).not.toContain('"despesas"');
+  });
+  it("compares real purchases and discovers approved source dates", () => {
+    expect(
+      parseInvestigationCall(
+        "comparar_kph",
+        {
+          dataset: "compras_itens",
+          from: "2026-10-01",
+          to: "2026-10-31",
+          baselineFrom: "2026-09-01",
+          baselineTo: "2026-09-30",
+          search: "carne",
+        },
+        today,
+      ),
+    ).toMatchObject({
+      rpc: "ghost_assistant_compare_v2",
+      args: { p_dataset: "compras_itens", p_search: "carne" },
+    });
+    expect(
+      parseInvestigationCall(
+        "verificar_cobertura",
+        { dataset: "inventarios" },
+        today,
+      ),
+    ).toMatchObject({
+      rpc: "ghost_assistant_coverage_v2",
+      args: { p_dataset: "inventarios" },
+    });
+    expect(() =>
+      parseInvestigationCall(
+        "comparar_kph",
+        {
+          dataset: "despesas",
+          from: "2026-10-01",
+          to: "2026-10-31",
+          baselineFrom: "2026-09-01",
+          baselineTo: "2026-09-30",
+        },
+        today,
+      ),
+    ).toThrow();
   });
   it("corrects missing revenue described as no revenue", async () => {
     const model = vi

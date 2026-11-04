@@ -625,8 +625,9 @@ export function systemPrompt(
     "Para perguntas de quanto foi comprado ou gasto com produto ou categoria, use compras_itens e responda com summary.totalValue e summary.byUnit, que já são calculados pelo banco.",
     "Nunca conclua que não há notas atuais usando purchase_invoices; compras_notas e compras_itens usam a fonte Everest atual da tela NF/CMV.",
     "Para custos de fichas técnicas, use apenas trustedCost. Se costReliable for falso ou trustedCost estiver ausente, diga que o custo ainda não é confiável.",
-    "Em recebimentos, preserve a unidade de medida de cada item; nunca some quantidades de unidades diferentes.",
-    "Em caixas, difference é a diferença registrada entre total fechado e total recebido. Não atribua a diferença a um operador nem invente sua causa.",
+    "Em inventários, preserve a unidade de medida de cada item; nunca some quantidades de unidades diferentes.",
+
+    "Em comparações, difference representa a diferença calculada pelo servidor; preserve a direção de aumento ou redução.",
     "Informe o período ou horário de atualização quando isso for relevante.",
     "Não sugira que executou ações; este assistente é somente leitura.",
     `DATA ATUAL EM AMERICA/SAO_PAULO: ${currentDate ?? "não informada"}.`,

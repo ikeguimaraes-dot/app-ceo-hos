@@ -1,5 +1,7 @@
 # Plano de qualidade da Ghost IA
 
+> Escopo atual em 04/11/2026: somente [fontes reais aprovadas](assistant-source-policy.md). As referências históricas abaixo a DRE/despesas demonstrativas e outros módulos não representam o catálogo atual da IA.
+
 Data: 23/10/2026.
 
 ## Diagnóstico atual

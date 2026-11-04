@@ -46,7 +46,7 @@ begin
    raise exception 'restricted role reached finance analysis';
  exception when insufficient_privilege then null; end;
  begin
-   perform public.ghost_assistant_compare_v1('despesas','2026-10-01','2026-10-31','2026-09-01','2026-09-30');
+   perform public.ghost_assistant_compare_v1('financeiro','2026-10-01','2026-10-31','2026-09-01','2026-09-30');
    raise exception 'restricted role reached comparison';
  exception when insufficient_privilege then null; end;
  begin

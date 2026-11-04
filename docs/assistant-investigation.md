@@ -1,6 +1,6 @@
 # IA com investigação no CEO de bolso
 
-Entrega de 04/11/2026. O backend do app passou a investigar com ferramentas antes de responder. A entrega usa o projeto KPH de desenvolvimento já conectado ao app; não implanta o sistema financeiro em produção nem altera o repositório KPH somente leitura.
+Entrega de 04/11/2026. **Escopo vigente:** somente as [fontes reais aprovadas](assistant-source-policy.md); DRE/despesas demonstrativas foram excluídas por instrução do dono. O backend do app passou a investigar com ferramentas antes de responder. A entrega usa o projeto KPH de desenvolvimento já conectado ao app; não implanta o sistema financeiro em produção nem altera o repositório KPH somente leitura.
 
 ## Comportamento
 
@@ -9,9 +9,9 @@ O handler `ghost-assistant` agora usa `runInvestigation`, compartilhado com os t
 As ferramentas disponíveis são:
 
 - `analisar_financeiro`: faturamento, eventos, metas, turnos, médias e cobertura, agrupados por unidade, dia, dia da semana ou mês.
-- `comparar_kph`: diferenças e variações de faturamento/despesas entre dois períodos, calculadas no PostgreSQL.
-- `consultar_kph`: DRE, compras e demais datasets existentes, com a autorização original de cada área. Faturamento usa exclusivamente a nova ferramenta para evitar as regras antigas de metas/eventos.
-- `verificar_cobertura`: primeiro e último registro importado de financeiro, despesas ou DRE por casa autorizada.
+- `comparar_kph`: diferenças e variações de faturamento ou compras reais por notas/itens entre dois períodos, calculadas no PostgreSQL.
+- `consultar_kph`: notas/itens de compras, vendas de produtos, contas a pagar, fichas técnicas e inventários reais, com a autorização original de cada área. Faturamento usa exclusivamente a nova ferramenta para evitar as regras antigas de metas/eventos.
+- `verificar_cobertura`: primeiro e último registro das sete fontes reais por casa autorizada.
 - `finalizar_resposta`: texto final e referência à evidência que representa o foco da conversa, preservando o assunto mesmo após consultas auxiliares.
 
 A investigação admite até oito rodadas e doze chamadas de dados, com um orçamento de 105 segundos, prazos individuais e cache somente em memória por requisição. Não existe cache compartilhado entre usuários. Erros de argumentos/fonte retornam ao modelo para correção. Consultas idênticas na mesma requisição reutilizam a evidência. Valores não encontrados nos resultados são recusados e há até duas tentativas de correção.
@@ -28,7 +28,7 @@ Médias habituais sem período explícito usam as últimas doze semanas completa
 
 A meta da faixa consultada e a meta do mês inteiro são campos separados. Percentuais novos são pontos percentuais (0 a 100), calculados no servidor. Comparações também retornam deltas e variações calculadas no banco, com direção e magnitude absoluta. Isso permite escrever “queda de X%” sem recusar o valor positivo da redução. A posição contra meta também inclui direção e desvio absoluto. Uma regressão real dessa apresentação foi corrigida e a conversa foi repetida com sucesso. O ticket exclui eventos, pois os clientes de eventos não entram no denominador de restaurante.
 
-Um filtro de mês da DRE tinha expressão regular com escape excessivo, excluindo competências válidas. A migration corrige somente esse predicado nas consultas já autorizadas. Orçado e realizado continuam separados.
+A correção anterior de filtro da DRE não torna a fonte demonstrativa uma fonte válida. A restrição posterior do dono bloqueia DRE/despesas em todas as versões de consulta da IA; essas tabelas não são usadas como alternativa às fontes reais.
 
 ## Permissões e provedor
 
@@ -48,15 +48,15 @@ A preferência e os quatro modelos existentes foram preservados. Os testes de in
 - Login Auth real da conta de demonstração e chamadas HTTP aos novos RPCs: doze semanas, quatro casas, eventos, metas iguais às da Home, comparação de despesas com período que tem registros e unidade não autorizada negada.
 - Conversa real com Claude: pergunta literal do anexo, “E sem eventos?” e detalhamento do Frêneze no mesmo período. A validação reproduz o formato de estado aceito pela versão 12 instalada.
 - A mesma pergunta original foi respondida com o histórico adequado também por DeepSeek (padrão), GPT-6 Luna e Gemini nas respectivas conversas/testes. GPT foi usado adicionalmente para metas e cobertura de despesas.
-- Advisors KPH: três novas funções autenticadas com autorização explícita, total 202; categoria anônima permanece em 107. Demais categorias legadas permanecem em 184/15/66/9/3/1 e proteção de senha vazada desativada. Na origem de eventos, permanecem os dois avisos legados (RLS de uma tabela e proteção de senha vazada). Não se afirma saneamento da superfície legada.
+- Advisors KPH na entrega inicial: três novas funções autenticadas com autorização explícita, total 202; categoria anônima permanece em 107. Demais categorias legadas permanecem em 184/15/66/9/3/1 e proteção de senha vazada desativada. Na origem de eventos, permanecem os dois avisos legados (RLS de uma tabela e proteção de senha vazada). Não se afirma saneamento da superfície legada.
 
-A versão final publicada da Edge Function é 29, e o gateway de eventos é a versão 2. O teste final de metas com GPT concluiu a distinção mensal/acumulada e a comparação entre os primeiros três dias de novembro/outubro, incluindo diferença e redução percentual. O detalhamento final com Claude também concluiu após uma correção de validação numérica.
+A entrega inicial foi publicada na Edge Function 29; a restrição posterior de fontes está descrita em assistant-source-policy.md. O gateway de eventos permanece na versão 2. O teste final de metas com GPT concluiu a distinção mensal/acumulada e a comparação entre os primeiros três dias de novembro/outubro, incluindo diferença e redução percentual. O detalhamento final com Claude também concluiu após uma correção de validação numérica.
 
 Não houve teste em aparelho físico nesta entrega. A validação conversacional usa Auth real e o endpoint publicado, e os E2Es locais usam mocks, claramente separados.
 
 ## Limites observados
 
-A fonte autorizada de despesas detalhadas possui registros até abril de 2026, com cobertura desigual entre casas. Consultar outubro/setembro não comprova despesa zero. A IA deve verificar a cobertura e informar essa limitação, mantendo o período solicitado; não deve substituí-lo silenciosamente por outro. Atualizar essa integração é trabalho distinto da melhoria do agente.
+O dono esclareceu que a tabela de despesas detalhadas analisada inicialmente é demonstrativa. Ela foi excluída da IA; seus registros até abril não dizem até quando o sistema financeiro tem dados reais. Consulte a política atual de fontes.
 
 Há domingos sem registro em todas as casas simultaneamente. Isso impede uma média consolidada completa; não comprova fechamento da casa nem receita zero. A resposta precisa declarar a limitação.
 

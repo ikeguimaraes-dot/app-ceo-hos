@@ -7,7 +7,10 @@ import {
   systemPrompt,
   normalizeAssistantSources,
 } from "../_shared/assistant.ts";
-import { runInvestigation } from "../_shared/assistant-agent.ts";
+import {
+  runInvestigation,
+  approvedAssistantCatalog,
+} from "../_shared/assistant-agent.ts";
 
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
 const cors = {
@@ -156,7 +159,7 @@ Deno.serve(async (request) => {
         ? (catalog as Record<string, unknown>)
         : {};
     const catalogDatasets = Array.isArray(catalogRecord.datasets)
-      ? catalogRecord.datasets
+      ? approvedAssistantCatalog(catalogRecord.datasets)
           .map((candidate) => {
             const item =
               candidate && typeof candidate === "object"

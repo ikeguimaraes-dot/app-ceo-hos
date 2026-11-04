@@ -1,5 +1,7 @@
 # Cobertura de dados do Ghost IA
 
+> Escopo atual em 04/11/2026: somente [fontes reais aprovadas](assistant-source-policy.md). As referências históricas abaixo a DRE/despesas demonstrativas e outros módulos não representam o catálogo atual da IA.
+
 Auditoria atualizada em 23/10/2026. O assistente consulta apenas RPCs `security definer` com autenticação, capability e escopo de unidades autorizadas. O OpenRouter nunca recebe credenciais, IDs internos nem acesso SQL.
 
 ## Cobertura disponível

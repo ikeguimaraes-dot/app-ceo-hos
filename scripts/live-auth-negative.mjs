@@ -18,6 +18,17 @@ const client = createClient(
 );
 const protectedRpcs = [
   [
+    "ghost_assistant_compare_v2",
+    {
+      p_dataset: "compras_itens",
+      p_from: "2026-10-01",
+      p_to: "2026-10-31",
+      p_baseline_from: "2026-09-01",
+      p_baseline_to: "2026-09-30",
+    },
+  ],
+  ["ghost_assistant_coverage_v2", { p_dataset: "inventarios" }],
+  [
     "ghost_assistant_finance_analysis_v1",
     { p_from: "2026-10-01", p_to: "2026-10-31" },
   ],
