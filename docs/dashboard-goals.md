@@ -90,3 +90,7 @@ em uma pela nova v5, com autorização explícita e execução anônima revogada
   no Expo; ainda não é disponibilidade no TestFlight. O acompanhamento local do
   envio foi iniciado para associar o build processado ao grupo público, enviar à
   revisão externa se necessário e ler o estado final da Apple.
+- Atualização de distribuição em 04/11/2026: a consulta direta à Apple confirmou
+  a versão 10 com revisão `APPROVED`, estado externo `IN_BETA_TESTING` e associação
+  ao grupo público existente. O percentual mensal corrigido está liberado nessa
+  versão; as versões seguintes também preservam essa correção.

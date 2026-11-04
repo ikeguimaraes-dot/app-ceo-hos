@@ -24,3 +24,19 @@ negativo de 36 RPCs. Jornadas E2E e exportações mock/remotas registradas na en
 Sem alteração de integrações financeiras ou módulos nativos; não houve teste em
 aparelho físico nesta etapa.
 As 13 jornadas E2E passaram, incluindo tema escuro e filtros mensais.
+
+## Publicação
+
+- Implementação `e3e174e`, enviada ao GitHub.
+- Web: https://app-ceo-hos.vercel.app, deployment
+  `dpl_FTXLhVHzeAw9K4PrGtpsuCKWDb6F`, pronta e promovida.
+- PNG baixado da implantação confirmado RGBA e idêntico ao arquivo local. Chrome
+  no domínio canônico confirmou o arquivo novo carregado, fundo computado do
+  componente `rgba(0, 0, 0, 0)` e zero erros de página.
+- iOS `0.1.0 (12)`: build `c547f40a-3498-40ea-966d-e6a697619795`;
+  submissão EAS `5c9ffa6b-8c08-4e2d-a11a-f783b4c87772`.
+- A versão 12 inclui também o percentual mensal correto e o seletor da Home.
+  O link público permanece https://testflight.apple.com/join/41JRK7ea.
+- Na consulta direta final, a Apple ainda não confirmou processamento válido do
+  build 12; a atualização não foi anunciada como disponível no TestFlight.
+  O acompanhamento do envio e da associação ao grupo público permanece ativo.
