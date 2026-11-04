@@ -25,8 +25,11 @@ Não houve instalação ou jornada em aparelho físico desta atualização.
 - Web publicada e promovida em https://app-ceo-hos.vercel.app, deployment
   `dpl_2Hfp3jJLGZiE2cjkhGciv3pz3FjJ`. Chrome confirmou título, logo visível,
   login e bundle novo no domínio canônico; zero erros de página.
-- iOS `0.1.0 (9)`: build `8ed5de2b-b971-4cb1-9191-da423ac1ff81`,
-  em compilação (`IN_PROGRESS`) na consulta final.
-- Envio automático agendado: `8251ac0b-e345-4300-9a2b-0b317310cae2`.
-  Compilação, envio, processamento e liberação externa ainda precisam concluir;
-  a versão 9 ainda não foi confirmada disponível para instalação no TestFlight.
+- iOS `0.1.0 (9)`: build `8ed5de2b-b971-4cb1-9191-da423ac1ff81` concluído;
+  Apple confirmou processamento `VALID`.
+- Submissão EAS `8251ac0b-e345-4300-9a2b-0b317310cae2`: `FINISHED`.
+- Em 04/11/2026 foi concluída a associação ao grupo público existente e o envio
+  à revisão beta externa. A versão 9 está `WAITING_FOR_REVIEW`; ainda não está
+  confirmada disponível para instalação externa.
+- A atribuição ao grupo e a revisão externa haviam ficado pendentes após o envio
+  automático do pacote na entrega de 03/11; essa pendência foi resolvida em 04/11.
