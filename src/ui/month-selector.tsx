@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "./theme";
 
 export function currentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit" }).formatToParts(new Date());
+  return `${parts.find((part) => part.type === "year")!.value}-${parts.find((part) => part.type === "month")!.value}-01`;
 }
 
 export function monthLabel(value: string, long = false) {
@@ -18,13 +18,14 @@ export function monthLabel(value: string, long = false) {
 
 export function MonthSelector({ value, onChange, months = 13 }: { value: string; onChange: (month: string) => void; months?: number }) {
   const { colors } = useTheme();
+  const calendarMonth = currentMonth();
   const options = useMemo(() => {
-    const now = new Date();
+    const [year, month] = calendarMonth.split("-").map(Number);
     return Array.from({ length: months }, (_, index) => {
-      const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
+      const date = new Date(Date.UTC(year!, month! - 1 - index, 1));
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-01`;
     });
-  }, [months]);
+  }, [months, calendarMonth]);
   return (
     <View accessibilityRole="tablist" style={{ gap: 9 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
@@ -35,7 +36,7 @@ export function MonthSelector({ value, onChange, months = 13 }: { value: string;
         {options.map((month) => {
           const active = month.slice(0, 7) === value.slice(0, 7);
           return (
-            <Pressable key={month} accessibilityRole="tab" accessibilityState={{ selected: active }} accessibilityLabel={monthLabel(month, true)} onPress={() => onChange(month)} style={({ pressed }) => ({ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? colors.accent : colors.surface, borderWidth: 1, borderColor: active ? colors.accent : colors.line, opacity: pressed ? 0.72 : 1 })}>
+            <Pressable key={month} accessibilityRole="tab" accessibilityState={{ selected: active }} aria-selected={active} accessibilityLabel={monthLabel(month, true)} onPress={() => onChange(month)} style={({ pressed }) => ({ paddingHorizontal: 15, paddingVertical: 10, borderRadius: 15, backgroundColor: active ? colors.accent : colors.surface, borderWidth: 1, borderColor: active ? colors.accent : colors.line, opacity: pressed ? 0.72 : 1 })}>
               <Text style={{ color: active ? "#FFFFFF" : colors.text, fontWeight: "700", fontSize: 12, textTransform: "capitalize" }}>{monthLabel(month)}</Text>
             </Pressable>
           );

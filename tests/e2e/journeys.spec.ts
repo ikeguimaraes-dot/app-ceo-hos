@@ -297,3 +297,40 @@ test("house progress uses the full monthly target and keeps the dated position s
   await expect(page.getByText("R$ 1,5 mi", { exact: true })).toBeVisible();
   await expect(page.getByText("Meta acumulada", { exact: true })).toHaveCount(0);
 });
+
+
+test("Home month selection updates all houses and survives a detail round trip", async ({ page }) => {
+  await login(page, "Acesso restrito");
+  await page.getByRole("tab", { name: "setembro de 2026", exact: true }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · SETEMBRO DE 2026", { exact: true })).toBeVisible();
+  for (const [house, amount] of [["Meet", "R$ 743.255"], ["Mdna", "R$ 540.450"], ["Freneze", "R$ 440.991"], ["Match", "R$ 410.151"]] as const) {
+    await expect(page.getByRole("button", { name: `Abrir dashboard ${house}`, exact: true }).getByText(amount, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByText("POSIÇÃO ATÉ 20/09", { exact: true })).toHaveCount(4);
+  await expect(page.getByText(/^(Último fechamento|Provisório) · 20\/09\/2026$/)).toHaveCount(4);
+  await expect(page.getByText("Últimos fechamentos do mês", { exact: true })).toBeVisible();
+  await expect(page.getByText("Resumo do mês", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ontem nas casas", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Abrir dashboard Meet", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "setembro de 2026", exact: true })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "agosto de 2026", exact: true }).click();
+  await page.getByRole("button", { name: "Voltar ao portfólio", exact: true }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · SETEMBRO DE 2026", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Voltar ao período atual", exact: true }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · OUTUBRO DE 2026", { exact: true })).toBeVisible();
+  await expect(page.getByText("Faturamento de 20/10/2026", { exact: true })).toBeVisible();
+  await expect(page.getByText("R$ 51 mil", { exact: true })).toBeVisible();
+});
+
+test("an explicitly chosen Home month stays selected across month rollover", async ({ page }) => {
+  await page.clock.setSystemTime(new Date("2026-11-01T23:59:00-03:00"));
+  await login(page);
+  await page.getByRole("tab", { name: "setembro de 2026", exact: true }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · SETEMBRO DE 2026", { exact: true })).toBeVisible();
+  await page.clock.setSystemTime(new Date("2026-11-02T00:00:00-03:00"));
+  await page.clock.runFor(30_000);
+  await expect(page.getByRole("tab", { name: "setembro de 2026", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · SETEMBRO DE 2026", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Voltar ao período atual", exact: true }).click();
+  await expect(page.getByText("FATURAMENTO DO PORTFÓLIO · NOVEMBRO DE 2026", { exact: true })).toBeVisible();
+});

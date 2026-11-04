@@ -234,7 +234,7 @@ function PortfolioSnapshotCard({ unit, data, onPress, delay }: { unit: Unit; dat
   const accent = positive ? "#A7F3D0" : "#FFD2D2";
   const asOf = snapshot?.asOf
     ? new Date(`${snapshot.asOf}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-    : "ontem";
+    : "—";
   const value = (amount: number | null | undefined) => amount == null ? "—" : preciseCurrency.format(amount);
   return (
     <Reveal delay={delay}>
@@ -373,8 +373,11 @@ export function DashboardExperience() {
   const [view, setView] = useState<"portfolio" | "detail">("portfolio");
   const [picker, setPicker] = useState(false);
   const [period, setPeriod] = useState(dashboardPeriod);
-  const [selectedMonth, setMonth] = useState<string | null>(null);
-  const month = view === "portfolio" ? period.month : selectedMonth ?? period.month;
+  const [homeMonth, setHomeMonth] = useState<string | null>(null);
+  const [detailMonth, setDetailMonth] = useState<string | null>(null);
+  const portfolioMonth = homeMonth ?? period.month;
+  const month = view === "portfolio" ? portfolioMonth : detailMonth ?? portfolioMonth;
+  const isLatestPeriod = portfolioMonth === period.month;
   useEffect(() => {
     const timer = setInterval(() => {
       const next = dashboardPeriod();
@@ -402,6 +405,7 @@ export function DashboardExperience() {
   async function select(unit: Unit) {
     setPicker(false);
     await controller.selectUnit(unit.id);
+    if (view === "portfolio") setDetailMonth(portfolioMonth);
     setView("detail");
   }
 
@@ -433,9 +437,11 @@ export function DashboardExperience() {
                 <Text style={{ color: colors.text, fontSize: 37, lineHeight: 41, fontWeight: "800", letterSpacing: -1.7 }}>Seu grupo em{`\n`}movimento.</Text>
               </View>
             </Reveal>
+            <MonthSelector value={portfolioMonth} onChange={setHomeMonth} />
+            {homeMonth !== null && <Pressable accessibilityRole="button" accessibilityLabel="Voltar ao período atual" onPress={() => setHomeMonth(null)} style={{ alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 12, backgroundColor: colors.soft }}><Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>Voltar ao período atual</Text></Pressable>}
             <Reveal delay={70}>
               <View style={{ padding: 22, borderRadius: 26, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.line, gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1.3 }}>FATURAMENTO DO PORTFÓLIO · {monthLabel(period.month, true).toUpperCase()}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", letterSpacing: 1.3 }}>FATURAMENTO DO PORTFÓLIO · {monthLabel(portfolioMonth, true).toUpperCase()}</Text>
                 {pending ? <Text style={{ color: colors.text, fontSize: 32, fontWeight: "800" }}>Calculando…</Text> : <AnimatedAmount value={total} color={colors.text} size={34} />}
                 <Text style={{ color: colors.muted, fontSize: 13 }}>{units.length} casas autorizadas · dados consolidados pelo KPH</Text>
               </View>
@@ -457,20 +463,26 @@ export function DashboardExperience() {
             </Reveal>
             <Reveal delay={480}>
               <View style={{ gap: 13 }}>
-                <View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Ontem nas casas</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>Faturamento de {yesterdayLabel}</Text></View>
+                <View><Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>{isLatestPeriod ? "Ontem nas casas" : "Últimos fechamentos do mês"}</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>{isLatestPeriod ? `Faturamento de ${yesterdayLabel}` : `${monthLabel(portfolioMonth, true)} · última data com receita por casa`}</Text></View>
                 <View style={{ gap: 9 }}>
                   {units.map((unit, index) => {
                     const brand = brandStyle(unit);
-                    const point = queries[index]?.data?.series.find((item) => item.date === yesterdayKey);
-                    return <View key={unit.id} style={{ flexDirection: "row", alignItems: "center", padding: 15, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 12 }}><LinearGradient colors={brand.colors} style={{ width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={19} /></LinearGradient><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontWeight: "700" }}>{brand.label}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{point?.provisional ? "Conciliação em andamento" : "Fechamento do dia"}</Text></View><Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }}>{point?.revenue == null ? "—" : compactCurrency.format(point.revenue)}</Text></View>;
+                    const series = queries[index]?.data?.series ?? [];
+                    const point = isLatestPeriod
+                      ? series.find((item) => item.date === yesterdayKey)
+                      : series.filter((item) => item.revenue !== null && item.date.startsWith(portfolioMonth.slice(0, 7)) && item.date <= yesterdayKey).sort((a, b) => b.date.localeCompare(a.date))[0];
+                    const closingLabel = queries[index]?.isPending ? "Carregando período…" : !isLatestPeriod
+                      ? point ? `${point.provisional ? "Provisório" : "Último fechamento"} · ${new Date(`${point.date}T12:00:00`).toLocaleDateString("pt-BR")}` : "Sem fechamento no período"
+                      : !point ? "Sem dados para a data" : point.provisional ? "Conciliação em andamento" : "Fechamento do dia";
+                    return <View key={unit.id} style={{ flexDirection: "row", alignItems: "center", padding: 15, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, gap: 12 }}><LinearGradient colors={brand.colors} style={{ width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={19} /></LinearGradient><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontWeight: "700" }}>{brand.label}</Text><Text style={{ color: colors.muted, fontSize: 11 }}>{closingLabel}</Text></View><Text style={{ color: colors.text, fontSize: 16, fontWeight: "800" }}>{point?.revenue == null ? "—" : compactCurrency.format(point.revenue)}</Text></View>;
                   })}
                 </View>
               </View>
             </Reveal>
             <View style={{ gap: 13 }}>
               <View>
-                <Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>Mês até ontem</Text>
-                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>{monthLabel(period.month, true)} · meta e faturamento acumulado por casa</Text>
+                <Text style={{ color: colors.text, fontSize: 21, fontWeight: "800", letterSpacing: -0.6 }}>{isLatestPeriod ? "Mês até ontem" : "Resumo do mês"}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 3 }}>{monthLabel(portfolioMonth, true)} · meta e faturamento acumulado por casa</Text>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {units.map((unit, index) => (
@@ -486,7 +498,7 @@ export function DashboardExperience() {
         ) : currentQuery?.error ? (
           <ErrorState message={currentQuery.error.message} retry={() => void currentQuery.refetch()} />
         ) : currentQuery?.data ? (
-          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} month={month} onMonth={setMonth} onBack={() => { setMonth(null); setView("portfolio"); }} onPick={() => setPicker(true)} />
+          <UnitDetail unit={currentUnit} dashboard={currentQuery.data} month={month} onMonth={setDetailMonth} onBack={() => { setDetailMonth(null); setView("portfolio"); }} onPick={() => setPicker(true)} />
         ) : null}
       </ScrollView>
       <HousePicker visible={picker} units={units} onClose={() => setPicker(false)} onSelect={(unit) => void select(unit)} />
