@@ -74,3 +74,19 @@ regressão específica do denominador mensal), lint, TypeScript, boundaries e ga
 de release. Teste negativo ampliado para 36 RPCs, incluindo v5. Security Advisor
 mantém as mesmas categorias e passivo; a contagem de funções autenticadas cresce
 em uma pela nova v5, com autorização explícita e execução anônima revogada.
+
+### Distribuição da correção de percentual
+
+- Implementação: `a8a8653`, enviada ao GitHub.
+- Web publicada e promovida no domínio https://app-ceo-hos.vercel.app, deployment
+  `dpl_3n99Vz3nPiHNgPfYcNDDELBBGFz3`; bundle v5 e rótulo mensal conferidos.
+- iOS `0.1.0 (10)`: build `4c2c255b-4add-442d-8019-98277e9dbbc5`;
+  submissão EAS `3f9897a9-2f6f-4d88-b1c5-159af53647dd`.
+- Link de distribuição preservado: https://testflight.apple.com/join/41JRK7ea.
+- Jornada web real no domínio canônico: login, card e detalhe do Frêneze mostrando
+  `5,8% da meta do mês` e `R$ 524 mil`, logout; zero erros de página no Chrome.
+  Não representa instalação ou jornada em aparelho físico.
+- Build iOS concluído (`FINISHED`). Na consulta final, a submissão está `IN_QUEUE`
+  no Expo; ainda não é disponibilidade no TestFlight. O acompanhamento local do
+  envio foi iniciado para associar o build processado ao grupo público, enviar à
+  revisão externa se necessário e ler o estado final da Apple.
