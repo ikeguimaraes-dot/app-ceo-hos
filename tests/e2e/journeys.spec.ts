@@ -284,3 +284,16 @@ test("partner deep link falls back to home without payables access", async ({ pa
   await expect(page.getByText("Contas a pagar", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Energia Centro")).toHaveCount(0);
 });
+
+
+test("house progress uses the full monthly target and keeps the dated position separate", async ({ page }) => {
+  await login(page);
+  const meet=page.getByRole("button", { name: "Abrir dashboard Meet", exact: true });
+  await expect(meet.getByText("56,9% da meta do mês", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^META ATÉ 20\/10$/i).first()).toBeVisible();
+  await meet.click();
+  await expect(page.getByText("56,9%", { exact: true })).toBeVisible();
+  await expect(page.getByText("Meta do mês", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("R$ 1,5 mi", { exact: true })).toBeVisible();
+  await expect(page.getByText("Meta acumulada", { exact: true })).toHaveCount(0);
+});

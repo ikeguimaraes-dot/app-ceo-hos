@@ -47,3 +47,30 @@ A versão 9 já instalada recebe a correção pela API, sem novo binário/TestFl
 - Security Advisor antes/depois sem alterações; passivo anterior preservado.
 - Exportações mock web e remota Android/iOS/web. Não houve alteração de módulos
   nativos, instalação ou jornada em aparelho físico nesta correção.
+
+## Percentual mensal e posição até uma data — 04/11/2026
+
+O card principal usava `goalProgress`, um indicador do período decorrido, como se
+fosse o avanço da meta mensal. No Frêneze, o payload tinha receita `30.488,45`,
+meta até 04/11 `38.000` e progresso `80,23%`, mas meta mensal `524.000`. A posição
+até 03/11, separadamente, tinha meta `25.000` e receita `30.488,45`.
+
+A API aditiva `ghost_dashboard_v5` calcula `monthGoalProgress` no servidor usando
+a mesma receita exibida no card dividida pela meta do mês inteiro. O caso real
+retorna `5,818406...%` (5,82% com duas casas). `goalProgress` e todas as versões
+anteriores mantêm seu significado; a posição acumulada continua com sua data.
+A nova UI usa somente o percentual mensal no card principal, mostra “Meta do mês”
+no detalhe e identifica os cartões de posição como “até DD/MM”. Essa apresentação
+exige a nova versão do app, ao contrário da correção anterior de herança de metas.
+
+O cálculo recebe a resposta já autorizada e minimizada da v4; não expõe nenhum
+campo adicional do restaurante aos sócios. Zero, ausência de dados, meta zero e
+atingimento acima de 100% são tratados explicitamente. O teste SQL reproduz o
+exemplo real sem gravar dados de negócio. Auth/RPC real validou as quatro casas
+nas versões v3/v4/v5 e manteve a negação de unidade fora do vínculo.
+
+Validação da distinção mensal: 221 testes unitários, 11 jornadas E2E (incluindo
+regressão específica do denominador mensal), lint, TypeScript, boundaries e gate
+de release. Teste negativo ampliado para 36 RPCs, incluindo v5. Security Advisor
+mantém as mesmas categorias e passivo; a contagem de funções autenticadas cresce
+em uma pela nova v5, com autorização explícita e execução anônima revogada.

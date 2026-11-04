@@ -37,6 +37,7 @@ export type Dashboard = {
   revenue: number | null;
   goal: number | null;
   goalProgress: number | null;
+  monthGoalProgress: number | null;
   hasData: boolean;
   provisional: boolean;
   eventsRevenue: number;

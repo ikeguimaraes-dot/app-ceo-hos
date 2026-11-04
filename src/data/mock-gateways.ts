@@ -118,6 +118,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
               revenue: null,
               goal: null,
               goalProgress: null,
+              monthGoalProgress: null,
               hasData: false,
               provisional: false,
               eventsRevenue: 0,
@@ -135,6 +136,7 @@ export function createMockGateways(now = Date.now, delay = 240): Gateways {
             }
           : {
               ...base,
+              monthGoalProgress: Math.round(base.revenue * scale) / Math.round((base.goal / 20) * 31 * scale),
               periodStart: `${requested}-01`,
               periodEnd: moveDate(base.periodEnd),
               revenue:

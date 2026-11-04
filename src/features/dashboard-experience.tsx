@@ -218,7 +218,7 @@ function PortfolioCard({ unit, data, onPress, delay }: { unit: Unit; data?: Dash
             </Text>
             <AnimatedAmount value={data?.revenue ?? null} color="#FFFFFF" size={28} />
             <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 12 }}>
-              {data?.goalProgress == null ? "Meta indisponível" : `${Math.round(data.goalProgress * 100)}% da meta até agora`}
+              {data?.monthGoalProgress == null ? "Meta mensal indisponível" : `${percentage.format(data.monthGoalProgress)} da meta do mês`}
             </Text>
           </View>
         </LinearGradient>
@@ -254,7 +254,7 @@ function PortfolioSnapshotCard({ unit, data, onPress, delay }: { unit: Unit; dat
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <View>
               <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900", letterSpacing: -0.5 }}>{brand.label}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.68)", fontSize: 9, fontWeight: "700", letterSpacing: 1.1, marginTop: 2 }}>POSIÇÃO DO MÊS</Text>
+              <Text style={{ color: "rgba(255,255,255,0.68)", fontSize: 9, fontWeight: "700", letterSpacing: 1.1, marginTop: 2 }}>{`POSIÇÃO ATÉ ${asOf}`}</Text>
             </View>
             <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" }}>
               <Ionicons name={brand.icon} size={17} color="#FFFFFF" />
@@ -266,7 +266,7 @@ function PortfolioSnapshotCard({ unit, data, onPress, delay }: { unit: Unit; dat
             <View style={{ height: 1, backgroundColor: "rgba(255,255,255,0.17)", marginVertical: 1 }} />
             <SnapshotLine label="Faturamento acumulado" value={value(snapshot?.accumulatedRevenue)} strong />
             <SnapshotLine label="Diferença acumulada" value={value(snapshot?.difference)} valueColor={snapshot?.difference == null ? undefined : accent} />
-            <SnapshotLine label="Desvio da meta" value={snapshot?.deviation == null ? "—" : percentage.format(snapshot.deviation)} valueColor={snapshot?.deviation == null ? undefined : accent} />
+            <SnapshotLine label={`Desvio até ${asOf}`} value={snapshot?.deviation == null ? "—" : percentage.format(snapshot.deviation)} valueColor={snapshot?.deviation == null ? undefined : accent} />
           </View>
         </LinearGradient>
       </Pressable>
@@ -498,7 +498,7 @@ function UnitDetail({ unit, dashboard, month, onMonth, onBack, onPick }: { unit:
   const { colors } = useTheme();
   const brand = brandStyle(unit);
   const showDetails = unit.capabilities.includes("dashboard.details");
-  const goalProgress = dashboard.goalProgress ?? 0;
+  const monthGoalProgress = dashboard.monthGoalProgress;
   const bestDay = dashboard.series.reduce<DashboardPoint | null>((best, point) => !best || (point.revenue ?? 0) > (best.revenue ?? 0) ? point : best, null);
   return (
     <>
@@ -514,7 +514,7 @@ function UnitDetail({ unit, dashboard, month, onMonth, onBack, onPick }: { unit:
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, right: -65, top: -100, backgroundColor: "rgba(255,255,255,0.14)" }} />
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}><View><Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700", letterSpacing: 1.3, textTransform: "uppercase" }}>FATURAMENTO · {monthLabel(month, true)}</Text><Text style={{ color: "rgba(255,255,255,0.72)", marginTop: 5, fontSize: 13 }}>{unit.name}</Text></View><View style={{ width: 43, height: 43, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.17)", alignItems: "center", justifyContent: "center" }}><Ionicons name={brand.icon} color="#fff" size={22} /></View></View>
           <AnimatedAmount value={dashboard.revenue} color="#FFFFFF" size={42} />
-          <View style={{ gap: 10 }}><View style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>Meta acumulada</Text><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>{Math.round(goalProgress * 100)}%</Text></View><AnimatedProgress value={goalProgress} color="#FFFFFF" /></View>
+          <View style={{ gap: 10 }}><View style={{ flexDirection: "row", justifyContent: "space-between" }}><Text style={{ color: "rgba(255,255,255,0.75)", fontSize: 12 }}>Meta do mês</Text><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>{monthGoalProgress == null ? "—" : percentage.format(monthGoalProgress)}</Text></View><AnimatedProgress value={monthGoalProgress ?? 0} color="#FFFFFF" /></View>
           {dashboard.provisional && <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Ionicons name="time-outline" color="rgba(255,255,255,0.82)" size={15} /><Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 11 }}>Há conciliações de pagamento em processamento</Text></View>}
         </LinearGradient>
       </Reveal>
@@ -524,7 +524,7 @@ function UnitDetail({ unit, dashboard, month, onMonth, onBack, onPick }: { unit:
         </View>
       </Reveal>
       <View style={{ flexDirection: "row", gap: 12 }}>
-        <View style={{ flex: 1 }}><Reveal delay={240}><Metric icon="flag-outline" label="Meta acumulada" value={dashboard.goal == null ? "—" : compactCurrency.format(dashboard.goal)} color={brand.glow} /></Reveal></View>
+        <View style={{ flex: 1 }}><Reveal delay={240}><Metric icon="flag-outline" label="Meta do mês" value={dashboard.portfolioSnapshot?.monthGoal == null ? "—" : compactCurrency.format(dashboard.portfolioSnapshot.monthGoal)} color={brand.glow} /></Reveal></View>
         <View style={{ flex: 1 }}><Reveal delay={310}><Metric icon="trophy-outline" label="Melhor dia" value={bestDay?.revenue == null ? "—" : compactCurrency.format(bestDay.revenue)} color={brand.glow} /></Reveal></View>
       </View>
       <RevenueOverview dashboard={dashboard} color={brand.glow} showDetails={showDetails} />
