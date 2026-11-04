@@ -30,3 +30,21 @@ todas as casas, sócio, mês do detalhe, volta à Home, retorno ao período atua
 escolha manual durante a virada de mês), boundaries, gate de release, exportações
 mock web/remota Android/iOS/web e teste remoto negativo de 36 RPCs. Sem mudança
 de módulos nativos. Não houve instalação ou teste em aparelho físico nesta etapa.
+
+## Distribuição
+
+- Implementação `d7e8d5d`, enviada ao GitHub.
+- Web publicada e promovida em https://app-ceo-hos.vercel.app, deployment
+  `dpl_6fETXbQYKBgy5BtGyGxspi76xkSA`; bundle e API v5 conferidos.
+- iOS `0.1.0 (11)`, build `8f770ca1-b416-4df8-b374-57498add4efa`;
+  submissão automática EAS `58d8062e-4720-4f48-87ae-2c2bb6a80f76` agendada.
+  A versão 11 inclui também a correção do percentual mensal feita na versão 10.
+- O link TestFlight é o mesmo: https://testflight.apple.com/join/41JRK7ea.
+  Compilação/envio e processamento externo ainda precisam concluir para que
+  a versão 11 possa ser instalada. O acompanhamento das versões 10/11 foi
+  configurado para concluir a associação ao grupo e a revisão após o processamento.
+- Validação real no domínio canônico com login: seleção de outubro, quatro casas
+  com referências diárias de outubro, abertura do detalhe no mês escolhido,
+  navegação de outro mês no detalhe e volta à Home preservando outubro, retorno
+  ao período atual e logout; zero erros de página no Chrome com viewport móvel.
+  Isso não equivale a validação em aparelho físico.
