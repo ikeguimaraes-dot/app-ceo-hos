@@ -143,3 +143,7 @@ Correção factual adicional em 23/10/2026:
 # Implementação atual
 
 O plano agora inclui respostas determinísticas para faturamento, compras por item, notas fiscais, contas a pagar, vendas por produto, pagamentos, descontos, cancelamentos, inventários, contratos, eventos, reservas e folha. A conversa mantém contexto estruturado de área, período, casa e busca. O app também possui um painel de qualidade por modelo em **Mais → Qualidade do Ghost IA**.
+
+## Investigação conversacional em 04/11/2026
+
+O fluxo publicado passou a investigar com ferramentas em todas as perguntas, sem encerramento pelas receitas antigas. Foram adicionadas análises financeiras com as regras da Home, médias semanais, comparações calculadas no banco, descoberta de cobertura e conclusão estruturada com foco da conversa. Consulte a implementação, os testes reais e os limites em [IA com investigação](assistant-investigation.md).

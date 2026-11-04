@@ -33,7 +33,7 @@ Deno.serve(
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const { data, error } = await client.rpc(
-        "ghost_events_revenue_source_v1",
+        "ghost_events_revenue_source_v2",
         {
           p_unit_id: body.unitId,
           p_start: body.start,

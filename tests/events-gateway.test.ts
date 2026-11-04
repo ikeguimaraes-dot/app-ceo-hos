@@ -42,13 +42,19 @@ describe("Events revenue gateway", () => {
     expect(t.source).not.toHaveBeenCalled();
   });
   it.each([
-    { ...body, end: "2026-11-01" },
-    { ...body, start: "2026-10-02" },
+    { ...body, end: "2027-03-01" },
+    { ...body, start: "2026-02-30" },
     { ...body, unitId: "other" },
   ])("rejects an invalid scope or period", async (invalid) => {
     const t = setup();
     expect((await t.handle(t.request(invalid))).status).toBe(400);
     expect(t.source).not.toHaveBeenCalled();
+  });
+  it("supports a bounded history across months with one authorized source call", async () => {
+    const t = setup();
+    const range = { ...body, start: "2026-08-10", end: "2026-11-01" };
+    expect((await t.handle(t.request(range))).status).toBe(200);
+    expect(t.source).toHaveBeenCalledExactlyOnceWith(range);
   });
   it("returns only scoped daily aggregates with no cache", async () => {
     const t = setup();

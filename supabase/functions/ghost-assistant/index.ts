@@ -1,20 +1,13 @@
 // eslint-disable-next-line import/no-unresolved
 import { createClient } from "npm:@supabase/supabase-js@2.118.0";
 import {
-  assistantDatasets,
   assistantModel,
-  deterministicAssistantAnswer,
-  evidenceReviewPrompt,
-  needsKphTool,
-  normalizeAssistantSources,
   parseAssistantInput,
-  parseKphQueryToolInput,
-  planAssistantQueries,
-  preferredDatasetForQuestion,
   shouldRetryModelRequest,
   systemPrompt,
-  verifyAssistantAnswer,
+  normalizeAssistantSources,
 } from "../_shared/assistant.ts";
+import { runInvestigation } from "../_shared/assistant-agent.ts";
 
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
 const cors = {
@@ -23,59 +16,6 @@ const cors = {
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-const kphTool = {
-  type: "function",
-  function: {
-    name: "consultar_kph",
-    description:
-      "Consulta o banco KPH real, em modo somente leitura, para todas as casas autorizadas. Pode ser chamada várias vezes para cruzar áreas ou refinar resultados.",
-    parameters: {
-      type: "object",
-      properties: {
-        dataset: {
-          type: "string",
-          enum: assistantDatasets,
-          description:
-            "Área de dados. Para valores comprados por produto ou categoria use compras_itens; para listar notas use compras_notas.",
-        },
-        from: {
-          type: "string",
-          description:
-            "Data inicial inclusiva em YYYY-MM-DD. Pode abranger todo o histórico desde 2000.",
-        },
-        to: {
-          type: "string",
-          description: "Data final inclusiva em YYYY-MM-DD.",
-        },
-        unit: {
-          type: "string",
-          description:
-            "Nome ou trecho da casa, marca ou grupo. Omita para todas as casas autorizadas.",
-        },
-        search: {
-          type: "string",
-          description:
-            "Texto opcional para filtrar nomes, descrições, fornecedores, cargos ou estados.",
-        },
-        grain: {
-          type: "string",
-          enum: ["day", "month"],
-          description:
-            "Granularidade do financeiro. Use month para períodos longos.",
-        },
-        limit: {
-          type: "integer",
-          minimum: 1,
-          maximum: 200,
-          description:
-            "Máximo de linhas. Use filtros para manter o resultado preciso.",
-        },
-      },
-      required: ["dataset"],
-      additionalProperties: false,
-    },
-  },
-} as const;
 
 function reply(body: Record<string, unknown>, status = 200) {
   return Response.json(body, { status, headers: cors });
@@ -87,6 +27,11 @@ function errorCode(error: unknown) {
   if (/unit_capability_denied|42501/i.test(text)) return "forbidden";
   if (/invalid_/i.test(text)) return "invalid_request";
   if (/openrouter_/i.test(text)) return "model_unavailable";
+  const technical =
+    /^(assistant_(?:unverified_numbers|investigation_timeout|investigation_limit|tool_budget_exceeded))$/.exec(
+      text,
+    )?.[1];
+  if (technical) return technical;
   return "assistant_failed";
 }
 
@@ -121,7 +66,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST")
     return reply({ error: "method_not_allowed" }, 405);
   const length = Number(request.headers.get("content-length") ?? "0");
-  if (length > 32_768) return reply({ error: "request_too_large" }, 413);
+  if (length > 131_072) return reply({ error: "request_too_large" }, 413);
 
   const startedAt = performance.now();
   const requestId = crypto.randomUUID();
@@ -159,7 +104,10 @@ Deno.serve(async (request) => {
   try {
     if (!/^Bearer\s+\S+$/i.test(authorization))
       return reply({ error: "authentication_required" }, 401);
-    const input = parseAssistantInput(await request.json());
+    const raw = await request.text();
+    if (new TextEncoder().encode(raw).length > 131_072)
+      return reply({ error: "request_too_large" }, 413);
+    const input = parseAssistantInput(JSON.parse(raw));
     model = input.modelId;
     const apiKey = Deno.env.get("OPENROUTER_API_KEY");
     if (!apiKey) throw new Error("openrouter_key_missing");
@@ -227,293 +175,107 @@ Deno.serve(async (request) => {
       })),
       queryCatalog: { datasets: catalogDatasets, rules: catalogRecord.rules },
     };
-    const sources: string[] = [];
-    const evidence: unknown[] = [];
-    let conversationState = input.conversationState;
-
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Sao_Paulo",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }).format(new Date());
-    const messages: Record<string, unknown>[] = [
-      { role: "system", content: systemPrompt(context, today) },
-      ...input.history,
-      { role: "user", content: input.question },
-    ];
     const user = await anonymousUserId(identity.user.id);
-    const callModel = async (
-      conversation: Record<string, unknown>[],
-      withTools: boolean,
-      forceTool = false,
-      structured = false,
-    ) => {
-      const body = JSON.stringify({
-        model,
-        messages: conversation,
-        temperature: 0.2,
-        max_tokens: structured ? 1200 : 700,
-        user,
-        provider: { data_collection: "deny", zdr: true },
-        ...(structured
-          ? {
-              response_format: {
-                type: "json_schema",
-                json_schema: {
-                  name: "ghost_answer",
-                  strict: true,
-                  schema: {
-                    type: "object",
-                    properties: { answer: { type: "string" } },
-                    required: ["answer"],
-                    additionalProperties: false,
-                  },
-                },
-              },
-            }
-          : {}),
-        ...(withTools
-          ? {
-              tools: [kphTool],
-              tool_choice: forceTool
-                ? {
-                    type: "function",
-                    function: { name: "consultar_kph" },
-                  }
-                : "auto",
-            }
-          : {}),
-      });
-      let lastError: unknown;
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          const response = await fetch(openRouterUrl, {
-            method: "POST",
-            signal: AbortSignal.timeout(25_000),
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://app-ceo-hos.vercel.app",
-              "X-OpenRouter-Title": "Ghost KPH",
-            },
-            body,
+    const result = await runInvestigation(
+      input,
+      systemPrompt(context, today),
+      today,
+      {
+        onProgress(progress) {
+          toolCallCount = progress.calls;
+          validationAttempts = Math.min(3, progress.validationAttempts);
+          for (const dataset of progress.datasets) queriedDatasets.add(dataset);
+        },
+        async model(messages, tools, remainingMs) {
+          const body = JSON.stringify({
+            model,
+            messages,
+            temperature: 0.2,
+            max_tokens: 2400,
+            user,
+            provider: { data_collection: "deny", zdr: true },
+            ...(tools.length ? { tools, tool_choice: "auto" } : {}),
           });
-          if (response.ok) return response.json();
-          lastError = new Error(`openrouter_http_${response.status}`);
-          if (attempt === 0 && shouldRetryModelRequest(response.status)) {
-            await wait(retryAfterMs(response, attempt));
-            continue;
+          const modelStarted = Date.now();
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const response = await fetch(openRouterUrl, {
+              method: "POST",
+              signal: AbortSignal.timeout(
+                Math.min(
+                  40000,
+                  Math.max(
+                    1000,
+                    remainingMs - (Date.now() - modelStarted) - 2000,
+                  ),
+                ),
+              ),
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://app-ceo-hos.vercel.app",
+                "X-OpenRouter-Title": "CEO de bolso KPH",
+              },
+              body,
+            });
+            if (response.ok) {
+              const payload = await response.json();
+              const message = payload?.choices?.[0]?.message;
+              if (!message || payload?.choices?.[0]?.finish_reason === "length")
+                throw Error("openrouter_incomplete_response");
+              return {
+                message,
+                promptTokens: Number(payload?.usage?.prompt_tokens ?? 0),
+                completionTokens: Number(
+                  payload?.usage?.completion_tokens ?? 0,
+                ),
+              };
+            }
+            if (
+              attempt === 0 &&
+              shouldRetryModelRequest(response.status) &&
+              remainingMs > 45000
+            ) {
+              await wait(retryAfterMs(response, attempt));
+              continue;
+            }
+            throw Error(`openrouter_http_${response.status}`);
           }
-          throw lastError;
-        } catch (error) {
-          lastError = error;
-          const status = Number(providerStatus(error));
-          const transient =
-            !status ||
-            (Number.isFinite(status) && shouldRetryModelRequest(status));
-          if (attempt === 0 && transient) {
-            await wait(450);
-            continue;
-          }
-          throw error;
-        }
-      }
-      throw lastError;
-    };
-
-    const executeQuery = async (
-      query: ReturnType<typeof parseKphQueryToolInput>,
-    ) => {
-      const { data, error } = await supabase!.rpc("ghost_assistant_query_v4", {
-        p_dataset: query.dataset,
-        p_from: query.from ?? null,
-        p_to: query.to ?? null,
-        p_unit: query.unit ?? null,
-        p_search: query.search ?? null,
-        p_grain: query.grain,
-        p_limit: query.limit,
-      });
-      if (error) throw error;
-      queriedDatasets.add(query.dataset);
-      const period = `${data?.from ?? query.from ?? "início"} a ${data?.to ?? query.to ?? "hoje"}`;
-      sources.push(`${query.dataset} · ${period}`);
-      evidence.push({ query, result: data });
-      conversationState = {
-        dataset: query.dataset,
-        from: data?.from ?? query.from,
-        to: data?.to ?? query.to,
-        unit: query.unit,
-        search: query.search,
-        grain: query.grain,
-      };
-      return data;
-    };
-    const plannedQueries = planAssistantQueries(
-      input.question,
-      today,
-      units.flatMap((unit) => [unit.name, unit.brand]).filter(Boolean),
-      input.history,
-      input.conversationState,
+          throw Error("openrouter_unavailable");
+        },
+        async query(rpc, args, remainingMs) {
+          const { data, error } = await supabase!
+            .rpc(rpc, args)
+            .abortSignal(
+              AbortSignal.timeout(
+                Math.min(40000, Math.max(1000, remainingMs - 2000)),
+              ),
+            );
+          if (error) throw error;
+          return data;
+        },
+      },
     );
-    let payload: Record<string, any>;
-    let modelMessage: Record<string, any> | undefined;
-    let promptTokens = 0;
-    let completionTokens = 0;
-    let deterministic = false;
-
-    if (plannedQueries?.length) {
-      for (const query of plannedQueries) {
-        toolCallCount += 1;
-        await executeQuery(query);
-      }
-      const serverAnswer = deterministicAssistantAnswer(
-        input.question,
-        evidence,
-      );
-      if (serverAnswer) {
-        deterministic = true;
-        payload = {};
-        modelMessage = { content: serverAnswer };
-      } else {
-        messages.push({
-          role: "system",
-          content: [
-            "EVIDÊNCIA CONSULTADA DIRETAMENTE NO BANCO KPH:",
-            JSON.stringify(evidence),
-            evidenceReviewPrompt(input.question, toolCallCount),
-            "Responda em JSON no formato solicitado.",
-          ].join("\n"),
-        });
-        payload = await callModel(messages, false, false, true);
-        modelMessage = payload?.choices?.[0]?.message;
-        promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
-        completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
-      }
-    } else {
-      payload = await callModel(messages, true, needsKphTool(input.question));
-      modelMessage = payload?.choices?.[0]?.message;
-      promptTokens = Number(payload?.usage?.prompt_tokens ?? 0);
-      completionTokens = Number(payload?.usage?.completion_tokens ?? 0);
-    }
-    for (let round = 0; !plannedQueries && round < 4; round += 1) {
-      const toolCalls = Array.isArray(modelMessage?.tool_calls)
-        ? modelMessage.tool_calls
-            .filter(
-              (call: { function?: { name?: string } }) =>
-                call.function?.name === "consultar_kph",
-            )
-            .slice(0, 3)
-        : [];
-      if (!toolCalls.length) break;
-      messages.push({
-        role: "assistant",
-        content: modelMessage.content ?? null,
-        tool_calls: toolCalls,
-      });
-      for (const toolCall of toolCalls) {
-        toolCallCount += 1;
-        let query = parseKphQueryToolInput(toolCall.function?.arguments);
-        query = {
-          ...query,
-          dataset: preferredDatasetForQuestion(
-            input.question,
-            query.dataset,
-            query.search,
-          ),
-        };
-        const data = await executeQuery(query);
-        messages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          name: "consultar_kph",
-          content: JSON.stringify(data),
-        });
-      }
-      payload = await callModel(messages, round < 3);
-      modelMessage = payload?.choices?.[0]?.message;
-      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
-      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
-    }
-    let answer = modelMessage?.content;
-    if (plannedQueries && !deterministic && typeof answer === "string") {
-      try {
-        const structured = JSON.parse(answer);
-        answer = structured?.answer;
-      } catch {
-        // Some OpenRouter providers return valid text even when they do not
-        // honor response_format. Keep that text as a safe compatibility path.
-      }
-    }
-    if (needsKphTool(input.question) && toolCallCount === 0)
-      throw new Error("assistant_no_evidence");
-    if (!plannedQueries && toolCallCount > 0) {
-      if (typeof answer === "string" && answer.trim())
-        messages.push({ role: "assistant", content: answer.trim() });
-      messages.push({
-        role: "user",
-        content: evidenceReviewPrompt(input.question, toolCallCount),
-      });
-      payload = await callModel(messages, false, false, true);
-      modelMessage = payload?.choices?.[0]?.message;
-      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
-      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
-      answer = modelMessage?.content;
-      if (typeof answer === "string") {
-        try {
-          answer = JSON.parse(answer)?.answer;
-        } catch {
-          // Compatibility fallback for providers without structured output.
-        }
-      }
-    }
-    if (typeof answer !== "string" || !answer.trim())
-      throw new Error("openrouter_empty_response");
-    let verification = verifyAssistantAnswer(answer, evidence, {
-      question: input.question,
-      today,
-      unitCount: units.length,
-      sources,
-    });
-    validationAttempts = 1;
-    if (!verification.valid) {
-      messages.push({ role: "assistant", content: answer.trim() });
-      messages.push({
-        role: "user",
-        content: [
-          "A resposta contém números que não aparecem nas evidências autorizadas:",
-          verification.unsupported.join(", "),
-          "Reescreva sem calcular, estimar ou acrescentar números. Use somente valores exatos presentes nas evidências. Responda em JSON no formato solicitado.",
-        ].join("\n"),
-      });
-      payload = await callModel(messages, false, false, true);
-      promptTokens += Number(payload?.usage?.prompt_tokens ?? 0);
-      completionTokens += Number(payload?.usage?.completion_tokens ?? 0);
-      const corrected = payload?.choices?.[0]?.message?.content;
-      if (typeof corrected !== "string" || !corrected.trim())
-        throw new Error("openrouter_empty_response");
-      try {
-        answer = JSON.parse(corrected)?.answer;
-      } catch {
-        answer = corrected;
-      }
-      validationAttempts += 1;
-      if (typeof answer !== "string" || !answer.trim())
-        throw new Error("openrouter_empty_response");
-      verification = verifyAssistantAnswer(answer, evidence, {
-        question: input.question,
-        today,
-        unitCount: units.length,
-        sources,
-      });
-      if (!verification.valid) throw new Error("assistant_unverified_numbers");
-    }
-    await finish(
-      "success",
-      deterministic ? "deterministic" : "ok",
-      promptTokens,
-      completionTokens,
+    toolCallCount = result.calls;
+    validationAttempts = Math.min(3, result.validationAttempts);
+    for (const item of result.evidence)
+      queriedDatasets.add(item.result.dataset ?? "financeiro");
+    const sources = normalizeAssistantSources(
+      result.evidence.map(
+        (item) =>
+          `${item.result.dataset ?? "financeiro"} · ${item.result.from ?? "início"} a ${item.result.to ?? "hoje"}`,
+      ),
     );
+    const conversationState = result.state;
+    const answer = result.answer;
+    const promptTokens = result.promptTokens;
+    const completionTokens = result.completionTokens;
+    await finish("success", "investigation_v1", promptTokens, completionTokens);
     console.log(
       JSON.stringify({
         operation: "assistant.ask",

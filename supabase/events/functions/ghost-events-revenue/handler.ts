@@ -25,10 +25,17 @@ export function eventsHandler(deps: EventsDependencies) {
         typeof input.unitId !== "string" ||
         !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(input.unitId) ||
         typeof input.start !== "string" ||
-        !/^\d{4}-\d{2}-01$/.test(input.start) ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(input.start) ||
         typeof input.end !== "string" ||
         !/^\d{4}-\d{2}-\d{2}$/.test(input.end) ||
-        input.end.slice(0, 7) !== input.start.slice(0, 7) ||
+        !Number.isFinite(Date.parse(`${input.start}T00:00:00Z`)) ||
+        !Number.isFinite(Date.parse(`${input.end}T00:00:00Z`)) ||
+        new Date(`${input.start}T00:00:00Z`).toISOString().slice(0, 10) !==
+          input.start ||
+        new Date(`${input.end}T00:00:00Z`).toISOString().slice(0, 10) !==
+          input.end ||
+        input.start < "2000-01-01" ||
+        (Date.parse(input.end) - Date.parse(input.start)) / 86400000 > 122 ||
         input.end < input.start
       )
         return reply(400, { error: "invalid_request" });

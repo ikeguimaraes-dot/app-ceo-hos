@@ -17,10 +17,40 @@ const client = createClient(
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 const protectedRpcs = [
-  ["ghost_dashboard_v5", { p_unit_id: "00000000-0000-0000-0000-000000000000", p_month: "2026-11-01" }],
+  [
+    "ghost_assistant_finance_analysis_v1",
+    { p_from: "2026-10-01", p_to: "2026-10-31" },
+  ],
+  [
+    "ghost_assistant_compare_v1",
+    {
+      p_dataset: "financeiro",
+      p_from: "2026-10-01",
+      p_to: "2026-10-31",
+      p_baseline_from: "2026-09-01",
+      p_baseline_to: "2026-09-30",
+    },
+  ],
+  ["ghost_assistant_coverage_v1", { p_dataset: "financeiro" }],
+  [
+    "ghost_dashboard_v5",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_month: "2026-11-01",
+    },
+  ],
   ["ghost_bootstrap_v2"],
-  ["ghost_dashboard_v4", { p_unit_id: "00000000-0000-0000-0000-000000000000", p_month: "2026-10-01" }],
-  ["ghost_events_authorize_v1", { p_unit_id: "00000000-0000-0000-0000-000000000000" }],
+  [
+    "ghost_dashboard_v4",
+    {
+      p_unit_id: "00000000-0000-0000-0000-000000000000",
+      p_month: "2026-10-01",
+    },
+  ],
+  [
+    "ghost_events_authorize_v1",
+    { p_unit_id: "00000000-0000-0000-0000-000000000000" },
+  ],
   [
     "ghost_reservations_authorize_v1",
     { p_unit_id: "00000000-0000-0000-0000-000000000000" },
@@ -246,6 +276,27 @@ if (
   throw new Error("Credenciais inválidas deveriam ser recusadas.");
 for (const authorization of [null, "Bearer invalid-test-token"]) {
   const response = await fetch(
+    `${env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/ghost-assistant`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { authorization } : {}),
+      },
+      body: JSON.stringify({
+        question: "Como está o faturamento?",
+        history: [],
+      }),
+      signal: AbortSignal.timeout(15000),
+    },
+  );
+  if (response.status !== 401)
+    throw new Error(
+      `IA sem autenticação válida deve retornar 401; recebido ${response.status}`,
+    );
+}
+for (const authorization of [null, "Bearer invalid-test-token"]) {
+  const response = await fetch(
     "https://czoakcsntfxmqfssubbe.supabase.co/functions/v1/ghost-reservations",
     {
       method: "POST",
@@ -270,12 +321,22 @@ for (const authorization of [null, "Bearer invalid-test-token"]) {
     "https://rpavxnjchfmeiacnumpk.supabase.co/functions/v1/ghost-events-revenue",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...(authorization ? { authorization } : {}) },
-      body: JSON.stringify({ unitId: "674eac8c-5a38-4a42-aa60-0a666387909b", start: "2026-10-01", end: "2026-10-31" }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { authorization } : {}),
+      },
+      body: JSON.stringify({
+        unitId: "674eac8c-5a38-4a42-aa60-0a666387909b",
+        start: "2026-10-01",
+        end: "2026-10-31",
+      }),
       signal: AbortSignal.timeout(15000),
     },
   );
-  if (response.status !== 401) throw new Error(`Eventos deveria recusar token ausente/inválido com 401; recebido ${response.status}`);
+  if (response.status !== 401)
+    throw new Error(
+      `Eventos deveria recusar token ausente/inválido com 401; recebido ${response.status}`,
+    );
 }
 process.stdout.write(
   JSON.stringify({
