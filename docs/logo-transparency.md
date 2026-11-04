@@ -37,6 +37,17 @@ As 13 jornadas E2E passaram, incluindo tema escuro e filtros mensais.
   submissão EAS `5c9ffa6b-8c08-4e2d-a11a-f783b4c87772`.
 - A versão 12 inclui também o percentual mensal correto e o seletor da Home.
   O link público permanece https://testflight.apple.com/join/41JRK7ea.
-- Na consulta direta final, a Apple ainda não confirmou processamento válido do
-  build 12; a atualização não foi anunciada como disponível no TestFlight.
-  O acompanhamento do envio e da associação ao grupo público permanece ativo.
+- Em 04/11/2026, o pacote 12 foi enviado diretamente pela ferramenta oficial
+  da Apple após permanecer na fila do Expo. O IPA original assinado foi mantido;
+  identificação, nome CEO de bolso e versões `0.1.0 (12)` foram conferidos.
+- Validação e upload com `altool` concluídos sem erros; delivery UUID
+  `c3cca7e5-3e09-4450-ba35-a361e8d4ba11`, processamento Apple `VALID`.
+- A submissão EAS `5c9ffa6b-8c08-4e2d-a11a-f783b4c87772` foi cancelada somente
+  para substituir o transporte parado; esse estado não representa falha na
+  distribuição final. O build EAS original continua disponível.
+- Credencial de assinatura usada somente pelo utilitário administrativo em
+  diretório temporário protegido; arquivos temporários de autenticação removidos
+  ao concluir, sem cópia de credenciais ao repositório ou aplicativo.
+- Leitura final da Apple: revisão `APPROVED`, estado externo `IN_BETA_TESTING`,
+  build 12 associado ao grupo público existente. A versão 12 está liberada para
+  atualização no TestFlight pelo mesmo link.
