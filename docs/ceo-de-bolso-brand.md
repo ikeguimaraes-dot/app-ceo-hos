@@ -29,7 +29,8 @@ Não houve instalação ou jornada em aparelho físico desta atualização.
   Apple confirmou processamento `VALID`.
 - Submissão EAS `8251ac0b-e345-4300-9a2b-0b317310cae2`: `FINISHED`.
 - Em 04/11/2026 foi concluída a associação ao grupo público existente e o envio
-  à revisão beta externa. A versão 9 está `WAITING_FOR_REVIEW`; ainda não está
-  confirmada disponível para instalação externa.
+  à revisão beta externa. Na leitura seguinte, a Apple confirmou revisão
+  `APPROVED` e estado externo `IN_BETA_TESTING`, com o build 9 associado ao grupo
+  público. A versão 9 está liberada para testes externos pelo mesmo link.
 - A atribuição ao grupo e a revisão externa haviam ficado pendentes após o envio
   automático do pacote na entrega de 03/11; essa pendência foi resolvida em 04/11.
